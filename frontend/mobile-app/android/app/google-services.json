@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "615143258112",
+    "project_id": "thesis-bbe0c",
+    "storage_bucket": "thesis-bbe0c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:615143258112:android:3c91e35397a66bb9d840e5",
+        "android_client_info": {
+          "package_name": "com.coandrei.egourd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "615143258112-60off9fleumfj61aahoqmmm47kvgl2kc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coandrei.egourd",
+            "certificate_hash": "e26c07cd0a5b52447b6ec9fc4b84dd8e0a945c5b"
+          }
+        },
+        {
+          "client_id": "615143258112-fsb0nou91mrl77t68edtr3p36vlfhjj7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQT8Ee10axC7rNRXktNra-eaYMhOEi-a8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "615143258112-fsb0nou91mrl77t68edtr3p36vlfhjj7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
