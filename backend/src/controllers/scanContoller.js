@@ -3,7 +3,19 @@ const Scan = require('../models/Scan');
 // Save a new scan
 exports.saveScan = async (req, res) => {
   try {
-    const { userId, imageUrl, prediction, confidence, diseaseInfo, location, notes } = req.body;
+    const { 
+      userId, 
+      imageUrl, 
+      prediction, 
+      confidence, 
+      diseaseInfo, 
+      location, 
+      notes,
+      // New Gemini validation fields
+      variety,
+      validationStatus,
+      aiPrediction
+    } = req.body;
 
     if (!userId || !imageUrl || !prediction || !confidence) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -16,7 +28,11 @@ exports.saveScan = async (req, res) => {
       confidence,
       diseaseInfo,
       location,
-      notes
+      notes,
+      // Save new validation fields if provided
+      variety: variety || null,
+      validationStatus: validationStatus || 'tflite_only',
+      aiPrediction: aiPrediction || {}
     });
 
     const savedScan = await newScan.save();

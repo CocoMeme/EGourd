@@ -7,6 +7,7 @@ export { default as EducationalScreen } from './HomeScreens/EducationalScreen';
 
 // Scan Screens
 export { CameraScreen } from './ScanScreens/CameraScreen';
+export { CameraScreenTM } from './ScanScreens/CameraScreenTM';
 export { ResultsScreen } from './ScanScreens/ResultsScreen';
 
 // History Screens

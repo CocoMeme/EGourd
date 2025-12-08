@@ -80,6 +80,10 @@ class ScanService {
         ...scanData,
         imageUrl,
         userId: user.id || user._id, // Handle different ID formats
+        // Include validation data if present
+        variety: scanData.variety || null,
+        validationStatus: scanData.validationStatus || 'tflite_only',
+        aiPrediction: scanData.aiPrediction || {}
       };
 
       const response = await authService.authenticatedRequest('/scans/save', {

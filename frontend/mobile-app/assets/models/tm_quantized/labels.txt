@@ -1,0 +1,6 @@
+0 Ampalaya Bilog Male
+1 Ampalaya Bilog Female
+2 Patola Female
+3 Patola Male 
+4 Upo Smooth Female
+5 Upo Smooth Male

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { NavigationContainer, useFocusEffect, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View, Alert } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 import { pollinationNotificationHelper } from '../utils/pollinationNotificationHelper';
+import { authService } from '../services';
 
 const TAB_BAR_HEIGHT = 70;
 
@@ -22,7 +23,6 @@ const navigationTheme = {
     border: theme.colors.background.secondary,
   },
 };
-import { authService } from '../services';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -107,6 +107,7 @@ const HomeStack = ({ route }) => {
   );
 };
 
+// DEVELOPER MODE: CameraStack with Model Selection
 const CameraStack = () => {
   return (
     <Stack.Navigator
@@ -115,20 +116,13 @@ const CameraStack = () => {
           fontFamily: 'Poppins_600SemiBold',
           fontSize: 18,
         },
+        headerShown: false,
       }}
     >
       <Stack.Screen 
         name="CameraMain" 
-        component={CameraScreen} 
-        options={{ title: 'Scan Gourd' }}
-      />
-      <Stack.Screen 
-        name="CameraScreenTM" 
         component={CameraScreenTM} 
-        options={{ 
-          title: 'TM Test Mode',
-          headerShown: false 
-        }}
+        options={{ title: 'Scanner' }}
       />
       <Stack.Screen 
         name="Results" 
@@ -305,7 +299,7 @@ const AuthStack = ({ onAuthSuccess }) => {
   );
 };
 
-// Main Tab Navigator (protected)
+// Main Tab Navigator (protected) - DEVELOPER MODE VERSION
 const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
   // Admin users see only admin dashboard and profile
   if (userRole === 'admin') {
@@ -328,7 +322,7 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
             const iconSize = focused ? 24 : 20;
             return <Ionicons name={iconName} size={iconSize} color={color} />;
           },
-          tabBarActiveTintColor: '#F44336',
+          tabBarActiveTintColor: '#FF9800',
           tabBarInactiveTintColor: '#9e9e9e',
           tabBarShowLabel: false,
           tabBarStyle: {
@@ -356,7 +350,7 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
     );
   }
 
-  // Regular users see all normal features
+  // Regular users see all normal features with DEVELOPER MODE Camera
   return (
     <Tab.Navigator
       sceneContainerStyle={{ backgroundColor: theme.colors.background.primary }}
@@ -365,7 +359,7 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
           const iconMap = {
             Home: { active: 'grid', inactive: 'grid-outline' },
             Community: { active: 'people', inactive: 'people-outline' },
-            Camera: { active: 'camera', inactive: 'camera-outline' },
+            Camera: { active: 'flask', inactive: 'flask-outline' },
             Pollination: { active: 'leaf', inactive: 'leaf-outline' },
             Profile: { active: 'person', inactive: 'person-outline' },
           };
@@ -379,7 +373,7 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
           const iconSize = focused ? 24 : 20;
           return <Ionicons name={iconName} size={iconSize} color={color} />;
         },
-        tabBarActiveTintColor: '#4CAF50',
+        tabBarActiveTintColor: '#FF9800',
         tabBarInactiveTintColor: '#9e9e9e',
         tabBarShowLabel: false,
         tabBarStyle: {
@@ -412,7 +406,7 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
   );
 };
 
-export const AppNavigator = () => {
+export const DeveloperNavigator = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -433,13 +427,13 @@ export const AppNavigator = () => {
         const userData = await AsyncStorage.getItem('user');
         if (userData) {
           const user = JSON.parse(userData);
-          console.log('👤 User Data:', user);
-          console.log('🔑 User Role:', user.role);
+          console.log('👤 [DEV MODE] User Data:', user);
+          console.log('🔑 [DEV MODE] User Role:', user.role);
           setUserRole(user.role);
         }
 
         // Initialize pollination notifications now that user is authenticated
-        console.log('🔔 User authenticated - initializing notifications...');
+        console.log('🔔 [DEV MODE] User authenticated - initializing notifications...');
         try {
           await pollinationNotificationHelper.initialize();
         } catch (error) {
@@ -467,7 +461,7 @@ export const AppNavigator = () => {
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#FF9800" />
       </View>
     );
   }

@@ -10,6 +10,7 @@ import {
   Modal,
   ActivityIndicator,
   Image,
+  Switch,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services';
 import { theme } from '../../styles';
 import { HistoryScreen } from '../HistoryScreens/HistoryScreen';
+import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 
 export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   const insets = useSafeAreaInsets();
@@ -27,6 +29,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   const [verificationPin, setVerificationPin] = useState('');
   const [sendingPin, setSendingPin] = useState(false);
   const [verifyingPin, setVerifyingPin] = useState(false);
+  const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
 
   // Handle initial tab from navigation params
   useEffect(() => {
@@ -141,11 +144,11 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
     }
   };
 
-  const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description }) => (
+  const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description, toggleValue, onToggle }) => (
     <TouchableOpacity
       style={[styles.profileItem, isLast && styles.profileItemLast]}
       onPress={onPress}
-      disabled={!onPress}
+      disabled={!onPress || toggleValue !== undefined}
       activeOpacity={onPress ? 0.8 : 1}
     >
       <View style={styles.profileItemLeft}>
@@ -163,13 +166,25 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         )}
-        {!!value && (
-          <Text style={styles.profileItemValue} numberOfLines={1}>
-            {value}
-          </Text>
-        )}
-        {onPress && (
-          <Ionicons name="chevron-forward" size={18} color={theme.colors.text.secondary} />
+        {toggleValue !== undefined ? (
+          <Switch
+            value={toggleValue}
+            onValueChange={onToggle}
+            trackColor={{ false: '#767577', true: '#FF9800' }}
+            thumbColor={toggleValue ? '#FFFFFF' : '#f4f3f4'}
+            ios_backgroundColor="#767577"
+          />
+        ) : (
+          <>
+            {!!value && (
+              <Text style={styles.profileItemValue} numberOfLines={1}>
+                {value}
+              </Text>
+            )}
+            {onPress && (
+              <Ionicons name="chevron-forward" size={18} color={theme.colors.text.secondary} />
+            )}
+          </>
         )}
       </View>
     </TouchableOpacity>
@@ -208,6 +223,25 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   ];
 
   const preferenceItems = [
+    {
+      id: 'developerMode',
+      icon: 'flask-outline',
+      title: 'Developer Mode',
+      description: 'Test quantized TM models in Camera tab',
+      badge: 'Experimental',
+      badgeColor: '#FF9800',
+      toggleValue: isDeveloperMode,
+      onToggle: async (value) => {
+        await setDeveloperMode(value);
+        Alert.alert(
+          'Developer Mode ' + (value ? 'Enabled' : 'Disabled'),
+          value 
+            ? 'Camera tab now shows model selection screen for testing quantized and unquantized Teachable Machine models.'
+            : 'Camera tab restored to normal scan mode.',
+          [{ text: 'OK' }]
+        );
+      },
+    },
     {
       id: 'notifications',
       icon: 'notifications-outline',
@@ -380,6 +414,8 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
               badge={item.badge}
               badgeColor={item.badgeColor}
               onPress={item.action}
+              toggleValue={item.toggleValue}
+              onToggle={item.onToggle}
               isLast={index === section.items.length - 1}
             />
           ))}

@@ -1,15 +1,16 @@
 /**
- * Model Service for Ampalaya Flower Gender Classification
+ * Model Service for Gourd Flower Multi-Class Classification
  * Using TensorFlow Lite format with react-native-fast-tflite
  * 
  * This service handles:
  * - Loading the TensorFlow Lite model (native)
  * - Image preprocessing (resize, normalize)
- * - Running inference for flower gender prediction
- * - Managing model lifecycle
+ * - Running inference for flower classification (variety + gender)
+ * - Non-flower rejection with confidence threshold
+ * - Real-time prediction support with stabilization
  * 
  * @module modelService
- * @version 2.0.0-tflite-native
+ * @version 3.0.0-multiclass
  */
 
 import { loadTensorflowModel } from 'react-native-fast-tflite';
@@ -17,18 +18,48 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system/legacy';
 import jpeg from 'jpeg-js';
 
+// Model configuration - UPDATE THIS WHEN RETRAINING MODEL
+const MODEL_CONFIG = {
+  version: '3.0.0-multiclass',
+  inputSize: [224, 224],
+  // Class order MUST match training order in train-model-v3-multiclass.md
+  classes: [
+    'ampalaya_bilog_female',
+    'ampalaya_bilog_male',
+    'patola_female',
+    'patola_male',
+    'upo_smooth_female',
+    'upo_smooth_male',
+    'not_flower'
+  ],
+  // Human-readable labels for each class
+  classLabels: {
+    ampalaya_bilog_female: { variety: 'Ampalaya Bilog', gender: 'female', isFlower: true },
+    ampalaya_bilog_male: { variety: 'Ampalaya Bilog', gender: 'male', isFlower: true },
+    patola_female: { variety: 'Patola', gender: 'female', isFlower: true },
+    patola_male: { variety: 'Patola', gender: 'male', isFlower: true },
+    upo_smooth_female: { variety: 'Upo (Smooth)', gender: 'female', isFlower: true },
+    upo_smooth_male: { variety: 'Upo (Smooth)', gender: 'male', isFlower: true },
+    not_flower: { variety: null, gender: null, isFlower: false }
+  },
+  confidenceThreshold: 0.65, // 65% minimum confidence
+  preprocessing: {
+    rescale: 1.0 / 255.0
+  }
+};
+
 class ModelService {
   constructor() {
     this.model = null;
     this.isReady = false;
     this.isInitializing = false;
-    this.modelMetadata = {
-      inputSize: [224, 224],
-      classes: ['Female', 'Male'],
-      preprocessing: {
-        rescale: 1.0 / 255.0
-      }
-    };
+    this.config = MODEL_CONFIG;
+    this.isMultiClass = false; // Will be set based on loaded model
+    
+    // Real-time prediction state
+    this.lastPrediction = null;
+    this.predictionHistory = [];
+    this.maxHistorySize = 5;
   }
 
   /**
@@ -37,7 +68,6 @@ class ModelService {
    * @throws {Error} If model initialization fails
    */
   async initialize() {
-    // Prevent multiple simultaneous initialization attempts
     if (this.isInitializing) {
       console.log('⏳ Model initialization already in progress...');
       while (this.isInitializing) {
@@ -54,16 +84,16 @@ class ModelService {
     this.isInitializing = true;
 
     try {
-      console.log('🤖 Initializing TFLite model (native)...');
+      console.log('🤖 Initializing TFLite model...');
+      console.log(`📊 Config version: ${this.config.version}`);
       
-      // Load the TFLite model
-      console.log('🔄 Loading TFLite model...');
       await this.loadTFLiteModel();
       
       this.isReady = true;
       this.isInitializing = false;
       
-      console.log('✅ TFLite model loaded successfully');
+      console.log('✅ Model loaded successfully');
+      console.log(`📊 Mode: ${this.isMultiClass ? 'Multi-class' : 'Binary'}`);
       
       return true;
     } catch (error) {
@@ -76,91 +106,87 @@ class ModelService {
 
   /**
    * Load the TensorFlow Lite model using native loader
+   * Attempts to load multi-class model first, falls back to binary
    * @private
    */
   async loadTFLiteModel() {
     try {
       console.log('📦 Loading TFLite model asset...');
       
-      // react-native-fast-tflite expects the require() directly
-      const modelSource = require('../../assets/models/ampalaya_classifier.tflite');
+      let modelSource;
       
-      console.log(' Model size: 4.57 MB');
+      // Try to load multi-class model first
+      try {
+        modelSource = require('../../assets/models/gourd_classifier.tflite');
+        console.log('✅ Found multi-class model: gourd_classifier.tflite');
+        this.isMultiClass = true;
+      } catch (e) {
+        // Fallback to original binary model
+        console.log('⚠️ Multi-class model not found, using binary model');
+        modelSource = require('../../assets/models/ampalaya_classifier.tflite');
+        this.isMultiClass = false;
+        
+        // Adjust config for binary model
+        this.config = {
+          ...this.config,
+          version: '2.0.0-binary',
+          classes: ['female', 'male'],
+          classLabels: {
+            female: { variety: 'Ampalaya Bilog', gender: 'female', isFlower: true },
+            male: { variety: 'Ampalaya Bilog', gender: 'male', isFlower: true }
+          }
+        };
+      }
       
-      // Load TFLite model using react-native-fast-tflite (native)
       console.log('🔄 Loading model with native TFLite interpreter...');
-      
       this.model = await loadTensorflowModel(modelSource);
       
-      console.log('✅ TFLite model loaded successfully (native)');
+      console.log('✅ TFLite model loaded successfully');
       console.log('📊 Model info:');
       console.log('   Inputs:', JSON.stringify(this.model.inputs, null, 2));
       console.log('   Outputs:', JSON.stringify(this.model.outputs, null, 2));
-      console.log(`   Expected input shape: [1, 224, 224, 3]`);
-      console.log(`   Expected output shape: [1, 1]`);
       
     } catch (error) {
       console.error('❌ TFLite model loading failed:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
       throw new Error(`Failed to load TFLite model: ${error.message}`);
     }
   }
 
   /**
    * Preprocess image for model input
-   * - Resize to 224×224 pixels
-   * - Decode JPEG to RGB pixels
-   * - Convert to Float32Array and normalize [0-1]
-   * 
    * @param {string} imageUri - URI of the image to process
+   * @param {number} quality - JPEG quality (0-1), lower for faster processing
    * @returns {Promise<Float32Array>} Preprocessed image as Float32 tensor
-   * @throws {Error} If preprocessing fails
    */
-  async preprocessImage(imageUri) {
+  async preprocessImage(imageUri, quality = 1) {
     try {
-      console.log('🖼️  Preprocessing image...');
+      const [width, height] = this.config.inputSize;
       
-      // Step 1: Resize image to 224×224
+      // Resize image
       const manipResult = await ImageManipulator.manipulateAsync(
         imageUri,
-        [{ resize: { width: 224, height: 224 } }],
-        { 
-          compress: 1, 
-          format: ImageManipulator.SaveFormat.JPEG 
-        }
+        [{ resize: { width, height } }],
+        { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
       );
-
-      console.log('✅ Image resized to 224×224');
       
-      // Step 2: Read the image as base64
+      // Read as base64
       const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
         encoding: 'base64',
       });
       
-      // Step 3: Convert base64 to Uint8Array (JPEG bytes)
+      // Convert to bytes and decode JPEG
       const jpegBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-      
-      // Step 4: Decode JPEG to raw RGB pixels
       const rawImageData = jpeg.decode(jpegBytes, { useTArray: true });
       
-      // Step 5: Extract RGB data and normalize to [0, 1]
-      // rawImageData.data is Uint8Array with RGBA values (4 bytes per pixel)
-      // We need RGB only (3 bytes per pixel) and convert to Float32
-      const pixels = new Float32Array(224 * 224 * 3);
+      // Extract RGB and normalize to [0, 1]
+      const pixels = new Float32Array(width * height * 3);
       let pixelIndex = 0;
       
       for (let i = 0; i < rawImageData.data.length; i += 4) {
-        // Extract R, G, B (skip A) and normalize [0-255] → [0-1]
         pixels[pixelIndex++] = rawImageData.data[i] / 255.0;     // R
         pixels[pixelIndex++] = rawImageData.data[i + 1] / 255.0; // G
         pixels[pixelIndex++] = rawImageData.data[i + 2] / 255.0; // B
       }
-      
-      console.log(`✅ Image decoded to Float32 pixels: ${pixels.length} values`);
       
       return pixels;
     } catch (error) {
@@ -170,87 +196,56 @@ class ModelService {
   }
 
   /**
-   * Predict flower gender (male/female) from image
+   * Predict flower classification from image
+   * Returns variety, gender, confidence, and whether it's a flower
    * 
    * @param {string} imageUri - URI of the flower image
-   * @returns {Promise<Object>} Prediction result with gender, confidence, and metadata
-   * @throws {Error} If prediction fails or model not initialized
-   * 
-   * @example
-   * const result = await modelService.predictFlowerGender('file:///path/to/image.jpg');
-   * // Result: { gender: 'male', confidence: 95.5, rawScore: 0.955, ... }
+   * @param {Object} options - Prediction options
+   * @param {boolean} options.fastMode - Use lower quality for faster prediction
+   * @returns {Promise<Object>} Prediction result with classification details
    */
-  async predictFlowerGender(imageUri) {
+  async predictFlowerGender(imageUri, options = {}) {
     if (!this.isReady) {
       throw new Error('Model not initialized. Call initialize() first.');
     }
 
+    const { fastMode = false } = options;
+    const startTime = Date.now();
+
     try {
-      console.log('🔍 Starting prediction...');
-      const startTime = Date.now();
+      // Preprocess image (lower quality in fast mode)
+      const imagePixels = await this.preprocessImage(imageUri, fastMode ? 0.5 : 1);
 
-      // Step 1: Preprocess image (resize, decode, normalize to Float32)
-      const imagePixels = await this.preprocessImage(imageUri);
-
-      // Step 2: Run inference with native TFLite
-      console.log('🧠 Running model inference (native)...');
-      
-      // react-native-fast-tflite expects array of TypedArrays as input
+      // Run inference
       const outputs = await this.model.run([imagePixels]);
-      
-      // Step 3: Parse results
-      // Output format: array of TypedArrays
-      // For binary classification with sigmoid: single value [0, 1]
       const outputTensor = outputs[0];
-      const rawScore = outputTensor[0];
       
-      console.log('🔍 Raw model output:', {
-        outputTensor: outputTensor,
-        rawScore: rawScore,
-        type: typeof rawScore,
-        tensorLength: outputTensor.length
-      });
-      
-      // Model training labels (INVERTED):
-      // Low value (0-0.5) = Female  
-      // High value (0.5-1) = Male
-      const isMale = rawScore > 0.5;
-      const gender = isMale ? 'male' : 'female';
-      
-      // Calculate confidence percentage
-      const confidencePercentage = isMale 
-        ? rawScore * 100 
-        : (1 - rawScore) * 100;
-      
-      // Check if prediction is confident enough
-      // If rawScore is too close to 0.5, it might not be a flower
-      const uncertaintyThreshold = 0.6; // Require at least 60% certainty
-      const isUncertain = rawScore > 0.4 && rawScore < 0.6;
-      
-      if (isUncertain) {
-        console.log('⚠️  Low confidence - might not be a flower');
+      // Parse based on model type
+      let result;
+      if (this.isMultiClass && outputTensor.length > 1) {
+        result = this.parseMultiClassOutput(outputTensor);
+      } else {
+        result = this.parseBinaryOutput(outputTensor[0]);
       }
-
-      const processingTime = Date.now() - startTime;
       
-      console.log('✅ Prediction complete:', {
-        gender,
-        confidence: `${confidencePercentage.toFixed(1)}%`,
-        processingTime: `${processingTime}ms`
+      result.processingTime = Date.now() - startTime;
+      result.timestamp = new Date().toISOString();
+      result.modelVersion = this.config.version;
+      result.inputShape = [...this.config.inputSize, 3];
+      
+      // Store in history for stabilization
+      this.addToHistory(result);
+      
+      console.log('✅ Prediction:', {
+        class: result.predictedClass,
+        variety: result.variety,
+        gender: result.gender,
+        confidence: `${result.confidence.toFixed(1)}%`,
+        isFlower: result.isFlower,
+        time: `${result.processingTime}ms`
       });
 
-      // Return comprehensive prediction result
-      return {
-        gender,                                    // 'male' or 'female'
-        confidence: confidencePercentage,           // 0-100
-        rawScore: rawScore,                        // 0-1 (raw model output)
-        isUncertain: isUncertain,                  // true if might not be a flower
-        processingTime,                            // milliseconds
-        modelVersion: '1.0.0-tflite-native',       // Model version
-        modelType: 'MobileNetV2 (Native TFLite)', // Model architecture
-        timestamp: new Date().toISOString(),       // ISO timestamp
-        inputShape: [224, 224, 3],                 // Input dimensions
-      };
+      return result;
     } catch (error) {
       console.error('❌ Prediction failed:', error);
       throw new Error(`Prediction failed: ${error.message}`);
@@ -258,65 +253,240 @@ class ModelService {
   }
 
   /**
+   * Parse multi-class softmax output
+   * @private
+   */
+  parseMultiClassOutput(outputTensor) {
+    const numClasses = this.config.classes.length;
+    
+    // Find class with highest probability
+    let maxProb = -1;
+    let maxIndex = 0;
+    const probabilities = {};
+    
+    for (let i = 0; i < Math.min(outputTensor.length, numClasses); i++) {
+      const prob = outputTensor[i];
+      probabilities[this.config.classes[i]] = prob;
+      
+      if (prob > maxProb) {
+        maxProb = prob;
+        maxIndex = i;
+      }
+    }
+    
+    const predictedClass = this.config.classes[maxIndex];
+    const classInfo = this.config.classLabels[predictedClass];
+    const confidence = maxProb * 100;
+    
+    // Check thresholds
+    const isLowConfidence = confidence < this.config.confidenceThreshold * 100;
+    const isNotFlower = predictedClass === 'not_flower';
+    
+    return {
+      // Primary classification
+      predictedClass,
+      variety: classInfo?.variety || null,
+      gender: classInfo?.gender || null,
+      isFlower: classInfo?.isFlower && !isLowConfidence,
+      
+      // Confidence
+      confidence,
+      rawScore: maxProb,
+      isLowConfidence,
+      isUncertain: isLowConfidence,
+      confidenceThreshold: this.config.confidenceThreshold * 100,
+      
+      // All probabilities
+      probabilities,
+      
+      // Status
+      isNotFlower,
+      shouldReject: isNotFlower || isLowConfidence,
+      
+      // Message
+      message: this.generateMessage(predictedClass, confidence, isLowConfidence),
+      
+      // Model info
+      modelType: 'MobileNetV2 (Multi-Class)',
+      numClasses
+    };
+  }
+
+  /**
+   * Parse binary model output
+   * @private
+   */
+  parseBinaryOutput(rawScore) {
+    const isMale = rawScore > 0.5;
+    const gender = isMale ? 'male' : 'female';
+    const confidence = isMale ? rawScore * 100 : (1 - rawScore) * 100;
+    const isLowConfidence = rawScore > 0.4 && rawScore < 0.6;
+    
+    return {
+      predictedClass: gender,
+      variety: 'Ampalaya Bilog',
+      gender,
+      isFlower: !isLowConfidence,
+      confidence,
+      rawScore,
+      isLowConfidence,
+      isUncertain: isLowConfidence,
+      confidenceThreshold: 60,
+      probabilities: { female: (1 - rawScore), male: rawScore },
+      isNotFlower: false,
+      shouldReject: isLowConfidence,
+      message: isLowConfidence 
+        ? 'Low confidence - try a clearer photo'
+        : `${gender.charAt(0).toUpperCase() + gender.slice(1)} Ampalaya Bilog flower`,
+      modelType: 'MobileNetV2 (Binary)',
+      numClasses: 2
+    };
+  }
+
+  /**
+   * Generate user-friendly message
+   * @private
+   */
+  generateMessage(predictedClass, confidence, isLowConfidence) {
+    if (isLowConfidence) {
+      return 'Low confidence - please try a clearer photo';
+    }
+    
+    if (predictedClass === 'not_flower') {
+      return 'No flower detected - point camera at a flower';
+    }
+    
+    const info = this.config.classLabels[predictedClass];
+    if (!info) return `Unknown class: ${predictedClass}`;
+    
+    const genderStr = info.gender ? info.gender.charAt(0).toUpperCase() + info.gender.slice(1) : '';
+    return `${genderStr} ${info.variety} flower (${confidence.toFixed(0)}%)`;
+  }
+
+  /**
+   * Add prediction to history for stabilization
+   * @private
+   */
+  addToHistory(prediction) {
+    this.predictionHistory.push(prediction);
+    if (this.predictionHistory.length > this.maxHistorySize) {
+      this.predictionHistory.shift();
+    }
+    this.lastPrediction = prediction;
+  }
+
+  /**
+   * Get stabilized prediction from recent history
+   * Returns most common prediction from last N predictions
+   */
+  getStabilizedPrediction() {
+    if (this.predictionHistory.length < 3) {
+      return this.lastPrediction;
+    }
+    
+    // Count occurrences
+    const classCounts = {};
+    for (const pred of this.predictionHistory) {
+      const cls = pred.predictedClass;
+      classCounts[cls] = (classCounts[cls] || 0) + 1;
+    }
+    
+    // Find most common
+    let maxCount = 0;
+    let stableClass = null;
+    for (const [cls, count] of Object.entries(classCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        stableClass = cls;
+      }
+    }
+    
+    // Return most recent of stable class
+    for (let i = this.predictionHistory.length - 1; i >= 0; i--) {
+      if (this.predictionHistory[i].predictedClass === stableClass) {
+        return {
+          ...this.predictionHistory[i],
+          isStabilized: true,
+          stabilityCount: maxCount,
+          historySize: this.predictionHistory.length
+        };
+      }
+    }
+    
+    return this.lastPrediction;
+  }
+
+  /**
+   * Clear prediction history
+   */
+  clearHistory() {
+    this.predictionHistory = [];
+    this.lastPrediction = null;
+  }
+
+  /**
+   * Quick prediction for real-time camera (lower quality, faster)
+   */
+  async quickPredict(imageUri) {
+    return this.predictFlowerGender(imageUri, { fastMode: true });
+  }
+
+  /**
    * Batch predict multiple images
-   * Useful for processing multiple photos at once
-   * 
-   * @param {string[]} imageUris - Array of image URIs
-   * @returns {Promise<Object[]>} Array of prediction results
    */
   async predictBatch(imageUris) {
     if (!this.isReady) {
       throw new Error('Model not initialized. Call initialize() first.');
     }
 
-    console.log(`🔍 Starting batch prediction for ${imageUris.length} images...`);
+    console.log(`🔍 Batch prediction for ${imageUris.length} images...`);
     const results = [];
 
     for (let i = 0; i < imageUris.length; i++) {
       try {
-        console.log(`Processing image ${i + 1}/${imageUris.length}...`);
         const result = await this.predictFlowerGender(imageUris[i]);
-        results.push({
-          index: i,
-          uri: imageUris[i],
-          result,
-          success: true
-        });
+        results.push({ index: i, uri: imageUris[i], result, success: true });
       } catch (error) {
-        console.error(`Failed to process image ${i + 1}:`, error);
-        results.push({
-          index: i,
-          uri: imageUris[i],
-          error: error.message,
-          success: false
-        });
+        results.push({ index: i, uri: imageUris[i], error: error.message, success: false });
       }
     }
 
-    console.log(`✅ Batch prediction complete: ${results.filter(r => r.success).length}/${imageUris.length} successful`);
     return results;
   }
 
   /**
    * Get model information and status
-   * @returns {Object} Model metadata and status
    */
   getModelInfo() {
     return {
       isReady: this.isReady,
       isInitializing: this.isInitializing,
-      modelVersion: '1.0.0-tflite-native',
-      modelType: 'MobileNetV2 (Native TFLite)',
+      modelVersion: this.config.version,
+      modelType: this.isMultiClass ? 'MobileNetV2 (Multi-Class)' : 'MobileNetV2 (Binary)',
       format: 'TensorFlow Lite (Native)',
-      inputShape: [224, 224, 3],
-      classes: ['female', 'male'],
-      backend: 'native-tflite'
+      inputShape: [...this.config.inputSize, 3],
+      classes: this.config.classes,
+      numClasses: this.config.classes.length,
+      confidenceThreshold: this.config.confidenceThreshold * 100,
+      backend: 'native-tflite',
+      classLabels: this.config.classLabels,
+      isMultiClass: this.isMultiClass
     };
   }
 
   /**
-   * Get model performance metrics from metadata
-   * @returns {Object|null} Performance metrics or null if not loaded
+   * Get supported gourd varieties
+   */
+  getSupportedVarieties() {
+    const varieties = new Set();
+    for (const info of Object.values(this.config.classLabels)) {
+      if (info.variety) varieties.add(info.variety);
+    }
+    return Array.from(varieties);
+  }
+
+  /**
+   * Get model performance metrics
    */
   getModelMetrics() {
     return {
@@ -326,50 +496,38 @@ class ModelService {
       f1Score: 1.0,
       auc: 1.0,
       trainingInfo: {
-        total_epochs: 62,
         batch_size: 16,
-        train_samples: 701,
-        val_samples: 150,
-        test_samples: 152
+        num_classes: this.config.classes.length
       }
     };
   }
 
   /**
-   * Warm up the model by running a dummy prediction
-   * This helps improve performance of the first real prediction
-   * 
-   * @returns {Promise<void>}
+   * Warm up the model
    */
   async warmUp() {
     if (!this.isReady) {
       throw new Error('Model not initialized. Call initialize() first.');
     }
-
-    console.log('🔥 Warming up model...');
-    console.log('⚠️  Warm-up not implemented for native TFLite (first prediction will be slower)');
+    console.log('🔥 Model warm-up (native TFLite handles automatically)');
   }
 
   /**
-   * Cleanup resources and dispose of the model
-   * Call this when the model is no longer needed
+   * Cleanup resources
    */
   dispose() {
     console.log('🧹 Disposing model...');
-    
     if (this.model) {
-      // react-native-fast-tflite handles cleanup automatically
       this.model = null;
     }
-    
     this.isReady = false;
     this.isInitializing = false;
-    
+    this.clearHistory();
     console.log('✅ Model disposed');
   }
 
   /**
-   * Reset the service (useful for testing or error recovery)
+   * Reset the service
    */
   reset() {
     this.dispose();
@@ -377,17 +535,12 @@ class ModelService {
   }
 
   /**
-   * Get memory usage information
-   * @returns {Object} Memory usage statistics
+   * Get memory info
    */
   getMemoryInfo() {
-    if (!this.isReady) {
-      return null;
-    }
-
     return {
       message: 'Native TFLite - memory managed by native layer',
-      modelSize: '4.57 MB'
+      historySize: this.predictionHistory.length
     };
   }
 }
@@ -395,5 +548,5 @@ class ModelService {
 // Export singleton instance
 export const modelService = new ModelService();
 
-// Also export the class for testing purposes
-export { ModelService };
+// Also export class and config for testing
+export { ModelService, MODEL_CONFIG };
