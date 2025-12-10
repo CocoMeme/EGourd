@@ -1,0 +1,75 @@
+{
+  "_id": "6908b03889439ddc640ca3c9",
+  "title": "First ML Model Release - Ampalaya Bilog v1.10.30",
+  "description": "We are excited to announce the release of our first machine learning model version 1.10.30, trained specifically for Ampalaya Bilog (Round Bitter Gourd) detection and classification.",
+  "body": "# First ML Model Release 🎉\n\nWe are thrilled to announce the release of our first machine learning model, **version 1.10.30**!\n\n## Model Details\n\nThis initial release focuses on **Ampalaya Bilog** (Round Bitter Gourd) detection and classification. Our team has trained this model using a comprehensive dataset to ensure accurate recognition and analysis.\n\n### Dataset Information\n- **Size**: 2.6GB of high-quality images\n- **Focus**: Ampalaya Bilog (Round Bitter Gourd)\n- **Training Duration**: Extensive training to achieve optimal accuracy\n- **Image Variety**: Multiple growth stages, lighting conditions, and angles\n\n## Key Features\n\n✅ **Gourd Detection**: Accurately identify Ampalaya Bilog in images\n✅ **Growth Stage Recognition**: Determine the maturity level of the gourd\n✅ **Health Assessment**: Detect potential issues or diseases\n✅ **Real-time Analysis**: Fast processing on mobile devices\n\n## What This Means for You\n\nWith this first model release, you can now:\n- Scan your Ampalaya Bilog plants\n- Get instant feedback on plant health\n- Track growth progress over time\n- Receive cultivation recommendations\n\n## Performance\n\nOur model has been rigorously tested and shows excellent performance in real-world conditions. We will continue to improve and expand our model capabilities based on your feedback.\n\n## What's Next?\n\nThis is just the beginning! We're already working on:\n- Additional gourd varieties\n- Enhanced detection accuracy\n- More detailed health analysis\n- Expanded disease recognition\n\nThank you for being part of our journey. Your feedback helps us improve!\n\n**Happy Scanning! 🌱**",
+  "category": "model_update",
+  "version": {
+    "modelVersion": "v1.10.30",
+    "appVersion": "1.0.0",
+    "versionNumber": "1.10.30"
+  },
+  "metadata": {
+    "datasetSize": "2.6GB",
+    "datasetInfo": "Ampalaya Bilog (Round Bitter Gourd)",
+    "improvements": [
+      "Initial model release",
+      "Accurate Ampalaya Bilog detection",
+      "Growth stage classification",
+      "Basic health assessment",
+      "Optimized for mobile devices"
+    ],
+    "technicalDetails": "YOLOv8 architecture with custom training on 2.6GB Ampalaya Bilog dataset",
+    "affectedPlatforms": ["iOS", "Android"]
+  },
+  "media": {
+    "images": []
+  },
+  "releaseDate": "2024-10-30T00:00:00Z",
+  "display": {
+    "isPinned": true,
+    "isHighlighted": true,
+    "showAsPopup": true,
+    "priority": 10
+  },
+  "engagement": {
+    "views": 0,
+    "likes": 0,
+    "readBy": [
+      {
+        "user": "6905b43e36dc0823422fad27",
+        "readAt": "2025-12-10T05:31:17.209Z"
+      },
+      {
+        "user": "69131e690b24e1105b9074f5",
+        "readAt": "2025-12-10T05:31:20.536Z"
+      },
+      {
+        "user": "69240ccb6579fa4dc91ef334",
+        "readAt": "2025-12-10T05:31:47.290Z"
+      }
+    ]
+  },
+  "tags": [
+    "model-update",
+    "ampalaya",
+    "bitter-gourd",
+    "first-release",
+    "ml-model",
+    "v1.10.30"
+  ],
+  "status": "published",
+  "isPublic": true,
+  "seo": {
+    "metaTitle": "First ML Model Release - Ampalaya Bilog v1.10.30",
+    "metaDescription": "Introducing our first machine learning model for Ampalaya Bilog detection and classification, trained on 2.6GB of high-quality data.",
+    "keywords": [
+      "ML model",
+      "Ampalaya",
+      "Bitter Gourd",
+      "Plant Detection",
+      "Machine Learning"
+    ]
+  },
+  "updatedAt": "2025-12-10T05:31:47.292Z"
+}
