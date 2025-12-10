@@ -1,7 +1,7 @@
 /**
- * CameraScreenTM - Teachable Machine Universal Scanner
- * Combined screen for both Floating Point and Quantized models
- * Features: Real-time scanning, Capture (Freeze), Model Selection
+ * CameraScreenTM - Teachable Machine Scanner
+ * Real-time flower classification using TM floating point model
+ * Features: Real-time scanning, Capture with Gemini AI analysis
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -13,13 +13,14 @@ import {
   ActivityIndicator, 
   Alert, 
   Animated, 
-  Dimensions,
-  Switch
+  Dimensions
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { modelServiceTM } from '../../services/modelServiceTM';
+import { geminiService } from '../../services/geminiService';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const TOP_N = 3; // Show top 3 predictions
@@ -31,20 +32,22 @@ export const CameraScreenTM = ({ navigation }) => {
   
   // Model State
   const [isModelReady, setIsModelReady] = useState(false);
-  const [currentModelType, setCurrentModelType] = useState('float'); // 'float' or 'quantized'
 
   // Scanning State
   const [isScanning, setIsScanning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false); // For "Capture" mode
+  const [isPaused, setIsPaused] = useState(false);
   const [predictions, setPredictions] = useState([]);
   const [processingTime, setProcessingTime] = useState(0);
+  const [isStable, setIsStable] = useState(false); // Track if prediction is stable
   
-  // UI State
-  const [showSettings, setShowSettings] = useState(false);
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current; // Start off-screen right
+  // Capture State
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const cameraRef = useRef(null);
   const scanIntervalRef = useRef(null);
+  const lastFrameUri = useRef(null); // Store last captured frame for instant capture
+  const bestFrame = useRef({ uri: null, label: null, confidence: 0, count: 0 }); // Track best stable frame
+  const recentPredictions = useRef([]); // Track recent predictions for stability
   
   // Animated values for smooth transitions
   const animatedBars = useRef({});
@@ -57,8 +60,8 @@ export const CameraScreenTM = ({ navigation }) => {
       stopScanning();
 
       try {
-        console.log(`🧪 Initializing TM model (${currentModelType})...`);
-        await modelServiceTM.initialize(currentModelType);
+        console.log('🧪 Initializing TM model...');
+        await modelServiceTM.initialize();
         setIsModelReady(true);
         console.log('✅ TM model ready');
         
@@ -80,23 +83,39 @@ export const CameraScreenTM = ({ navigation }) => {
     return () => {
       stopScanning();
     };
-  }, [currentModelType]);
+  }, []);
+
+  // Reset state and restart scanning when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log('📱 CameraScreenTM focused - resetting state');
+      setIsCapturing(false);
+      setIsStable(false);
+      
+      // Reset best frame tracking for fresh scan
+      bestFrame.current = { uri: null, label: null, confidence: 0, count: 0 };
+      recentPredictions.current = [];
+      lastFrameUri.current = null;
+      
+      // Restart scanning if model is ready
+      if (isModelReady && !scanIntervalRef.current) {
+        startScanning();
+      }
+
+      return () => {
+        // IMPORTANT: Stop scanning when screen loses focus
+        console.log('📱 CameraScreenTM unfocused - stopping scanning');
+        stopScanning();
+      };
+    }, [isModelReady, startScanning, stopScanning])
+  );
 
   // Start scanning when model is ready
   useEffect(() => {
-    if (isModelReady && !isScanning && !isPaused) {
+    if (isModelReady && !isScanning && !isPaused && !isCapturing) {
       startScanning();
     }
-  }, [isModelReady]);
-
-  // Handle Settings Animation
-  useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: showSettings ? 0 : SCREEN_WIDTH,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [showSettings]);
+  }, [isModelReady, isCapturing]);
 
   /**
    * Start real-time scanning
@@ -116,13 +135,57 @@ export const CameraScreenTM = ({ navigation }) => {
           quality: 0.5,  // Balance between speed and accuracy
           skipProcessing: true,
           base64: false,
-          exif: true, // Needed for orientation
+          exif: false,
           isImageMirror: false,
           shutterSound: false,
         });
 
+        // Save the last frame URI for instant capture
+        lastFrameUri.current = photo.uri;
+
         // Run prediction
         const result = await modelServiceTM.quickPredict(photo.uri, photo.width, photo.height);
+        
+        // DEBUG: Log real-time prediction
+        console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`, '| Frame:', photo.uri.slice(-20));
+        
+        // Track stability: count consecutive same predictions
+        const currentLabel = result.topPrediction.label;
+        const currentConfidence = result.topPrediction.percentage;
+        
+        // Add to recent predictions (keep last 5)
+        recentPredictions.current.push({ label: currentLabel, confidence: currentConfidence, uri: photo.uri });
+        if (recentPredictions.current.length > 5) {
+          recentPredictions.current.shift();
+        }
+        
+        // Check for stable prediction (same label 3+ times in a row)
+        const recent = recentPredictions.current;
+        const lastThree = recent.slice(-3);
+        const stableNow = lastThree.length >= 3 && lastThree.every(p => p.label === currentLabel);
+        
+        // Update UI stability indicator
+        setIsStable(stableNow && currentLabel !== 'Not Flower');
+        
+        // Update best frame if:
+        // 1. Current prediction is stable (3+ consecutive same label)
+        // 2. AND confidence is higher than previous best for same label
+        // 3. OR it's a different label with higher confidence and stability
+        if (stableNow && currentLabel !== 'Not Flower') {
+          if (currentLabel === bestFrame.current.label) {
+            // Same label - update if higher confidence
+            if (currentConfidence > bestFrame.current.confidence) {
+              bestFrame.current = { uri: photo.uri, label: currentLabel, confidence: currentConfidence, count: lastThree.length };
+              console.log('🏆 BEST FRAME updated (higher confidence):', currentLabel, `${currentConfidence.toFixed(1)}%`);
+            }
+          } else {
+            // Different label - update if this stable prediction is more confident
+            if (currentConfidence > bestFrame.current.confidence) {
+              bestFrame.current = { uri: photo.uri, label: currentLabel, confidence: currentConfidence, count: lastThree.length };
+              console.log('🏆 BEST FRAME changed to:', currentLabel, `${currentConfidence.toFixed(1)}%`);
+            }
+          }
+        }
         
         // Update predictions with animations
         const topPredictions = result.predictions.slice(0, TOP_N);
@@ -176,16 +239,92 @@ export const CameraScreenTM = ({ navigation }) => {
   }, []);
 
   /**
-   * Toggle Capture (Freeze/Unfreeze)
+   * Helper: Extract variety from TM label
    */
-  const toggleCapture = () => {
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
-    if (newPausedState) {
-      stopScanning();
-    } else {
-      startScanning();
+  const getVarietyFromLabel = (label) => {
+    if (!label) return null;
+    if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
+    if (label.includes('Patola')) return 'Patola';
+    if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label === 'Not Flower') return null;
+    return null;
+  };
+
+  /**
+   * Helper: Extract gender from TM label
+   */
+  const getGenderFromLabel = (label) => {
+    if (!label) return 'unknown';
+    if (label.includes('Male')) return 'male';
+    if (label.includes('Female')) return 'female';
+    return 'unknown';
+  };
+
+  /**
+   * Handle Capture - Uses the BEST STABLE frame from real-time scanning
+   * Prioritizes frames where the prediction was stable (3+ consecutive same label)
+   * Falls back to last frame if no stable prediction exists
+   */
+  const handleCapture = async () => {
+    if (isCapturing) return;
+
+    // Set capturing flag to prevent double-taps
+    setIsCapturing(true);
+    
+    // Stop scanning FIRST
+    stopScanning();
+
+    console.log('📸 Capturing image...');
+    
+    // Prefer the BEST STABLE frame, fall back to last frame
+    let imageUri = null;
+    let selectionReason = '';
+    
+    if (bestFrame.current.uri && bestFrame.current.confidence > 50) {
+      // Use the best stable frame
+      imageUri = bestFrame.current.uri;
+      selectionReason = `BEST STABLE: ${bestFrame.current.label} (${bestFrame.current.confidence.toFixed(1)}%)`;
+    } else if (lastFrameUri.current) {
+      // Fall back to last frame
+      imageUri = lastFrameUri.current;
+      selectionReason = 'LAST FRAME (no stable prediction found)';
     }
+    
+    if (!imageUri) {
+      // Fallback: take a new photo if no frame available
+      console.log('⚠️ No cached frame, taking new photo...');
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+          skipProcessing: true,
+          base64: false,
+          exif: false,
+          shutterSound: false,
+        });
+        
+        console.log('✅ Image captured:', photo.uri);
+        navigation.navigate('ResultsTM', {
+          imageUri: photo.uri,
+          isLoading: true,
+        });
+      } catch (error) {
+        console.error('❌ Capture failed:', error);
+        Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
+        setIsCapturing(false);
+        startScanning();
+      }
+      return;
+    }
+
+    console.log('🟢 CAPTURE:', selectionReason);
+    console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
+
+    // Navigate IMMEDIATELY - no waiting!
+    navigation.navigate('ResultsTM', {
+      imageUri: imageUri,
+      isLoading: true,
+    });
+    // Note: isCapturing will be reset by useFocusEffect when returning
   };
 
   if (!permission) {
@@ -223,14 +362,15 @@ export const CameraScreenTM = ({ navigation }) => {
     if (predictions.length === 0) return null;
     
     const top = predictions[0];
-    const isUncertain = top.isSynthetic || top.percentage < 70;
-    const color = getConfidenceColor(top.percentage, isUncertain);
+    const isNotFlower = top.label === 'Not Flower';
+    const isLowConfidence = top.percentage < 70;
+    const color = getConfidenceColor(top.percentage, isNotFlower || isLowConfidence);
     
     return (
       <View style={styles.mainResultCard}>
-        <View style={[styles.iconContainer, { backgroundColor: isUncertain ? 'rgba(158, 158, 158, 0.2)' : 'rgba(76, 175, 80, 0.2)' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: isNotFlower ? 'rgba(158, 158, 158, 0.2)' : 'rgba(76, 175, 80, 0.2)' }]}>
           <Ionicons 
-            name={isUncertain ? "help-circle" : "leaf"} 
+            name={isNotFlower ? "help-circle" : "leaf"} 
             size={32} 
             color={color} 
           />
@@ -256,15 +396,13 @@ export const CameraScreenTM = ({ navigation }) => {
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
-          <View style={[styles.badge, { backgroundColor: currentModelType === 'float' ? '#2196F3' : '#FF9800' }]}>
-            <Text style={styles.badgeText}>
-              {currentModelType === 'float' ? 'High Accuracy' : 'Fast Mode'}
-            </Text>
+          <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
+            <Text style={styles.badgeText}>TM Model</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
-          <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
+        <TouchableOpacity style={styles.settingsButton} onPress={toggleCameraFacing}>
+          <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -341,63 +479,26 @@ export const CameraScreenTM = ({ navigation }) => {
 
         {/* Capture Button at Bottom of Predictions */}
         <View style={styles.bottomControls}>
-          <TouchableOpacity onPress={toggleCapture} style={styles.captureButton}>
-            <View style={[styles.captureInner, isPaused && styles.captureInnerActive]} />
+          <TouchableOpacity 
+            onPress={handleCapture} 
+            style={[
+              styles.captureButton, 
+              (!isModelReady || isCapturing) && styles.captureButtonDisabled,
+              isStable && styles.captureButtonStable
+            ]}
+            disabled={!isModelReady || isCapturing}
+          >
+            <View style={[styles.captureInner, isStable && styles.captureInnerStable]}>
+              <Ionicons name="camera" size={28} color={isStable ? "#4CAF50" : "#000"} />
+            </View>
           </TouchableOpacity>
+          <Text style={[styles.captureHint, isStable && styles.captureHintStable]}>
+            {!isModelReady ? 'Loading model...' : 
+             isStable ? '✓ Stable detection - Tap to capture!' : 
+             'Hold steady for best results'}
+          </Text>
         </View>
       </View>
-
-      {/* Settings Slide-out Menu (Full Width) */}
-      {showSettings && (
-        <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.settingsMenu, { transform: [{ translateX: slideAnim }] }]}>
-            <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Settings</Text>
-              <TouchableOpacity onPress={() => setShowSettings(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={32} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.settingSection}>
-              <Text style={styles.sectionTitle}>Model Type</Text>
-              
-              <TouchableOpacity 
-                style={styles.radioOption} 
-                onPress={() => setCurrentModelType('float')}
-              >
-                <View style={[styles.radioCircle, currentModelType === 'float' && styles.radioCircleSelected]}>
-                  {currentModelType === 'float' && <View style={styles.radioInner} />}
-                </View>
-                <View style={styles.radioTextContainer}>
-                  <Text style={styles.radioLabel}>Floating Point</Text>
-                  <Text style={styles.radioSubLabel}>Higher accuracy, standard speed</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.radioOption} 
-                onPress={() => setCurrentModelType('quantized')}
-              >
-                <View style={[styles.radioCircle, currentModelType === 'quantized' && styles.radioCircleSelected]}>
-                  {currentModelType === 'quantized' && <View style={styles.radioInner} />}
-                </View>
-                <View style={styles.radioTextContainer}>
-                  <Text style={styles.radioLabel}>Quantized</Text>
-                  <Text style={styles.radioSubLabel}>Faster performance, slightly lower accuracy</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
-            <TouchableOpacity style={styles.settingItem} onPress={toggleCameraFacing}>
-              <Text style={styles.settingLabel}>Flip Camera</Text>
-              <Ionicons name="camera-reverse-outline" size={24} color="#FFF" />
-            </TouchableOpacity>
-
-          </Animated.View>
-        </View>
-      )}
     </View>
   );
 };
@@ -556,12 +657,12 @@ const styles = StyleSheet.create({
   bottomControls: {
     marginTop: 'auto',
     alignItems: 'center',
-    paddingBottom: 10, // Reduced padding to move it lower
+    paddingBottom: 10,
   },
   captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -569,14 +670,20 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
   },
   captureInner: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  captureInnerActive: {
-    backgroundColor: '#FF5252', // Red when paused/captured
-    transform: [{ scale: 0.8 }],
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  captureHint: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 12,
+    marginTop: 8,
   },
 
   // Loading state
@@ -628,105 +735,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-
-  // Settings Menu
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 100,
-    flexDirection: 'row',
-  },
-  settingsMenu: {
-    width: '100%', // Full width
-    height: '100%',
-    backgroundColor: '#1E1E1E',
-    padding: 20,
-    paddingTop: 50,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  settingsTitle: {
-    color: '#FFF',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    padding: 5,
-  },
   
-  // Settings Sections
-  settingSection: {
-    marginBottom: 30,
+  // Stable state styles
+  captureButtonStable: {
+    borderColor: '#4CAF50',
+    borderWidth: 3,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  sectionTitle: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+  captureInnerStable: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+  },
+  captureHintStable: {
+    color: '#4CAF50',
     fontWeight: '600',
-    marginBottom: 15,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  
-  // Radio Options
-  radioOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  radioCircleSelected: {
-    borderColor: '#2196F3',
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#2196F3',
-  },
-  radioTextContainer: {
-    flex: 1,
-  },
-  radioLabel: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  radioSubLabel: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
-  },
-
-  // Other Settings
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginVertical: 20,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-  },
-  settingLabel: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '500',
   },
 });

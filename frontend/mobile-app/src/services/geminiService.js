@@ -5,19 +5,19 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 // Get API key from environment
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const ENABLE_GEMINI = process.env.EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION === 'true';
 
-// Gemini configuration
+// Gemini configuration - Using latest Gemini 2.5 Flash (Free Tier)
 const GEMINI_CONFIG = {
-  model: 'gemini-1.5-flash',
-  temperature: 0.2, // Low temperature for consistent classification
+  model: 'gemini-2.5-flash',
+  temperature: 0.3, // Slightly higher for better reasoning
   topK: 1,
   topP: 1,
-  maxOutputTokens: 512,
+  maxOutputTokens: 2048, // Increased for comprehensive analysis
 };
 
 class GeminiService {
@@ -92,42 +92,33 @@ class GeminiService {
 
       console.log('🔍 Gemini analyzing image:', imageUri);
 
-      // Convert image to base64
+      // Convert image to base64 (use string 'base64' for compatibility)
       const base64Image = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64',
       });
 
-      // Prepare detailed prompt
-      const prompt = `You are an expert botanist specializing in gourd flower identification. Analyze this flower image carefully and provide a detailed classification.
+      // Prepare simplified prompt to avoid response truncation
+      const prompt = `Analyze this gourd flower image. Identify the variety and gender.
 
-**Task:** Identify the gourd variety and flower gender.
+**Varieties:** ampalaya_bilog (yellow, 5 petals), patola (large yellow), upo_smooth (white)
+**Gender:** male (stamens, thin stem, no base bulge) | female (ovary bulge at base, pistil)
 
-**Gourd Varieties to Detect:**
-1. **Ampalaya Bilog** (Bitter Gourd) - Round variety with characteristic bitter gourd flowers
-2. **Patola** (Luffa/Sponge Gourd) - Has larger yellow flowers with distinct luffa characteristics
-3. **Upo Smooth** (Bottle Gourd) - Smooth variety with white flowers, typically bloom at night
+**CRITICAL IDENTIFICATION TIPS:**
+- Ampalaya Bilog: Small to medium yellow flowers, warty/bumpy fruit texture if visible
+- Patola: Large bright yellow flowers, RIDGED elongated fruit/ovary
+- Upo: WHITE flowers (not yellow!), smooth bottle-shaped ovary
 
-**Gender Classification:**
-- **Male Flowers:** Have visible stamens (pollen-bearing structures), typically on long thin stems
-- **Female Flowers:** Have an ovary/small fruit at the base, pistil instead of stamens
-
-**Special Case:**
-- If this is NOT a gourd flower (e.g., different plant, object, blurry image), classify as "not_flower"
-
-**Required Response Format (JSON only):**
+Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
 {
   "variety": "ampalaya_bilog" | "patola" | "upo_smooth" | "not_flower",
   "gender": "male" | "female" | "unknown",
-  "confidence": 0.0 to 1.0,
-  "reasoning": "Brief 1-2 sentence explanation of your classification",
-  "keyFeatures": ["feature1", "feature2", "feature3"]
-}
-
-**Important:**
-- Respond ONLY with valid JSON (no markdown, no extra text)
-- Be conservative with confidence scores
-- If uncertain, lower the confidence score
-- If image quality is poor, mention it in reasoning and lower confidence`;
+  "confidence": 0.0-1.0,
+  "reasoning": "One sentence explanation",
+  "keyFeatures": ["feature1", "feature2"],
+  "flowerQuality": {"overallScore": 0-100, "petalCondition": "excellent|good|fair|poor"},
+  "harvestPrediction": {"daysToHarvest": number, "currentStage": "bud|blooming|peak_bloom|wilting|pollinated", "pollinationReady": true|false},
+  "qualityMetrics": {"healthScore": 0-100, "pollinationPotential": 0-100}
+}`;
 
       // Call Gemini API
       const result = await this.model.generateContent([
@@ -145,13 +136,53 @@ class GeminiService {
 
       console.log('📄 Gemini raw response:', text);
 
-      // Parse JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Invalid response format from Gemini');
+      // Parse JSON from response - handle potentially truncated responses
+      let geminiResult;
+      try {
+        // Try to find complete JSON object
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          geminiResult = JSON.parse(jsonMatch[0]);
+        } else {
+          // Try to extract basic fields from partial response
+          const varietyMatch = text.match(/"variety"\s*:\s*"([^"]+)"/);
+          const genderMatch = text.match(/"gender"\s*:\s*"([^"]+)"/);
+          const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/);
+          const reasoningMatch = text.match(/"reasoning"\s*:\s*"([^"]+)/);
+          
+          if (varietyMatch && genderMatch && confidenceMatch) {
+            geminiResult = {
+              variety: varietyMatch[1],
+              gender: genderMatch[1],
+              confidence: parseFloat(confidenceMatch[1]),
+              reasoning: reasoningMatch ? reasoningMatch[1] : 'Analysis completed',
+              keyFeatures: [],
+            };
+            console.log('⚠️ Extracted partial response:', geminiResult);
+          } else {
+            throw new Error('Could not parse Gemini response');
+          }
+        }
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        // Try fallback extraction
+        const varietyMatch = text.match(/"variety"\s*:\s*"([^"]+)"/);
+        const genderMatch = text.match(/"gender"\s*:\s*"([^"]+)"/);
+        const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/);
+        
+        if (varietyMatch && genderMatch && confidenceMatch) {
+          geminiResult = {
+            variety: varietyMatch[1],
+            gender: genderMatch[1],
+            confidence: parseFloat(confidenceMatch[1]),
+            reasoning: 'Analysis completed (partial response)',
+            keyFeatures: [],
+          };
+          console.log('⚠️ Fallback extraction:', geminiResult);
+        } else {
+          throw new Error('Invalid response format from Gemini');
+        }
       }
-
-      const geminiResult = JSON.parse(jsonMatch[0]);
 
       // Validate response structure
       if (!geminiResult.variety || !geminiResult.gender || geminiResult.confidence === undefined) {
@@ -178,7 +209,17 @@ class GeminiService {
    * @returns {Object} Formatted prediction
    */
   formatPrediction(geminiResult, processingTime) {
-    const { variety, gender, confidence, reasoning, keyFeatures } = geminiResult;
+    const { 
+      variety, 
+      gender, 
+      confidence, 
+      reasoning, 
+      keyFeatures,
+      flowerQuality,
+      harvestPrediction,
+      observations,
+      qualityMetrics
+    } = geminiResult;
 
     // Determine if it's a flower
     const isNotFlower = variety === 'not_flower';
@@ -243,16 +284,20 @@ class GeminiService {
       message,
 
       // Model metadata
-      modelType: 'Gemini 1.5 Flash',
+      modelType: 'Gemini 2.5 Flash',
       source: 'gemini',
       processingTime,
       timestamp: new Date().toISOString(),
-      modelVersion: 'gemini-1.5-flash',
+      modelVersion: 'gemini-2.5-flash',
 
-      // Gemini-specific data
+      // Gemini-specific data (enhanced with new fields)
       geminiData: {
         reasoning,
         keyFeatures: keyFeatures || [],
+        flowerQuality: isFlower ? flowerQuality : null,
+        harvestPrediction: isFlower ? harvestPrediction : null,
+        observations: isFlower ? observations : null,
+        qualityMetrics: isFlower ? qualityMetrics : null,
       },
 
       // Probabilities (simulated for consistency)

@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View, Alert } from 'react-native';
 
-import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
+import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 import { pollinationNotificationHelper } from '../utils/pollinationNotificationHelper';
@@ -134,6 +134,11 @@ const CameraStack = () => {
         name="Results" 
         component={ResultsScreen} 
         options={{ title: 'Scan Results' }}
+      />
+      <Stack.Screen 
+        name="ResultsTM" 
+        component={ResultsScreenTM} 
+        options={{ title: 'TM Analysis Results', headerShown: false }}
       />
     </Stack.Navigator>
   );

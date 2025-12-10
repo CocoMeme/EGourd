@@ -1,23 +1,24 @@
 /**
- * Teachable Machine Model Service (Universal)
- * Handles both Floating Point (Unquantized) and Quantized TFLite models
+ * Teachable Machine Model Service (Float Only)
+ * Handles Floating Point TFLite model from Teachable Machine
  * 
  * @module modelServiceTM
- * @version 2.0.0-universal
+ * @version 3.0.0-float-only
  */
 
 import { loadTensorflowModel } from 'react-native-fast-tflite';
 import * as ImageManipulator from 'expo-image-manipulator';
 import jpeg from 'jpeg-js';
 
-// Labels from labels.txt
+// Labels from labels.txt (7 classes - 200 epoch trained model)
 const TM_LABELS = [
   'Ampalaya Bilog Male',       // 0
   'Ampalaya Bilog Female',     // 1
-  'Patola Female',             // 2
-  'Patola Male',               // 3
-  'Upo Smooth Female',         // 4
-  'Upo Smooth Male',           // 5
+  'Not Flower',                // 2
+  'Patola Female',             // 3
+  'Patola Male',               // 4
+  'Upo Smooth Female',         // 5
+  'Upo Smooth Male',           // 6
 ];
 
 class ModelServiceTM {
@@ -27,21 +28,15 @@ class ModelServiceTM {
     this.isReady = false;
     this.isInitializing = false;
     this.inputSize = [224, 224]; // Standard Teachable Machine size
-    this.modelType = 'float'; // 'float' or 'quantized'
-    
-    // Smoothing
-    this.predictionHistory = [];
-    this.historySize = 5; // Average over last 5 frames
   }
 
   /**
-   * Initialize TM model
-   * @param {string} type - 'float' or 'quantized'
+   * Initialize TM model (Float only)
    */
-  async initialize(type = 'float') {
-    // If already initialized with same type, skip
-    if (this.isReady && this.modelType === type) {
-      console.log(`✅ TM Model (${type}) already initialized`);
+  async initialize() {
+    // If already initialized, skip
+    if (this.isReady) {
+      console.log('✅ TM Model already initialized');
       return true;
     }
 
@@ -54,42 +49,34 @@ class ModelServiceTM {
     }
 
     this.isInitializing = true;
-    this.modelType = type;
-    this.predictionHistory = []; // Reset history on model switch
 
     try {
-      console.log(`🤖 Initializing Teachable Machine model (${type})...`);
+      console.log('🤖 Initializing Teachable Machine model (float)...');
       
-      // Load TFLite model based on type
-      await this.loadModel(type);
+      // Load floating point TFLite model
+      await this.loadModel();
       
       this.isReady = true;
       this.isInitializing = false;
       
-      console.log(`✅ TM Model (${type}) loaded successfully`);
+      console.log('✅ TM Model loaded successfully');
       
       return true;
     } catch (error) {
       this.isInitializing = false;
       this.isReady = false;
-      console.error(`❌ TM Model (${type}) initialization failed:`, error);
+      console.error('❌ TM Model initialization failed:', error);
       throw new Error(`Failed to initialize TM model: ${error.message}`);
     }
   }
 
   /**
-   * Load TFLite model file
+   * Load TFLite model file (floating point only)
    */
-  async loadModel(type) {
+  async loadModel() {
     try {
-      let modelSource;
-      if (type === 'quantized') {
-        console.log('📦 Loading tm_quantized/model.tflite...');
-        modelSource = require('../../assets/models/tm_quantized/model.tflite');
-      } else {
-        console.log('📦 Loading tm_floating_point/model_unquant.tflite...');
-        modelSource = require('../../assets/models/tm_floating_point/model_unquant.tflite');
-      }
+      console.log('📦 Loading tm_floating_point/model_unquant.tflite...');
+      const modelSource = require('../../assets/models/tm_floating_point/model_unquant.tflite');
 
       this.model = await loadTensorflowModel(modelSource);
       
@@ -206,35 +193,12 @@ class ModelServiceTM {
         ? this.model.outputs[0].dataType
         : 'float32';
 
-      // Normalize output if needed (Quantized uint8 0-255 -> Float 0-1)
-      let normalizedOutput;
-      if (outputType === 'uint8') {
-        normalizedOutput = Array.from(outputTensor).map(val => val / 255.0);
-      } else {
-        normalizedOutput = Array.from(outputTensor);
-      }
-      
-      // --- SMOOTHING LOGIC (Moving Average) ---
-      this.predictionHistory.push(normalizedOutput);
-      if (this.predictionHistory.length > this.historySize) {
-        this.predictionHistory.shift();
-      }
-
-      const numClasses = this.labels.length;
-      const averagedProbs = new Array(numClasses).fill(0);
-
-      for (let i = 0; i < numClasses; i++) {
-        let sum = 0;
-        for (const historyItem of this.predictionHistory) {
-          sum += (historyItem[i] || 0);
-        }
-        averagedProbs[i] = sum / this.predictionHistory.length;
-      }
-      // ----------------------------------------
+      // Get raw probabilities (no smoothing - matches TM website behavior)
+      const probabilities = Array.from(outputTensor);
       
       // Build probability array
       const predictions = this.labels.map((label, index) => {
-        const probability = averagedProbs[index] || 0;
+        const probability = probabilities[index] || 0;
         const percentage = probability * 100;
         
         return {
@@ -245,36 +209,16 @@ class ModelServiceTM {
         };
       });
       
-      // Sort
+      // Sort by probability (highest first)
       predictions.sort((a, b) => b.probability - a.probability);
       
-      // "Not Flower" Logic
-      let topPrediction = predictions[0];
-      const CONFIDENCE_THRESHOLD = 0.70;
-      const isUncertain = topPrediction.probability < CONFIDENCE_THRESHOLD;
-      
-      if (isUncertain) {
-        const notFlowerProbability = 1.0 - topPrediction.probability;
-        const notFlowerPrediction = {
-          label: "Not Flower",
-          probability: notFlowerProbability,
-          percentage: Math.round(notFlowerProbability * 100 * 10) / 10,
-          index: -1,
-          isSynthetic: true
-        };
-        predictions.push(notFlowerPrediction);
-        predictions.sort((a, b) => b.probability - a.probability);
-        topPrediction = predictions[0];
-      }
-
+      const topPrediction = predictions[0];
       const processingTime = Date.now() - startTime;
       
       return {
         predictions,
         topPrediction,
-        isUncertain,
-        processingTime,
-        modelType: this.modelType
+        processingTime
       };
       
     } catch (error) {
@@ -290,18 +234,11 @@ class ModelServiceTM {
   async warmUp() {
     if (!this.isReady) return;
     try {
-      // Create dummy input based on model type
+      // Create dummy float32 input for warmup
       const [w, h] = this.inputSize;
-      const inputType = (this.model && this.model.inputs && this.model.inputs[0] && this.model.inputs[0].dataType) || 'float32';
-      
-      let dummyInput;
-      if (inputType === 'uint8') {
-        dummyInput = new Uint8Array(w * h * 3).fill(0);
-      } else {
-        dummyInput = new Float32Array(w * h * 3).fill(0);
-      }
-      
+      const dummyInput = new Float32Array(w * h * 3).fill(0);
       await this.model.run([dummyInput]);
+      console.log('🔥 Model warmup complete');
     } catch (e) {
       console.log('Warmup failed (ignoring):', e.message);
     }

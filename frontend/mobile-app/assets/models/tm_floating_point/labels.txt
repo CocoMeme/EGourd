@@ -1,6 +1,7 @@
 0 Ampalaya Bilog Male
 1 Ampalaya Bilog Female
-2 Patola Female
-3 Patola Male 
-4 Upo Smooth Female
-5 Upo Smooth Male
+2 Not Flower
+3 Patola Female
+4 Patola Male 
+5 Upo Smooth Female
+6 Upo Smooth Male
