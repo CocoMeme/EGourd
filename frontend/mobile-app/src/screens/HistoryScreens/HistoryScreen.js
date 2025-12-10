@@ -122,10 +122,6 @@ export const HistoryScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Scan History</Text>
-      </View>
-
       <FlatList
         data={filteredScans}
         renderItem={renderItem}

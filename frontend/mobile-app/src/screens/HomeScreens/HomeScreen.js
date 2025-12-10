@@ -383,19 +383,6 @@ export const HomeScreen = ({ navigation, route }) => {
         />
         
         <View style={styles.content}>
-          <View style={styles.heroCard}>
-            <View style={styles.heroText}>
-              <Text style={styles.heroTitle}>Ready to scan?</Text>
-              <Text style={styles.heroSubtitle}>Capture a new gourd in seconds.</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.heroButton}
-              onPress={() => navigation.navigate('Camera')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.heroButtonText}>Open Camera</Text>
-            </TouchableOpacity>
-          </View>
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>Quick tools</Text>
@@ -452,7 +439,7 @@ export const HomeScreen = ({ navigation, route }) => {
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               </View>
             ) : news.length > 0 ? (
-              newsPreview.map((newsItem) => (
+              newsPreview.slice().reverse().map((newsItem) => (
                 <NewsCard
                   key={newsItem._id}
                   news={newsItem}
