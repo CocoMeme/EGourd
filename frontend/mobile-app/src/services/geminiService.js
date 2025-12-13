@@ -33,7 +33,7 @@ class GeminiService {
    */
   async initialize() {
     if (this.isInitialized) return;
-    
+
     if (!this.isEnabled) {
       console.log('⚠️ Gemini validation is disabled in environment');
       return;
@@ -48,7 +48,7 @@ class GeminiService {
     try {
       console.log('🤖 Initializing Gemini AI...');
       this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      this.model = this.genAI.getGenerativeModel({ 
+      this.model = this.genAI.getGenerativeModel({
         model: GEMINI_CONFIG.model,
         generationConfig: {
           temperature: GEMINI_CONFIG.temperature,
@@ -75,9 +75,10 @@ class GeminiService {
   /**
    * Analyze flower image using Gemini AI
    * @param {string} imageUri - Local image URI
+   * @param {Object} tmPrediction - Optional context from TFLite model
    * @returns {Promise<Object>} Prediction object matching modelService format
    */
-  async analyzeFlower(imageUri) {
+  async analyzeFlower(imageUri, tmPrediction = null) {
     const startTime = Date.now();
 
     try {
@@ -90,30 +91,54 @@ class GeminiService {
         throw new Error('Gemini service not available');
       }
 
-      console.log('🔍 Gemini analyzing image:', imageUri);
+      console.log('🔍 Gemini analyzing image:', imageUri.slice(-30));
+      if (tmPrediction) {
+        console.log('💡 Using TM Context:', tmPrediction.label, `(${tmPrediction.confidence}%)`);
+      }
 
       // Convert image to base64 (use string 'base64' for compatibility)
       const base64Image = await FileSystem.readAsStringAsync(imageUri, {
         encoding: 'base64',
       });
 
+      // Prepare context string if prediction is available
+      let contextString = '';
+      if (tmPrediction) {
+        contextString = `
+CONTEXT FROM SPECIALIZED MODEL:
+This image was identified by a specialized local model as: "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence.
+Please verify this. If you disagree, you must have STRONG visual evidence (e.g. wrong color, wrong shape).
+`;
+
+        // GENDER ENHANCEMENT: If TM says female, force Gemini to look closer
+        if (tmPrediction.gender === 'female') {
+          contextString += `
+IMPORTANT: The local model detected a FEMALE flower. 
+This means it likely saw an ovary/fruit bulge behind the flower base.
+LOOK SPECIFICALLY FOR THIS BULGE. Do not classify as MALE unless you are absolutely certain that bulge is absent.
+`;
+        }
+      }
+
       // Prepare simplified prompt to avoid response truncation
       const prompt = `Analyze this gourd flower image. Identify the variety and gender.
+${contextString}
 
 **Varieties:** ampalaya_bilog (yellow, 5 petals), patola (large yellow), upo_smooth (white)
 **Gender:** male (stamens, thin stem, no base bulge) | female (ovary bulge at base, pistil)
 
-**CRITICAL IDENTIFICATION TIPS:**
-- Ampalaya Bilog: Small to medium yellow flowers, warty/bumpy fruit texture if visible
-- Patola: Large bright yellow flowers, RIDGED elongated fruit/ovary
-- Upo: WHITE flowers (not yellow!), smooth bottle-shaped ovary
+**CRITICAL IDENTIFICATION TIPS (Visual Rules):**
+- **UJO (Bottle Gourd):** Flowers are **WHITE**. If it is yellow, it is NOT Upo.
+- **AMPALAYA (Bitter Gourd):** Small yellow flowers, thin stems.
+- **PATOLA (Sponge Gourd):** LARGE bright yellow flowers.
+- **MALE vs FEMALE:** Look for the "baby fruit" (ovary bulge) behind the flower base. No bulge = MALE.
 
 Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
 {
   "variety": "ampalaya_bilog" | "patola" | "upo_smooth" | "not_flower",
   "gender": "male" | "female" | "unknown",
   "confidence": 0.0-1.0,
-  "reasoning": "One sentence explanation",
+  "reasoning": "One sentence explanation citing color and shape",
   "keyFeatures": ["feature1", "feature2"],
   "flowerQuality": {"overallScore": 0-100, "petalCondition": "excellent|good|fair|poor"},
   "harvestPrediction": {"daysToHarvest": number, "currentStage": "bud|blooming|peak_bloom|wilting|pollinated", "pollinationReady": true|false},
@@ -134,6 +159,8 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
       const response = await result.response;
       const text = response.text();
 
+      /* ... (rest of parsing logic remains same until formatPrediction) ... */
+
       console.log('📄 Gemini raw response:', text);
 
       // Parse JSON from response - handle potentially truncated responses
@@ -149,7 +176,7 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
           const genderMatch = text.match(/"gender"\s*:\s*"([^"]+)"/);
           const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/);
           const reasoningMatch = text.match(/"reasoning"\s*:\s*"([^"]+)/);
-          
+
           if (varietyMatch && genderMatch && confidenceMatch) {
             geminiResult = {
               variety: varietyMatch[1],
@@ -169,7 +196,7 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
         const varietyMatch = text.match(/"variety"\s*:\s*"([^"]+)"/);
         const genderMatch = text.match(/"gender"\s*:\s*"([^"]+)"/);
         const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/);
-        
+
         if (varietyMatch && genderMatch && confidenceMatch) {
           geminiResult = {
             variety: varietyMatch[1],
@@ -209,11 +236,11 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
    * @returns {Object} Formatted prediction
    */
   formatPrediction(geminiResult, processingTime) {
-    const { 
-      variety, 
-      gender, 
-      confidence, 
-      reasoning, 
+    const {
+      variety,
+      gender,
+      confidence,
+      reasoning,
       keyFeatures,
       flowerQuality,
       harvestPrediction,
@@ -268,7 +295,7 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
       variety: varietyDisplay,
       gender: isFlower ? gender : null,
       isFlower,
-      
+
       // Confidence metrics
       confidence: confidencePercent,
       rawScore: confidence,
@@ -320,8 +347,8 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
     ];
 
     const probabilities = {};
-    const predictedClass = variety === 'not_flower' 
-      ? 'not_flower' 
+    const predictedClass = variety === 'not_flower'
+      ? 'not_flower'
       : `${variety}_${gender}`;
 
     // Distribute remaining probability among other classes
@@ -352,18 +379,49 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
 
     // Determine which prediction to trust more
     let recommendation = 'manual'; // Default: let user choose
-    
+
+    // Logic Refinement:
     if (bothAgree) {
       // Both agree - use higher confidence prediction
-      recommendation = geminiPrediction.rawScore >= tflitePrediction.rawScore 
-        ? 'gemini' 
+      recommendation = geminiPrediction.rawScore >= tflitePrediction.rawScore
+        ? 'gemini'
         : 'tflite';
-    } else if (geminiPrediction.rawScore > 0.8 && tflitePrediction.rawScore < 0.6) {
-      // Gemini very confident, TFLite uncertain
-      recommendation = 'gemini';
-    } else if (tflitePrediction.rawScore > 0.8 && geminiPrediction.rawScore < 0.6) {
-      // TFLite very confident, Gemini uncertain
-      recommendation = 'tflite';
+    } else {
+      // DISAGREEMENT LOGIC:
+
+      // 0. SPECIES CHECK: Trust TM if it says Upo (White) and Gemini says Ampalaya (Yellow)
+      // This handles cases where Gemini hallucinates color
+      if (tflitePrediction.variety === 'Upo (Smooth)' && geminiPrediction.variety === 'Ampalaya Bilog') {
+        if (tflitePrediction.rawScore > 0.8) recommendation = 'tflite';
+      }
+
+      // 1. GENDER CHECK (The "Female Protection" Rule)
+      // If TM saw a female (harder to see) and Gemini defaults to male, trust TM unless Gemini is super sure
+      else if (tflitePrediction.gender === 'female' && geminiPrediction.gender === 'male') {
+        if (geminiPrediction.rawScore < 0.98 && tflitePrediction.rawScore > 0.65) {
+          recommendation = 'tflite';
+        } else if (geminiPrediction.rawScore >= 0.98) {
+          recommendation = 'gemini'; // Only trust Gemini if 98%+ sure it's male
+        }
+      }
+
+      // 2. TFLite Extemely High Confidence (>= 98%) -> Trust TFLite (Specialist override)
+      else if (tflitePrediction.rawScore >= 0.98) {
+        recommendation = 'tflite';
+      }
+      // 3. Gemini Very High Confidence (>= 95%) vs TFLite Low (< 70%) -> Trust Gemini
+      else if (geminiPrediction.rawScore >= 0.95 && tflitePrediction.rawScore < 0.7) {
+        recommendation = 'gemini';
+      }
+      // 4. TFLite High (>= 90%) vs Gemini Low/Med (< 90%) -> Trust TFLite
+      else if (tflitePrediction.rawScore >= 0.90 && geminiPrediction.rawScore < 0.90) {
+        recommendation = 'tflite';
+      }
+      // 5. Gemini High (>= 90%) vs TFLite Low/Med (< 80%) -> Trust Gemini
+      else if (geminiPrediction.rawScore >= 0.90 && tflitePrediction.rawScore < 0.80) {
+        recommendation = 'gemini';
+      }
+      // Else remain 'manual'
     }
 
     return {

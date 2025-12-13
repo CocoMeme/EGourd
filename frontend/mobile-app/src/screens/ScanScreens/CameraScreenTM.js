@@ -5,14 +5,14 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ActivityIndicator, 
-  Alert, 
-  Animated, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Animated,
   Dimensions
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -29,7 +29,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const CameraScreenTM = ({ navigation }) => {
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
-  
+
   // Model State
   const [isModelReady, setIsModelReady] = useState(false);
 
@@ -39,16 +39,18 @@ export const CameraScreenTM = ({ navigation }) => {
   const [predictions, setPredictions] = useState([]);
   const [processingTime, setProcessingTime] = useState(0);
   const [isStable, setIsStable] = useState(false); // Track if prediction is stable
-  
+
   // Capture State
   const [isCapturing, setIsCapturing] = useState(false);
 
   const cameraRef = useRef(null);
   const scanIntervalRef = useRef(null);
-  const lastFrameUri = useRef(null); // Store last captured frame for instant capture
-  const bestFrame = useRef({ uri: null, label: null, confidence: 0, count: 0 }); // Track best stable frame
+
+  // LOGIC PRESERVATION: Store dimensions to fix distortion
+  const lastFrameUri = useRef({ uri: null, width: 0, height: 0 });
+  const bestFrame = useRef({ uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 }); // Track best stable frame
   const recentPredictions = useRef([]); // Track recent predictions for stability
-  
+
   // Animated values for smooth transitions
   const animatedBars = useRef({});
   const animatedPositions = useRef({});
@@ -64,7 +66,7 @@ export const CameraScreenTM = ({ navigation }) => {
         await modelServiceTM.initialize();
         setIsModelReady(true);
         console.log('✅ TM model ready');
-        
+
         // Warm up
         await modelServiceTM.warmUp();
         console.log('🔥 TM model warmed up');
@@ -91,12 +93,12 @@ export const CameraScreenTM = ({ navigation }) => {
       console.log('📱 CameraScreenTM focused - resetting state');
       setIsCapturing(false);
       setIsStable(false);
-      
+
       // Reset best frame tracking for fresh scan
-      bestFrame.current = { uri: null, label: null, confidence: 0, count: 0 };
+      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
       recentPredictions.current = [];
-      lastFrameUri.current = null;
-      
+      lastFrameUri.current = { uri: null, width: 0, height: 0 };
+
       // Restart scanning if model is ready
       if (isModelReady && !scanIntervalRef.current) {
         startScanning();
@@ -127,6 +129,7 @@ export const CameraScreenTM = ({ navigation }) => {
     setIsScanning(true);
 
     scanIntervalRef.current = setInterval(async () => {
+      // Logic Preservation: Added strict check for null scanIntervalRef
       if (!cameraRef.current || !isModelReady || isPaused) return;
 
       try {
@@ -140,60 +143,82 @@ export const CameraScreenTM = ({ navigation }) => {
           shutterSound: false,
         });
 
+        // Logic Preservation: Check if stopped during async capture
+        if (!scanIntervalRef.current) return;
+
         // Save the last frame URI for instant capture
-        lastFrameUri.current = photo.uri;
+        lastFrameUri.current = { uri: photo.uri, width: photo.width, height: photo.height };
 
         // Run prediction
         const result = await modelServiceTM.quickPredict(photo.uri, photo.width, photo.height);
-        
+
         // DEBUG: Log real-time prediction
         console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`, '| Frame:', photo.uri.slice(-20));
-        
+
         // Track stability: count consecutive same predictions
         const currentLabel = result.topPrediction.label;
         const currentConfidence = result.topPrediction.percentage;
-        
-        // Add to recent predictions (keep last 5)
-        recentPredictions.current.push({ label: currentLabel, confidence: currentConfidence, uri: photo.uri });
-        if (recentPredictions.current.length > 5) {
+
+        // Add to recent predictions 
+        // Logic Preservation: Increased buffer to 7 for better "recent" selection
+        recentPredictions.current.push({
+          label: currentLabel,
+          confidence: currentConfidence,
+          uri: photo.uri,
+          width: photo.width,
+          height: photo.height
+        });
+        if (recentPredictions.current.length > 7) {
           recentPredictions.current.shift();
         }
-        
-        // Check for stable prediction (same label 3+ times in a row)
+
+        // Check for stable prediction 
+        // Logic Preservation: Increased to 5 frames for better stability
         const recent = recentPredictions.current;
-        const lastThree = recent.slice(-3);
-        const stableNow = lastThree.length >= 3 && lastThree.every(p => p.label === currentLabel);
-        
+        const lastFive = recent.slice(-5);
+        const stableNow = lastFive.length >= 5 && lastFive.every(p => p.label === currentLabel);
+
         // Update UI stability indicator
         setIsStable(stableNow && currentLabel !== 'Not Flower');
-        
+
         // Update best frame if:
-        // 1. Current prediction is stable (3+ consecutive same label)
-        // 2. AND confidence is higher than previous best for same label
-        // 3. OR it's a different label with higher confidence and stability
         if (stableNow && currentLabel !== 'Not Flower') {
           if (currentLabel === bestFrame.current.label) {
             // Same label - update if higher confidence
             if (currentConfidence > bestFrame.current.confidence) {
-              bestFrame.current = { uri: photo.uri, label: currentLabel, confidence: currentConfidence, count: lastThree.length };
+              bestFrame.current = {
+                uri: photo.uri,
+                width: photo.width,
+                height: photo.height,
+                label: currentLabel,
+                confidence: currentConfidence,
+                count: lastFive.length
+              };
               console.log('🏆 BEST FRAME updated (higher confidence):', currentLabel, `${currentConfidence.toFixed(1)}%`);
             }
           } else {
             // Different label - update if this stable prediction is more confident
             if (currentConfidence > bestFrame.current.confidence) {
-              bestFrame.current = { uri: photo.uri, label: currentLabel, confidence: currentConfidence, count: lastThree.length };
+              bestFrame.current = {
+                uri: photo.uri,
+                width: photo.width,
+                height: photo.height,
+                label: currentLabel,
+                confidence: currentConfidence,
+                count: lastFive.length
+              };
               console.log('🏆 BEST FRAME changed to:', currentLabel, `${currentConfidence.toFixed(1)}%`);
             }
           }
         }
-        
+
         // Update predictions with animations
         const topPredictions = result.predictions.slice(0, TOP_N);
-        
+
         // Animate bars and positions smoothly
         topPredictions.forEach((pred, index) => {
           const key = pred.label;
-          
+
           // Initialize animated values if they don't exist
           if (!animatedBars.current[key]) {
             animatedBars.current[key] = new Animated.Value(0);
@@ -201,14 +226,14 @@ export const CameraScreenTM = ({ navigation }) => {
           if (!animatedPositions.current[key]) {
             animatedPositions.current[key] = new Animated.Value(index * 100);
           }
-          
+
           // Animate bar width
           Animated.timing(animatedBars.current[key], {
             toValue: pred.percentage,
             duration: 180, // Smoother transition
             useNativeDriver: false,
           }).start();
-          
+
           // Animate position (for smooth reordering)
           Animated.timing(animatedPositions.current[key], {
             toValue: index * 60, // Height of each row
@@ -216,7 +241,7 @@ export const CameraScreenTM = ({ navigation }) => {
             useNativeDriver: true,
           }).start();
         });
-        
+
         setPredictions(topPredictions);
         setProcessingTime(result.processingTime);
 
@@ -262,34 +287,54 @@ export const CameraScreenTM = ({ navigation }) => {
 
   /**
    * Handle Capture - Uses the BEST STABLE frame from real-time scanning
-   * Prioritizes frames where the prediction was stable (3+ consecutive same label)
-   * Falls back to last frame if no stable prediction exists
+   * Prioritizes frames where the prediction was stable
+   * Falls back to best recent frame, then last frame
    */
   const handleCapture = async () => {
     if (isCapturing) return;
 
     // Set capturing flag to prevent double-taps
     setIsCapturing(true);
-    
+
     // Stop scanning FIRST
     stopScanning();
 
     console.log('📸 Capturing image...');
-    
-    // Prefer the BEST STABLE frame, fall back to last frame
+
+    // Prefer the BEST STABLE frame, fall back to Best Recent, then Last Frame
     let imageUri = null;
+    let imageWidth = 0;
+    let imageHeight = 0;
     let selectionReason = '';
-    
+
+    // 1. Try Best Stable Frame
     if (bestFrame.current.uri && bestFrame.current.confidence > 50) {
-      // Use the best stable frame
       imageUri = bestFrame.current.uri;
+      imageWidth = bestFrame.current.width;
+      imageHeight = bestFrame.current.height;
       selectionReason = `BEST STABLE: ${bestFrame.current.label} (${bestFrame.current.confidence.toFixed(1)}%)`;
-    } else if (lastFrameUri.current) {
-      // Fall back to last frame
-      imageUri = lastFrameUri.current;
-      selectionReason = 'LAST FRAME (no stable prediction found)';
     }
-    
+    // Logic Preservation: 2. Try Best Recent Frame (Intelligent Capture)
+    else {
+      const bestRecent = recentPredictions.current
+        .filter(p => p.label !== 'Not Flower')
+        .sort((a, b) => b.confidence - a.confidence)[0];
+
+      if (bestRecent && bestRecent.confidence > 60) {
+        imageUri = bestRecent.uri;
+        imageWidth = bestRecent.width;
+        imageHeight = bestRecent.height;
+        selectionReason = `BEST RECENT: ${bestRecent.label} (${bestRecent.confidence.toFixed(1)}%)`;
+      }
+      // 3. Fallback to Last Frame
+      else if (lastFrameUri.current.uri) {
+        imageUri = lastFrameUri.current.uri;
+        imageWidth = lastFrameUri.current.width;
+        imageHeight = lastFrameUri.current.height;
+        selectionReason = 'LAST FRAME (no stable prediction found)';
+      }
+    }
+
     if (!imageUri) {
       // Fallback: take a new photo if no frame available
       console.log('⚠️ No cached frame, taking new photo...');
@@ -301,10 +346,12 @@ export const CameraScreenTM = ({ navigation }) => {
           exif: false,
           shutterSound: false,
         });
-        
+
         console.log('✅ Image captured:', photo.uri);
         navigation.navigate('ResultsTM', {
           imageUri: photo.uri,
+          width: photo.width,
+          height: photo.height,
           isLoading: true,
         });
       } catch (error) {
@@ -320,8 +367,11 @@ export const CameraScreenTM = ({ navigation }) => {
     console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
 
     // Navigate IMMEDIATELY - no waiting!
+    // Logic Preservation: Passing width and height to fix distortion
     navigation.navigate('ResultsTM', {
       imageUri: imageUri,
+      width: imageWidth,
+      height: imageHeight,
       isLoading: true,
     });
     // Note: isCapturing will be reset by useFocusEffect when returning
@@ -333,10 +383,10 @@ export const CameraScreenTM = ({ navigation }) => {
 
   if (!permission.granted) {
     return (
-    <View style={styles.container}>
-      <View style={styles.permissionContainer}>
-        <Ionicons name="camera-outline" size={64} color={theme.colors.text.secondary} />
-        <Text style={styles.permissionText}>Camera permission required</Text>
+      <View style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Ionicons name="camera-outline" size={64} color={theme.colors.text.secondary} />
+          <Text style={styles.permissionText}>Camera permission required</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
             <Text style={styles.permissionButtonText}>Grant Permission</Text>
           </TouchableOpacity>
@@ -360,19 +410,19 @@ export const CameraScreenTM = ({ navigation }) => {
   // Render Main Result Card
   const renderMainResult = () => {
     if (predictions.length === 0) return null;
-    
+
     const top = predictions[0];
     const isNotFlower = top.label === 'Not Flower';
     const isLowConfidence = top.percentage < 70;
     const color = getConfidenceColor(top.percentage, isNotFlower || isLowConfidence);
-    
+
     return (
       <View style={styles.mainResultCard}>
         <View style={[styles.iconContainer, { backgroundColor: isNotFlower ? 'rgba(158, 158, 158, 0.2)' : 'rgba(76, 175, 80, 0.2)' }]}>
-          <Ionicons 
-            name={isNotFlower ? "help-circle" : "leaf"} 
-            size={32} 
-            color={color} 
+          <Ionicons
+            name={isNotFlower ? "help-circle" : "leaf"}
+            size={32}
+            color={color}
           />
         </View>
         <View style={styles.mainResultTextContainer}>
@@ -394,7 +444,7 @@ export const CameraScreenTM = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerCenter}>
           <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
             <Text style={styles.badgeText}>TM Model</Text>
@@ -408,9 +458,9 @@ export const CameraScreenTM = ({ navigation }) => {
 
       {/* 2. Camera Viewport (Square 1:1) */}
       <View style={styles.cameraContainer}>
-        <CameraView 
-          style={styles.camera} 
-          facing={facing} 
+        <CameraView
+          style={styles.camera}
+          facing={facing}
           ref={cameraRef}
           animateShutter={false}
         />
@@ -451,22 +501,22 @@ export const CameraScreenTM = ({ navigation }) => {
               {predictions.slice(1, TOP_N).map((pred, index) => {
                 const key = pred.label;
                 const animatedWidth = animatedBars.current[key] || new Animated.Value(pred.percentage);
-                
+
                 return (
                   <View key={pred.label} style={styles.secondaryRow}>
                     <Text style={styles.secondaryLabel} numberOfLines={1}>{pred.label}</Text>
                     <View style={styles.secondaryBarContainer}>
-                      <Animated.View 
+                      <Animated.View
                         style={[
-                          styles.secondaryBar, 
-                          { 
+                          styles.secondaryBar,
+                          {
                             width: animatedWidth.interpolate({
                               inputRange: [0, 100],
                               outputRange: ['0%', '100%']
-                            }), 
-                            backgroundColor: getConfidenceColor(pred.percentage, false) 
+                            }),
+                            backgroundColor: getConfidenceColor(pred.percentage, false)
                           }
-                        ]} 
+                        ]}
                       />
                     </View>
                     <Text style={styles.secondaryPercentage}>{pred.percentage.toFixed(1)}%</Text>
@@ -479,10 +529,10 @@ export const CameraScreenTM = ({ navigation }) => {
 
         {/* Capture Button at Bottom of Predictions */}
         <View style={styles.bottomControls}>
-          <TouchableOpacity 
-            onPress={handleCapture} 
+          <TouchableOpacity
+            onPress={handleCapture}
             style={[
-              styles.captureButton, 
+              styles.captureButton,
               (!isModelReady || isCapturing) && styles.captureButtonDisabled,
               isStable && styles.captureButtonStable
             ]}
@@ -493,9 +543,9 @@ export const CameraScreenTM = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           <Text style={[styles.captureHint, isStable && styles.captureHintStable]}>
-            {!isModelReady ? 'Loading model...' : 
-             isStable ? '✓ Stable detection - Tap to capture!' : 
-             'Hold steady for best results'}
+            {!isModelReady ? 'Loading model...' :
+              isStable ? '✓ Stable detection - Tap to capture!' :
+                'Hold steady for best results'}
           </Text>
         </View>
       </View>
@@ -509,7 +559,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     paddingTop: 40, // Status bar padding
   },
-  
+
   // Header
   header: {
     flexDirection: 'row',
@@ -536,7 +586,7 @@ const styles = StyleSheet.create({
   settingsButton: {
     padding: 8,
   },
-  
+
   // Camera Container
   cameraContainer: {
     width: SCREEN_WIDTH,
@@ -547,7 +597,7 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  
+
   // Predictions container
   predictionsContainer: {
     flex: 1, // Fill remaining space
@@ -735,7 +785,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  
+
   // Stable state styles
   captureButtonStable: {
     borderColor: '#4CAF50',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -351,18 +351,12 @@ export const HomeScreen = ({ navigation, route }) => {
     });
   };
 
-  const scrollContentPadding = useMemo(
-    () => ({ paddingBottom: theme.spacing.lg + insets.bottom }),
-    [insets.bottom]
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView 
         style={styles.scrollView}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
-        contentContainerStyle={scrollContentPadding}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -439,7 +433,7 @@ export const HomeScreen = ({ navigation, route }) => {
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               </View>
             ) : news.length > 0 ? (
-              newsPreview.slice().reverse().map((newsItem) => (
+              newsPreview.map((newsItem) => (
                 <NewsCard
                   key={newsItem._id}
                   news={newsItem}
@@ -514,49 +508,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xl,
     paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
   section: {
-    marginBottom: theme.spacing.xl,
-  },
-  heroCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.background.secondary,
-  },
-  heroText: {
-    flex: 1,
-    marginRight: theme.spacing.md,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontFamily: theme.fonts.bold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  heroSubtitle: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: theme.colors.text.secondary,
-    lineHeight: 18,
-  },
-  heroButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.medium,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  heroButtonText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
-    color: theme.colors.background.primary,
   },
   sectionHeader: {
     flexDirection: 'row',

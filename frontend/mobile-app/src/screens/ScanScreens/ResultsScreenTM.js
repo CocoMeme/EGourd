@@ -54,7 +54,7 @@ const MetricBar = ({ label, value, color }) => (
  */
 const HarvestTimeline = ({ data }) => {
   if (!data) return null;
-  
+
   const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'fruiting', 'harvest'];
   const stageLabels = {
     bud: 'Bud',
@@ -64,15 +64,15 @@ const HarvestTimeline = ({ data }) => {
     fruiting: 'Fruiting',
     harvest: 'Harvest',
   };
-  
+
   const currentIndex = stages.indexOf(data.currentStage);
-  
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>
         <Ionicons name="time-outline" size={18} color="#FFF" /> Growth Timeline
       </Text>
-      
+
       <View style={styles.timeline}>
         {stages.map((stage, index) => (
           <View key={stage} style={styles.timelineStep}>
@@ -101,7 +101,7 @@ const HarvestTimeline = ({ data }) => {
           </View>
         ))}
       </View>
-      
+
       <View style={styles.harvestInfo}>
         <View style={styles.harvestRow}>
           <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
@@ -175,7 +175,7 @@ const FlowerQualityCard = ({ quality }) => {
       <Text style={styles.sectionTitle}>
         <Ionicons name="flower" size={18} color="#FFF" /> Flower Quality
       </Text>
-      
+
       <View style={styles.qualityGrid}>
         <View style={styles.qualityItem}>
           <Text style={styles.qualityScore}>{quality.overallScore}</Text>
@@ -220,7 +220,7 @@ const ObservationsCard = ({ observations }) => {
       <Text style={styles.sectionTitle}>
         <Ionicons name="eye" size={18} color="#FFF" /> AI Observations
       </Text>
-      
+
       {observations.strengths?.length > 0 && (
         <View style={styles.observationSection}>
           <View style={styles.observationHeader}>
@@ -267,24 +267,24 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
   return (
     <View style={styles.confidenceCard}>
       <Text style={styles.confidenceTitle}>Model Confidence</Text>
-      
+
       <View style={styles.confidenceRow}>
         <Text style={styles.confidenceLabel}>TM Model</Text>
         <View style={styles.confidenceBarBg}>
           <View style={[
-            styles.confidenceBar, 
+            styles.confidenceBar,
             { width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#2196F3' }
           ]} />
         </View>
         <Text style={styles.confidenceValue}>{tmPrediction?.confidence?.toFixed(1)}%</Text>
       </View>
-      
+
       {geminiPrediction && (
         <View style={styles.confidenceRow}>
           <Text style={styles.confidenceLabel}>Gemini AI</Text>
           <View style={styles.confidenceBarBg}>
             <View style={[
-              styles.confidenceBar, 
+              styles.confidenceBar,
               { width: `${geminiPrediction.confidence}%`, backgroundColor: '#9C27B0' }
             ]} />
           </View>
@@ -294,7 +294,7 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
 
       {comparisonResult && (
         <View style={[
-          styles.agreementBadge, 
+          styles.agreementBadge,
           { backgroundColor: comparisonResult.agree ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)' }
         ]}>
           <Ionicons
@@ -303,7 +303,7 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
             color={comparisonResult.agree ? '#4CAF50' : '#FF9800'}
           />
           <Text style={[
-            styles.agreementText, 
+            styles.agreementText,
             { color: comparisonResult.agree ? '#4CAF50' : '#FF9800' }
           ]}>
             {comparisonResult.agree ? 'Models Agree ✓' : 'Models Differ - Review Recommended'}
@@ -318,7 +318,8 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
  * Main Results Screen Component
  */
 export const ResultsScreenTM = ({ route, navigation }) => {
-  const { imageUri, isLoading: initialLoading } = route.params;
+  // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
+  const { imageUri, isLoading: initialLoading, width, height } = route.params;
 
   // Loading and analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
@@ -332,7 +333,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
   const [prediction, setPrediction] = useState(route.params.prediction || null);
 
   const [imageLoading, setImageLoading] = useState(true);
-  
+
   // Animation for loading
   const spinAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -394,17 +395,18 @@ export const ResultsScreenTM = ({ route, navigation }) => {
       // Step 1: TM Model Prediction
       setLoadingStage('Analyzing with TM model...');
       console.log('🤖 Running TM prediction...');
-      
-      const tmResult = await modelServiceTM.quickPredict(imageUri);
+
+      // Logic Preservation: Pass width and height to fix aspect ratio distortion
+      const tmResult = await modelServiceTM.quickPredict(imageUri, width, height);
       const topTmPrediction = tmResult.topPrediction;
-      
+
       // DEBUG: Detailed TM prediction logging
       console.log('🟡 ====== TM PREDICTION IN RESULTS ======');
       console.log('🟡 Image URI:', imageUri.slice(-40));
       console.log('🟡 Top Prediction:', topTmPrediction.label, `(${topTmPrediction.percentage.toFixed(1)}%)`);
       console.log('🟡 All Predictions:');
       tmResult.predictions.forEach((p, i) => {
-        console.log(`   ${i+1}. ${p.label}: ${p.percentage.toFixed(1)}%`);
+        console.log(`   ${i + 1}. ${p.label}: ${p.percentage.toFixed(1)}%`);
       });
       console.log('🟡 ======================================');
 
@@ -427,22 +429,28 @@ export const ResultsScreenTM = ({ route, navigation }) => {
       let comparison = null;
 
       setLoadingStage('Running Gemini AI analysis...');
-      
+
       try {
         console.log('🌐 Initializing Gemini...');
         await geminiService.initialize();
-        
+
         if (geminiService.isAvailable()) {
+          // Logic Preservation: Check confidence before analyzing to save quota (optional but recommended)
+          // Since user said "keep all progress on logic", I will keep context passing logic
+
           console.log('🔍 Running Gemini analysis...');
-          geminiPred = await geminiService.analyzeFlower(imageUri);
-          
+          // Logic Preservation: Pass tmPred to give context to Gemini (Conflict Resolution Fix)
+          geminiPred = await geminiService.analyzeFlower(imageUri, tmPred);
+
           // DEBUG: Detailed Gemini prediction logging
           console.log('🟣 ====== GEMINI PREDICTION ======');
-          console.log('🟣 Variety:', geminiPred.variety);
-          console.log('🟣 Gender:', geminiPred.gender);
-          console.log('🟣 Confidence:', geminiPred.confidence + '%');
-          console.log('🟣 Is Not Flower:', geminiPred.isNotFlower);
-          console.log('🟣 Reasoning:', geminiPred.geminiData?.reasoning?.slice(0, 100) + '...');
+          if (geminiPred) {
+            console.log('🟣 Variety:', geminiPred.variety);
+            console.log('🟣 Gender:', geminiPred.gender);
+            console.log('🟣 Confidence:', geminiPred.confidence + '%');
+            console.log('🟣 Is Not Flower:', geminiPred.isNotFlower);
+            console.log('🟣 Reasoning:', geminiPred.geminiData?.reasoning?.slice(0, 100) + '...');
+          }
           console.log('🟣 ================================');
           setGeminiPrediction(geminiPred);
 
@@ -468,7 +476,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
       setPrediction(finalPred);
 
       setLoadingStage('Complete!');
-      
+
       // Fade in results
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -531,7 +539,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
             style={styles.image}
             onLoadEnd={() => setImageLoading(false)}
           />
-          
+
           {/* Loading Overlay on Image */}
           {isAnalyzing && (
             <View style={styles.loadingOverlay}>
@@ -601,7 +609,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
                   </View>
 
                   {/* Confidence Comparison */}
-                  <ConfidenceComparison 
+                  <ConfidenceComparison
                     tmPrediction={tmPrediction}
                     geminiPrediction={geminiPrediction}
                     comparisonResult={comparisonResult}
@@ -632,7 +640,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
                       <Ionicons name="chatbubble-ellipses" size={18} color="#FFF" /> AI Reasoning
                     </Text>
                     <Text style={styles.reasoningText}>{geminiData.reasoning}</Text>
-                    
+
                     {geminiData.keyFeatures?.length > 0 && (
                       <View style={styles.tagsContainer}>
                         {geminiData.keyFeatures.map((feature, i) => (
@@ -661,8 +669,8 @@ export const ResultsScreenTM = ({ route, navigation }) => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]}
             onPress={() => navigation.goBack()}
             disabled={isAnalyzing}
           >
@@ -682,7 +690,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
-  
+
   // Header
   header: {
     flexDirection: 'row',
@@ -719,12 +727,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  
+
   // Scroll View
   scrollView: {
     flex: 1,
   },
-  
+
   // Image
   imageContainer: {
     width: width,
@@ -743,7 +751,7 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  
+
   // Loading Overlay
   loadingOverlay: {
     position: 'absolute',
@@ -762,7 +770,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
   },
-  
+
   // Loading Container
   loadingContainer: {
     padding: 16,
@@ -788,7 +796,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  
+
   // Error Card
   errorCard: {
     backgroundColor: '#1E1E1E',
@@ -827,12 +835,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  
+
   // Button disabled state
   buttonDisabled: {
     opacity: 0.5,
   },
-  
+
   // Main Result Card
   mainResultCard: {
     backgroundColor: '#1E1E1E',
@@ -866,7 +874,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 4,
   },
-  
+
   // Not Flower Result
   notFlowerResult: {
     alignItems: 'center',
@@ -885,7 +893,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 20,
   },
-  
+
   // Confidence Card
   confidenceCard: {
     marginTop: 20,
@@ -942,7 +950,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  
+
   // Cards
   card: {
     backgroundColor: '#1E1E1E',
@@ -957,7 +965,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
   },
-  
+
   // Timeline
   timeline: {
     flexDirection: 'row',
@@ -1033,7 +1041,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 4,
   },
-  
+
   // Quality Metrics
   metricRow: {
     flexDirection: 'row',
@@ -1064,7 +1072,7 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'right',
   },
-  
+
   // Quality Grid
   qualityGrid: {
     flexDirection: 'row',
@@ -1115,7 +1123,7 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 12,
   },
-  
+
   // Observations
   observationSection: {
     marginBottom: 16,
@@ -1137,7 +1145,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 20,
   },
-  
+
   // Reasoning
   reasoningText: {
     color: 'rgba(255,255,255,0.8)',
@@ -1155,7 +1163,7 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     fontSize: 12,
   },
-  
+
   // TM Only Notice
   tmOnlyNotice: {
     flexDirection: 'row',
@@ -1173,7 +1181,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-  
+
   // Action Buttons
   actionButtons: {
     padding: 16,
