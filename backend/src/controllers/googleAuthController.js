@@ -4,450 +4,133 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Handle Google OAuth authentication
+ * Expects { idToken } in body
  */
 const googleOAuth = async (req, res) => {
   try {
-    const { idToken, accessToken, demoUser } = req.body;
+    const { idToken } = req.body;
 
-    if (!idToken && !accessToken && !demoUser) {
+    if (!idToken) {
       return res.status(400).json({
         success: false,
-        message: 'Google ID token, access token, or demo user data is required',
+        message: 'Google ID token is required',
       });
     }
 
-    let userInfo;
+    // 1. Verify ID Token
+    const verificationResult = await googleOAuthConfig.verifyIdToken(idToken);
 
-    // Handle demo mode for development/testing
-    if (demoUser && process.env.NODE_ENV === 'development') {
-      console.log('🎭 Processing demo Google authentication:', demoUser.email);
-      userInfo = {
-        googleId: demoUser.id,
-        email: demoUser.email,
-        emailVerified: true,
-        name: demoUser.name,
-        firstName: demoUser.firstName,
-        lastName: demoUser.lastName,
-        picture: demoUser.picture,
-      };
-    }
-    // Verify ID token if provided (preferred method)
-    else if (idToken) {
-      // Skip verification for demo tokens in development
-      if (idToken.startsWith('demo_') && process.env.NODE_ENV === 'development') {
-        return res.status(400).json({
-          success: false,
-          message: 'Demo mode requires demoUser data, not demo tokens',
-        });
-      }
-
-      const verificationResult = await googleOAuthConfig.verifyIdToken(idToken);
-      
-      if (!verificationResult.success) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid Google ID token',
-          error: verificationResult.error,
-        });
-      }
-      
-      userInfo = verificationResult.user;
-    }
-    // Fall back to access token
-    else if (accessToken) {
-      // Skip verification for demo tokens in development
-      if (accessToken.startsWith('demo_') && process.env.NODE_ENV === 'development') {
-        return res.status(400).json({
-          success: false,
-          message: 'Demo mode requires demoUser data, not demo tokens',
-        });
-      }
-
-      const profileResult = await googleOAuthConfig.getUserProfile(accessToken);
-      
-      if (!profileResult.success) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid Google access token',
-          error: profileResult.error,
-        });
-      }
-      
-      userInfo = profileResult.user;
+    if (!verificationResult.success) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google ID token',
+        error: verificationResult.error,
+      });
     }
 
-    // Check if user exists in local database
-    let localUser = await User.findOne({ 
+    const { user: googleUser } = verificationResult;
+
+    // 2. Find or Create User
+    let user = await User.findOne({
       $or: [
-        { googleId: userInfo.googleId },
-        { email: userInfo.email }
+        { googleId: googleUser.googleId },
+        { email: googleUser.email }
       ]
     });
 
-    if (!localUser) {
-      // Create new user from Google data
-      localUser = new User({
-        googleId: userInfo.googleId,
-        email: userInfo.email,
-        firstName: userInfo.firstName || '',
-        lastName: userInfo.lastName || '',
-        profilePicture: userInfo.picture,
-        emailVerified: userInfo.emailVerified || false,
+    if (!user) {
+      // Create new user
+      user = new User({
+        googleId: googleUser.googleId,
+        email: googleUser.email,
+        firstName: googleUser.firstName,
+        lastName: googleUser.lastName,
+        profilePicture: googleUser.picture,
+        emailVerified: googleUser.emailVerified || true, // Google emails are verified
+        isEmailVerified: true,
         provider: 'google',
         isActive: true,
         lastLogin: new Date(),
         createdAt: new Date(),
+        role: 'user'
       });
-
-      await localUser.save();
+      await user.save();
+      console.log(`🆕 New Google user created: ${user.email}`);
     } else {
-      // Check if account is deactivated
-      if (!localUser.isActive) {
+      // Update existing user
+      if (!user.isActive) {
         return res.status(403).json({
           success: false,
-          message: 'Your account has been deactivated. Please contact support for assistance.',
-          accountDeactivated: true,
-          deactivationReason: localUser.deactivationReason || null,
+          message: 'Account deactivated',
+          accountDeactivated: true
         });
       }
 
-      // Update existing user's last login and Google ID if needed
-      localUser.lastLogin = new Date();
-      if (!localUser.googleId) {
-        localUser.googleId = userInfo.googleId;
+      // Link Google ID if not present (e.g., previously registered with email)
+      if (!user.googleId) user.googleId = googleUser.googleId;
+      if (!user.profilePicture) user.profilePicture = googleUser.picture;
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        user.emailVerified = true;
       }
-      if (!localUser.profilePicture && userInfo.picture) {
-        localUser.profilePicture = userInfo.picture;
-      }
-      if (userInfo.emailVerified && !localUser.emailVerified) {
-        localUser.emailVerified = userInfo.emailVerified;
-      }
-      await localUser.save();
+
+      user.lastLogin = new Date();
+      await user.save();
+      console.log(`👋 Google user logged in: ${user.email}`);
     }
 
-    // Generate JWT token
-    const jwtToken = jwt.sign(
+    // 3. Generate JWT
+    const token = jwt.sign(
       {
-        userId: localUser._id,
-        email: localUser.email,
-        googleId: localUser.googleId,
+        userId: user._id,
+        email: user.email,
+        role: user.role
       },
       process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
 
-    // Remove sensitive information
-    const userResponse = {
-      id: localUser._id,
-      email: localUser.email,
-      firstName: localUser.firstName,
-      lastName: localUser.lastName,
-      profilePicture: localUser.profilePicture,
-      emailVerified: localUser.emailVerified,
-      provider: localUser.provider,
-      createdAt: localUser.createdAt,
-    };
-
+    // 4. Respond
     res.status(200).json({
       success: true,
-      message: 'Google authentication successful',
-      user: userResponse,
-      token: jwtToken,
+      message: 'Authentication successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profilePicture: user.profilePicture,
+        role: user.role
+      }
     });
 
   } catch (error) {
-    console.error('Google OAuth error:', error);
+    console.error('Google OAuth Controller Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during Google authentication',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      message: 'Internal server error during authentication'
     });
   }
 };
 
 /**
- * Generate Google OAuth authorization URL
- */
-const getAuthUrl = async (req, res) => {
-  try {
-    const { state } = req.query;
-    
-    const authUrlResult = googleOAuthConfig.generateAuthUrl(state);
-    
-    if (!authUrlResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to generate authorization URL',
-        error: authUrlResult.error,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      authUrl: authUrlResult.authUrl,
-    });
-  } catch (error) {
-    console.error('Generate auth URL error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-};
-
-/**
- * Handle OAuth callback (for web-based flows)
- */
-const handleCallback = async (req, res) => {
-  try {
-    const { code, state, error } = req.query;
-
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: 'OAuth authorization denied',
-        error: error,
-      });
-    }
-
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Authorization code is required',
-      });
-    }
-
-    // Exchange code for tokens
-    const tokenResult = await googleOAuthConfig.exchangeCodeForTokens(code);
-    
-    if (!tokenResult.success) {
-      return res.status(400).json({
-        success: false,
-        message: 'Failed to exchange code for tokens',
-        error: tokenResult.error,
-      });
-    }
-
-    // Use the ID token to authenticate
-    const { idToken } = tokenResult.tokens;
-    
-    // Call our own OAuth handler
-    req.body = { idToken };
-    return googleOAuth(req, res);
-
-  } catch (error) {
-    console.error('OAuth callback error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during OAuth callback',
-    });
-  }
-};
-
-/**
- * Refresh user token
- */
-const refreshToken = async (req, res) => {
-  try {
-    const { refreshToken: userRefreshToken } = req.body;
-
-    if (!userRefreshToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refresh token is required',
-      });
-    }
-
-    const refreshResult = await googleOAuthConfig.refreshAccessToken(userRefreshToken);
-    
-    if (!refreshResult.success) {
-      return res.status(401).json({
-        success: false,
-        message: 'Failed to refresh token',
-        error: refreshResult.error,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Token refreshed successfully',
-      tokens: refreshResult.tokens,
-    });
-
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during token refresh',
-    });
-  }
-};
-
-/**
- * Handle user logout (revoke tokens)
- */
-const logout = async (req, res) => {
-  try {
-    const { accessToken } = req.body;
-    const { userId } = req;
-
-    // Update user's last active timestamp
-    if (userId) {
-      await User.updateOne(
-        { _id: userId },
-        { lastActive: new Date() }
-      );
-    }
-
-    // Revoke Google token if provided
-    if (accessToken) {
-      await googleOAuthConfig.revokeToken(accessToken);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Logout successful',
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during logout',
-    });
-  }
-};
-
-/**
- * Get current user profile
+ * Get Current User Profile
  */
 const getCurrentUser = async (req, res) => {
   try {
-    const { user } = req;
-
+    const user = await User.findById(req.user._id); // Assuming auth middleware sets req.user
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User profile not found',
-      });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-
-    res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        googleId: user.googleId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePicture: user.profilePicture,
-        emailVerified: user.emailVerified,
-        provider: user.provider,
-        role: user.role,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin,
-      },
-    });
+    res.status(200).json({ success: true, user });
   } catch (error) {
-    console.error('Get current user error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-};
-
-/**
- * Update user profile
- */
-const updateProfile = async (req, res) => {
-  try {
-    const { user } = req;
-    const { firstName, lastName, profilePicture } = req.body;
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User profile not found',
-      });
-    }
-
-    // Update allowed fields
-    if (firstName !== undefined) user.firstName = firstName.trim();
-    if (lastName !== undefined) user.lastName = lastName.trim();
-    if (profilePicture !== undefined) user.profilePicture = profilePicture;
-
-    user.updatedAt = new Date();
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        googleId: user.googleId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePicture: user.profilePicture,
-        emailVerified: user.emailVerified,
-        provider: user.provider,
-        role: user.role,
-        updatedAt: user.updatedAt,
-      },
-    });
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during profile update',
-    });
-  }
-};
-
-/**
- * Delete user account
- */
-const deleteAccount = async (req, res) => {
-  try {
-    const { user } = req;
-    const { accessToken } = req.body;
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User profile not found',
-      });
-    }
-
-    // Revoke Google tokens
-    if (accessToken) {
-      await googleOAuthConfig.revokeToken(accessToken);
-    }
-
-    // Delete from local database
-    await User.deleteOne({ _id: user._id });
-
-    res.status(200).json({
-      success: true,
-      message: 'Account deleted successfully',
-    });
-  } catch (error) {
-    console.error('Delete account error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during account deletion',
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
 module.exports = {
   googleOAuth,
-  getAuthUrl,
-  handleCallback,
-  refreshToken,
-  logout,
-  getCurrentUser,
-  updateProfile,
-  deleteAccount,
+  getCurrentUser
 };

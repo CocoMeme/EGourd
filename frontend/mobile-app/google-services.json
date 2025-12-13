@@ -1,41 +1,49 @@
 {
   "project_info": {
-    "project_number": "615143258112",
-    "project_id": "thesis-bbe0c",
-    "storage_bucket": "thesis-bbe0c.firebasestorage.app"
+    "project_number": "797245365582",
+    "project_id": "egourd-e9f49",
+    "storage_bucket": "egourd-e9f49.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:615143258112:android:3c91e35397a66bb9d840e5",
+        "mobilesdk_app_id": "1:797245365582:android:248b5fd38ce83f18c2921f",
         "android_client_info": {
-          "package_name": "com.coandrei.gourdscanner"
+          "package_name": "com.coandrei.egourd"
         }
       },
       "oauth_client": [
         {
-          "client_id": "615143258112-60off9fleumfj61aahoqmmm47kvgl2kc.apps.googleusercontent.com",
+          "client_id": "797245365582-hoooojlrjk6559t0fc04qj3uandjvi62.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.coandrei.gourdscanner",
+            "package_name": "com.coandrei.egourd",
             "certificate_hash": "e26c07cd0a5b52447b6ec9fc4b84dd8e0a945c5b"
           }
         },
         {
-          "client_id": "615143258112-fsb0nou91mrl77t68edtr3p36vlfhjj7.apps.googleusercontent.com",
+          "client_id": "797245365582-rm3p9pq8b0pmqthlqq85ju8mfr21kpq7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coandrei.egourd",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "797245365582-lb13u42fmg9kfpn5r9hh08t5um1ba70d.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBQT8Ee10axC7rNRXktNra-eaYMhOEi-a8"
+          "current_key": "AIzaSyCOqw8yG5DqEk32CJhWsgHnq6JVd_AVQzA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "615143258112-fsb0nou91mrl77t68edtr3p36vlfhjj7.apps.googleusercontent.com",
+              "client_id": "797245365582-fmoo1f74cjl22cblreib44k0th8vvn81.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

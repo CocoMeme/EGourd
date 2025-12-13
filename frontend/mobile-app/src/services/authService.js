@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
-import { googleAuthService } from './googleAuthService';
+// Native Google Auth will be imported dynamically or we can import here
+import nativeGoogleAuthService from './nativeGoogleAuth';
 
 // Configuration
 const TOKEN_KEY = 'userToken';
@@ -19,10 +20,10 @@ class AuthService {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const user = await AsyncStorage.getItem(USER_KEY);
-      
+
       this.token = token;
       this.user = user ? JSON.parse(user) : null;
-      
+
       // If we have a token but no user data, try to fetch the profile
       if (this.token && !this.user) {
         try {
@@ -110,7 +111,7 @@ class AuthService {
             deactivationReason: data.deactivationReason,
           };
         }
-        
+
         throw new Error(data.message || 'Login failed');
       }
 
@@ -183,35 +184,36 @@ class AuthService {
   /**
    * Google Sign-In
    */
+  /**
+   * Google Sign-In (Native)
+   */
   async signInWithGoogle() {
     try {
-      // Use Google Auth Service to get user data
-      const googleResult = await googleAuthService.signInWithGoogle();
+      // Import dynamically to avoid circular dependencies if any
+      const { nativeGoogleAuthService } = require('./nativeGoogleAuth');
+
+      // Perform Native Google Sign-In
+      const googleResult = await nativeGoogleAuthService.signIn();
 
       if (!googleResult.success) {
+        if (googleResult.error === 'Cancelled') {
+          return { success: false, cancelled: true };
+        }
         return {
           success: false,
           message: googleResult.error || 'Google Sign-In failed',
         };
       }
 
-      // Send Google user data to your backend for verification and user creation/login
-      const payload = {
-        idToken: googleResult.tokens.idToken,
-        accessToken: googleResult.tokens.accessToken,
-      };
-
-      // Add demo user data if in demo mode (for development)
-      if (googleResult.tokens.idToken?.startsWith('demo_')) {
-        payload.demoUser = googleResult.user;
-      }
-
+      // Send ID Token to Backend for Verification
       const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          idToken: googleResult.idToken,
+        }),
       });
 
       const data = await response.json();
@@ -219,6 +221,9 @@ class AuthService {
       if (!response.ok) {
         // Check if account is deactivated
         if (response.status === 403 && data.accountDeactivated) {
+          // Sign out from Google since backend rejected/deactivated
+          await nativeGoogleAuthService.signOut();
+
           return {
             success: false,
             message: data.message || 'Your account has been deactivated',
@@ -490,15 +495,18 @@ class AuthService {
   /**
    * Get Google OAuth configuration status
    */
+  /**
+   * Get Google OAuth configuration status
+   */
   getGoogleAuthStatus() {
-    return googleAuthService.getConfigurationStatus();
+    return nativeGoogleAuthService.getConfigurationStatus();
   }
 
   /**
    * Check if Google OAuth is configured
    */
   isGoogleAuthConfigured() {
-    return googleAuthService.isConfigured();
+    return true; // Native auth is always considered configured for UI purposes
   }
 
   /**
