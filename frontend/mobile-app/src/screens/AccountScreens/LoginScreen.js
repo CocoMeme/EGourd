@@ -55,17 +55,26 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       const result = await authService.login(email, password);
 
       if (result.success) {
-        // Navigate immediately without showing alert on login screen
-        if (onAuthSuccess) {
-          onAuthSuccess();
+        // Check if email is verified
+        const user = result.user;
+        const isVerified = user.isEmailVerified;
+
+        if (!isVerified) {
+          // Use user.email from server (canonical) instead of typed email
+          navigation.navigate('VerifyEmail', { email: user.email, sendPin: true });
+        } else {
+          // Navigate immediately without showing alert on login screen
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
         }
       } else {
         // Check if account is deactivated
         if (result.accountDeactivated) {
-          const message = result.deactivationReason 
+          const message = result.deactivationReason
             ? `Your account has been deactivated.\n\nReason: ${result.deactivationReason}\n\nPlease contact support for assistance.`
             : 'Your account has been deactivated. Please contact support for assistance.';
-          
+
           setAlert({
             visible: true,
             type: 'error',
@@ -108,18 +117,25 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       const result = await authService.signInWithGoogle();
 
       if (result.success) {
-        const mode = authStatus.isDemoMode ? ' (Demo Mode)' : '';
-        // Navigate immediately without showing alert on login screen
-        if (onAuthSuccess) {
-          onAuthSuccess();
+        // Check if email is verified
+        const user = result.user;
+        const isVerified = user.isEmailVerified;
+
+        if (!isVerified) {
+          navigation.navigate('VerifyEmail', { email: user.email, sendPin: true });
+        } else {
+          // Navigate immediately
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
         }
       } else {
         // Check if account is deactivated
         if (result.accountDeactivated) {
-          const message = result.deactivationReason 
+          const message = result.deactivationReason
             ? `Your account has been deactivated.\n\nReason: ${result.deactivationReason}\n\nPlease contact support for assistance.`
             : 'Your account has been deactivated. Please contact support for assistance.';
-          
+
           setAlert({
             visible: true,
             type: 'error',
@@ -189,8 +205,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
           >
             {/* Logo Section */}
             <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')} 
+              <Image
+                source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -203,13 +219,13 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
             {/* Login Form Card */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Welcome Back</Text>
-              
+
               {/* Email Input */}
               <View style={styles.inputContainer}>
-                <Ionicons 
-                  name="mail-outline" 
-                  size={20} 
-                  color={theme.colors.text.secondary} 
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
                   style={styles.inputIcon}
                 />
                 <RNTextInput
@@ -226,10 +242,10 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={20} 
-                  color={theme.colors.text.secondary} 
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
                   style={styles.inputIcon}
                 />
                 <RNTextInput
@@ -241,20 +257,20 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   secureTextEntry={!showPassword}
                   autoComplete="password"
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
                 >
-                  <Ionicons 
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'} 
-                    size={20} 
-                    color={theme.colors.text.secondary} 
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={theme.colors.text.secondary}
                   />
                 </TouchableOpacity>
               </View>
 
               {/* Forgot Password */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setAlert({
                   visible: true,
                   type: 'info',
@@ -300,10 +316,10 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                 disabled={loading}
                 style={[styles.googleButton, loading && styles.buttonDisabled]}
               >
-                <Ionicons 
-                  name="logo-google" 
-                  size={20} 
-                  color={theme.colors.primary} 
+                <Ionicons
+                  name="logo-google"
+                  size={20}
+                  color={theme.colors.primary}
                   style={styles.googleIcon}
                 />
                 <Text style={styles.googleButtonText}>Continue with Google</Text>

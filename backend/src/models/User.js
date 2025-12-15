@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     maxlength: [30, 'Username cannot exceed 30 characters'],
     match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
   },
-  
+
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
 
   password: {
     type: String,
-    required: function() {
+    required: function () {
       return !this.googleId; // Password required only if not using Google OAuth
     },
     minlength: [6, 'Password must be at least 6 characters long'],
@@ -44,10 +44,7 @@ const userSchema = new mongoose.Schema({
     index: true
   },
 
-  emailVerified: {
-    type: Boolean,
-    default: false
-  },
+
 
   provider: {
     type: String,
@@ -61,7 +58,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'First name cannot exceed 50 characters']
   },
-  
+
   lastName: {
     type: String,
     trim: true,
@@ -138,18 +135,16 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
 
   // Email verification
-  emailVerificationToken: String,
-  emailVerificationExpires: Date,
-  
-  // Email verification PIN
-  verificationPin: {
-    type: String,
-    select: false // Don't return PIN in queries by default
-  },
-  verificationPinExpires: Date,
-  verificationPinAttempts: {
-    type: Number,
-    default: 0
+  emailVerification: {
+    pin: {
+      type: String,
+      select: false // Don't return PIN in queries by default
+    },
+    expires: Date,
+    attempts: {
+      type: Number,
+      default: 0
+    }
   },
 
   // Login tracking
@@ -187,7 +182,7 @@ userSchema.index({ 'refreshTokens.token': 1 });
 userSchema.index({ 'refreshTokens.expiresAt': 1 });
 
 // Virtual for full name
-userSchema.virtual('fullName').get(function() {
+userSchema.virtual('fullName').get(function () {
   if (this.profile.firstName && this.profile.lastName) {
     return `${this.profile.firstName} ${this.profile.lastName}`;
   }
@@ -195,13 +190,13 @@ userSchema.virtual('fullName').get(function() {
 });
 
 // Virtual for scan accuracy percentage
-userSchema.virtual('scanAccuracyPercentage').get(function() {
+userSchema.virtual('scanAccuracyPercentage').get(function () {
   if (this.stats.totalScans === 0) return 0;
   return Math.round((this.stats.accurateScans / this.stats.totalScans) * 100);
 });
 
 // Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   // Only hash password if it's been modified (or is new)
   if (!this.isModified('password')) return next();
 
@@ -216,7 +211,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Pre-save middleware to update login count and last login
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   if (this.isModified('lastLogin')) {
     this.loginCount += 1;
   }
@@ -224,13 +219,13 @@ userSchema.pre('save', function(next) {
 });
 
 // Instance method to check password
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   if (!candidatePassword) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Instance method to generate JWT token
-userSchema.methods.generateAuthToken = function() {
+userSchema.methods.generateAuthToken = function () {
   const payload = {
     id: this._id,
     username: this.username,
@@ -244,7 +239,7 @@ userSchema.methods.generateAuthToken = function() {
 };
 
 // Instance method to generate refresh token
-userSchema.methods.generateRefreshToken = function() {
+userSchema.methods.generateRefreshToken = function () {
   const refreshToken = jwt.sign(
     { id: this._id, type: 'refresh' },
     process.env.JWT_REFRESH_SECRET,
@@ -264,7 +259,7 @@ userSchema.methods.generateRefreshToken = function() {
 };
 
 // Instance method to revoke refresh token
-userSchema.methods.revokeRefreshToken = function(token) {
+userSchema.methods.revokeRefreshToken = function (token) {
   const refreshToken = this.refreshTokens.find(rt => rt.token === token);
   if (refreshToken) {
     refreshToken.isActive = false;
@@ -272,14 +267,14 @@ userSchema.methods.revokeRefreshToken = function(token) {
 };
 
 // Instance method to clean expired refresh tokens
-userSchema.methods.cleanExpiredRefreshTokens = function() {
+userSchema.methods.cleanExpiredRefreshTokens = function () {
   this.refreshTokens = this.refreshTokens.filter(
     rt => rt.isActive && rt.expiresAt > new Date()
   );
 };
 
 // Static method to find user by email or username
-userSchema.statics.findByCredentials = async function(identifier, password) {
+userSchema.statics.findByCredentials = async function (identifier, password) {
   // Find user by email or username
   const user = await this.findOne({
     $or: [
@@ -306,7 +301,7 @@ userSchema.statics.findByCredentials = async function(identifier, password) {
 };
 
 // Static method to clean all expired refresh tokens
-userSchema.statics.cleanAllExpiredTokens = async function() {
+userSchema.statics.cleanAllExpiredTokens = async function () {
   return this.updateMany(
     {},
     {

@@ -18,6 +18,7 @@ export { HistoryScreen } from './HistoryScreens/HistoryScreen';
 export { LoginScreen } from './AccountScreens/LoginScreen';
 export { SignUpScreen } from './AccountScreens/SignUpScreen';
 export { ProfileScreen } from './AccountScreens/ProfileScreen';
+export * from './AccountScreens/VerifyScreen';
 
 // Pollination Screens
 export { PollinationScreen } from './PolinationScreens/PollinationScreen';

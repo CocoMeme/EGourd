@@ -50,5 +50,8 @@
     "streamifier": "^0.1.1",
     "text-encoding": "^0.7.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "baseline-browser-mapping": "^2.9.7"
+  }
 }

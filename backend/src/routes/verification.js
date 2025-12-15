@@ -14,7 +14,7 @@ router.post(
   [
     body('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Please provide a valid email address')
   ],
   handleValidationErrors,
@@ -31,7 +31,7 @@ router.post(
   [
     body('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Please provide a valid email address'),
     body('pin')
       .isLength({ min: 6, max: 6 })
@@ -52,7 +52,7 @@ router.post(
   [
     body('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Please provide a valid email address')
   ],
   handleValidationErrors,
@@ -69,7 +69,7 @@ router.get(
   [
     query('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Please provide a valid email address')
   ],
   handleValidationErrors,

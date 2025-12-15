@@ -123,23 +123,20 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
     try {
       const { confirmPassword, ...signupData } = formData;
-      
+
       const result = await authService.register(signupData);
 
       if (result.success) {
         setAlert({
           visible: true,
           type: 'success',
-          title: 'Welcome to eGourd!',
-          message: 'Account created successfully! Start scanning your gourds now.',
+          title: 'Account Created!',
+          message: 'We have sent a verification code to your email.',
           buttons: [
             {
-              text: 'Get Started',
+              text: 'Verify Email',
               onPress: () => {
-                // Notify AppNavigator that authentication succeeded
-                if (onAuthSuccess) {
-                  onAuthSuccess();
-                }
+                navigation.navigate('VerifyEmail', { email: signupData.email, sendPin: true });
               }
             }
           ],
@@ -174,23 +171,27 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       const result = await authService.signInWithGoogle();
 
       if (result.success) {
-        setAlert({
-          visible: true,
-          type: 'success',
-          title: 'Welcome to eGourd!',
-          message: 'Google Sign-Up successful! Start scanning your gourds now.',
-          buttons: [
-            {
-              text: 'Get Started',
-              onPress: () => {
-                // Notify AppNavigator that authentication succeeded
-                if (onAuthSuccess) {
-                  onAuthSuccess();
+        const user = result.user;
+        const isVerified = user.isEmailVerified;
+
+        if (!isVerified) {
+          navigation.navigate('VerifyEmail', { email: user.email, sendPin: true });
+        } else {
+          setAlert({
+            visible: true,
+            type: 'success',
+            title: 'Welcome to eGourd!',
+            message: 'Google Sign-Up successful! Start scanning your gourds now.',
+            buttons: [
+              {
+                text: 'Get Started',
+                onPress: () => {
+                  if (onAuthSuccess) onAuthSuccess();
                 }
               }
-            }
-          ],
-        });
+            ],
+          });
+        }
       } else {
         // Show a more detailed error for configuration issues
         const errorMessage = result.message || 'Unable to sign up with Google';
@@ -237,13 +238,13 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
     const { password } = formData;
     if (password.length === 0) return { text: '', color: '#ccc' };
     if (password.length < 8) return { text: 'Too Short', color: '#f44336' };
-    
+
     let strength = 0;
     if (/[a-z]/.test(password)) strength++;
     if (/[A-Z]/.test(password)) strength++;
     if (/\d/.test(password)) strength++;
     if (/[^a-zA-Z\d]/.test(password)) strength++;
-    
+
     if (strength === 1) return { text: 'Weak', color: '#ff9800' };
     if (strength === 2) return { text: 'Fair', color: '#ffeb3b' };
     if (strength === 3) return { text: 'Good', color: '#8bc34a' };
@@ -271,8 +272,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
           >
             {/* Logo Section */}
             <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')} 
+              <Image
+                source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -285,14 +286,14 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
             {/* Sign Up Form Card */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Create Account</Text>
-              
+
               {/* Name Inputs */}
               <View style={styles.nameRow}>
                 <View style={[styles.inputContainer, styles.nameInput]}>
-                  <Ionicons 
-                    name="person-outline" 
-                    size={20} 
-                    color={theme.colors.text.secondary} 
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={theme.colors.text.secondary}
                     style={styles.inputIcon}
                   />
                   <RNTextInput
@@ -304,7 +305,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                     autoCapitalize="words"
                   />
                 </View>
-                
+
                 <View style={[styles.inputContainer, styles.nameInput]}>
                   <RNTextInput
                     placeholder="Last Name"
@@ -319,10 +320,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
-                <Ionicons 
-                  name="mail-outline" 
-                  size={20} 
-                  color={theme.colors.text.secondary} 
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
                   style={styles.inputIcon}
                 />
                 <RNTextInput
@@ -339,10 +340,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={20} 
-                  color={theme.colors.text.secondary} 
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
                   style={styles.inputIcon}
                 />
                 <RNTextInput
@@ -354,14 +355,14 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   secureTextEntry={!showPassword}
                   autoComplete="password-new"
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
                 >
-                  <Ionicons 
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'} 
-                    size={20} 
-                    color={theme.colors.text.secondary} 
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={theme.colors.text.secondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -377,10 +378,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
               {/* Confirm Password Input */}
               <View style={styles.inputContainer}>
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={20} 
-                  color={theme.colors.text.secondary} 
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
                   style={styles.inputIcon}
                 />
                 <RNTextInput
@@ -392,20 +393,20 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   secureTextEntry={!showConfirmPassword}
                   autoComplete="password-new"
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   style={styles.eyeIcon}
                 >
-                  <Ionicons 
-                    name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} 
-                    size={20} 
-                    color={theme.colors.text.secondary} 
+                  <Ionicons
+                    name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={theme.colors.text.secondary}
                   />
                 </TouchableOpacity>
               </View>
 
               {/* Terms Checkbox */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.checkboxContainer}
                 onPress={() => setAgreeToTerms(!agreeToTerms)}
               >
@@ -455,10 +456,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                 disabled={loading}
                 style={[styles.googleButton, loading && styles.buttonDisabled]}
               >
-                <Ionicons 
-                  name="logo-google" 
-                  size={20} 
-                  color={theme.colors.primary} 
+                <Ionicons
+                  name="logo-google"
+                  size={20}
+                  color={theme.colors.primary}
                   style={styles.googleIcon}
                 />
                 <Text style={styles.googleButtonText}>Sign up with Google</Text>

@@ -10,8 +10,8 @@ const register = async (req, res) => {
     const { email, password, firstName, lastName } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      email: email.toLowerCase().trim() 
+    const existingUser = await User.findOne({
+      email: email.toLowerCase().trim()
     });
 
     if (existingUser) {
@@ -27,7 +27,7 @@ const register = async (req, res) => {
       password: password,
       firstName: firstName ? firstName.trim() : '',
       lastName: lastName ? lastName.trim() : '',
-      emailVerified: false, // Will need email verification in production
+
       provider: 'local',
       isActive: true,
       lastLogin: new Date(),
@@ -53,7 +53,7 @@ const register = async (req, res) => {
       firstName: newUser.firstName,
       lastName: newUser.lastName,
       profilePicture: newUser.profilePicture,
-      emailVerified: newUser.emailVerified,
+      isEmailVerified: newUser.isEmailVerified,
       provider: newUser.provider,
       createdAt: newUser.createdAt,
     };
@@ -67,7 +67,7 @@ const register = async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     // Handle specific MongoDB errors
     if (error.code === 11000) {
       return res.status(409).json({
@@ -108,7 +108,7 @@ const login = async (req, res) => {
     }
 
     // Find user by email (don't filter by isActive yet)
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: email.toLowerCase().trim()
     }).select('+password'); // Include password field for comparison
 
@@ -160,7 +160,7 @@ const login = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       profilePicture: user.profilePicture,
-      emailVerified: user.emailVerified,
+      isEmailVerified: user.isEmailVerified,
       provider: user.provider,
       role: user.role,
       createdAt: user.createdAt,

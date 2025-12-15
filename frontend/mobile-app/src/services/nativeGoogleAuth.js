@@ -86,7 +86,17 @@ class NativeGoogleAuthService {
     async signOut() {
         try {
             if (!this.isConfigured) this.configure();
-            await GoogleSignin.signOut();
+            try {
+                await GoogleSignin.revokeAccess();
+                await GoogleSignin.signOut();
+            } catch (innerError) {
+                // Ignore if user is not signed in
+                if (innerError.code === statusCodes.SIGN_IN_REQUIRED || innerError.message.includes('SIGN_IN_REQUIRED')) {
+                    console.log('User was not signed in to Google, skipping sign out');
+                } else {
+                    throw innerError;
+                }
+            }
             return { success: true };
         } catch (error) {
             console.error('Google Sign-Out Error:', error);

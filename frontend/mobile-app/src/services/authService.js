@@ -279,6 +279,14 @@ class AuthService {
       // Continue with local cleanup even if API call fails
     }
 
+    try {
+      // Sign out from Native Google Auth to force account picker next time
+      const { nativeGoogleAuthService } = require('./nativeGoogleAuth');
+      await nativeGoogleAuthService.signOut();
+    } catch (error) {
+      console.error('Native Google Sign-Out failed:', error);
+    }
+
     // Clear local storage
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
     this.token = null;
@@ -514,7 +522,9 @@ class AuthService {
    */
   async sendVerificationPin(email) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/send-verification-pin`, {
+      console.log('[AuthService] sendVerificationPin called with email:', JSON.stringify(email));
+
+      const response = await fetch(`${API_BASE_URL}/verification/send-pin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -547,7 +557,7 @@ class AuthService {
    */
   async verifyEmailWithPin(email, pin) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+      const response = await fetch(`${API_BASE_URL}/verification/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -563,7 +573,6 @@ class AuthService {
 
       // Update stored user data
       if (this.user) {
-        this.user.emailVerified = true;
         this.user.isEmailVerified = true;
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(this.user));
       }
@@ -587,7 +596,7 @@ class AuthService {
    */
   async checkVerificationStatus(email) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verification-status?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`${API_BASE_URL}/verification/status?email=${encodeURIComponent(email)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

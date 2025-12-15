@@ -34,7 +34,7 @@ const googleOAuth = async (req, res) => {
     let user = await User.findOne({
       $or: [
         { googleId: googleUser.googleId },
-        { email: googleUser.email }
+        { email: googleUser.email.toLowerCase() }
       ]
     });
 
@@ -42,12 +42,12 @@ const googleOAuth = async (req, res) => {
       // Create new user
       user = new User({
         googleId: googleUser.googleId,
-        email: googleUser.email,
+        email: googleUser.email.toLowerCase(),
         firstName: googleUser.firstName,
         lastName: googleUser.lastName,
         profilePicture: googleUser.picture,
-        emailVerified: googleUser.emailVerified || true, // Google emails are verified
-        isEmailVerified: true,
+
+        isEmailVerified: false,
         provider: 'google',
         isActive: true,
         lastLogin: new Date(),
@@ -71,7 +71,6 @@ const googleOAuth = async (req, res) => {
       if (!user.profilePicture) user.profilePicture = googleUser.picture;
       if (!user.isEmailVerified) {
         user.isEmailVerified = true;
-        user.emailVerified = true;
       }
 
       user.lastLogin = new Date();
@@ -101,6 +100,7 @@ const googleOAuth = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         profilePicture: user.profilePicture,
+        isEmailVerified: user.isEmailVerified,
         role: user.role
       }
     });

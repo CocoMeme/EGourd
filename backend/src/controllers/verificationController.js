@@ -14,6 +14,10 @@ exports.sendVerificationPin = async (req, res) => {
   try {
     const { email } = req.body;
 
+    console.log('=== [SendPin] START ===');
+    console.log('[SendPin] Raw email from request:', JSON.stringify(email));
+    console.log('[SendPin] Lowercase email:', email ? email.toLowerCase() : 'UNDEFINED');
+
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -22,9 +26,19 @@ exports.sendVerificationPin = async (req, res) => {
     }
 
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('[SendPin] Querying User collection with email:', normalizedEmail);
+
+    const user = await User.findOne({ email: normalizedEmail });
+
+    console.log('[SendPin] User.findOne result:', user ? `Found: ${user.email}` : 'NOT FOUND');
+
+    // Debug: List all users to compare
+    const allUsers = await User.find({}).select('email');
+    console.log('[SendPin] All users in DB:', allUsers.map(u => u.email));
 
     if (!user) {
+      console.log('[SendPin] Returning 404 - user not found');
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -41,14 +55,16 @@ exports.sendVerificationPin = async (req, res) => {
 
     // Generate 6-digit PIN
     const pin = emailService.generateVerificationPin();
-    
+
     // Set PIN expiration (10 minutes)
     const pinExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     // Save PIN to user document
-    user.verificationPin = pin;
-    user.verificationPinExpires = pinExpires;
-    user.verificationPinAttempts = 0; // Reset attempts
+    user.emailVerification = {
+      pin: pin,
+      expires: pinExpires,
+      attempts: 0
+    };
     await user.save();
 
     // Send email with PIN
@@ -87,7 +103,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     }
 
     // Find user with PIN (explicitly select PIN field)
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+verificationPin');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+emailVerification.pin');
 
     if (!user) {
       return res.status(404).json({
@@ -105,7 +121,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     }
 
     // Check if PIN exists
-    if (!user.verificationPin) {
+    if (!user.emailVerification || !user.emailVerification.pin) {
       return res.status(400).json({
         success: false,
         message: 'No verification PIN found. Please request a new PIN.'
@@ -113,7 +129,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     }
 
     // Check if PIN has expired
-    if (user.verificationPinExpires < new Date()) {
+    if (user.emailVerification.expires < new Date()) {
       return res.status(400).json({
         success: false,
         message: 'Verification PIN has expired. Please request a new PIN.'
@@ -121,7 +137,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     }
 
     // Check attempt limit (max 5 attempts)
-    if (user.verificationPinAttempts >= 5) {
+    if (user.emailVerification.attempts >= 5) {
       return res.status(429).json({
         success: false,
         message: 'Too many attempts. Please request a new PIN.'
@@ -129,24 +145,27 @@ exports.verifyEmailWithPin = async (req, res) => {
     }
 
     // Verify PIN
-    if (user.verificationPin !== pin.toString()) {
+    if (user.emailVerification.pin !== pin.toString()) {
       // Increment attempts
-      user.verificationPinAttempts += 1;
+      user.emailVerification.attempts += 1;
       await user.save();
 
       return res.status(400).json({
         success: false,
         message: 'Invalid PIN',
-        attemptsRemaining: 5 - user.verificationPinAttempts
+        attemptsRemaining: 5 - user.emailVerification.attempts
       });
     }
 
     // PIN is correct - verify email
     user.isEmailVerified = true;
-    user.emailVerified = true; // For compatibility
-    user.verificationPin = undefined; // Clear PIN
-    user.verificationPinExpires = undefined;
-    user.verificationPinAttempts = 0;
+
+    // Clear verification data
+    user.emailVerification = {
+      pin: undefined,
+      expires: undefined,
+      attempts: 0
+    };
     await user.save();
 
     // Send welcome email (non-blocking)
@@ -209,7 +228,7 @@ exports.resendVerificationPin = async (req, res) => {
     }
 
     // Check if last PIN was sent recently (prevent spam - 1 minute cooldown)
-    if (user.verificationPinExpires && user.verificationPinExpires > new Date(Date.now() + 9 * 60 * 1000)) {
+    if (user.emailVerification && user.emailVerification.expires && user.emailVerification.expires > new Date(Date.now() + 9 * 60 * 1000)) {
       return res.status(429).json({
         success: false,
         message: 'Please wait before requesting a new PIN'
@@ -221,9 +240,11 @@ exports.resendVerificationPin = async (req, res) => {
     const pinExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     // Save new PIN
-    user.verificationPin = pin;
-    user.verificationPinExpires = pinExpires;
-    user.verificationPinAttempts = 0; // Reset attempts
+    user.emailVerification = {
+      pin: pin,
+      expires: pinExpires,
+      attempts: 0
+    };
     await user.save();
 
     // Send email
