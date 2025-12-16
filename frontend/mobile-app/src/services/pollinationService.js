@@ -455,6 +455,78 @@ class PollinationService {
     
     return { status: 'unknown', color: '#757575' };
   }
+
+  // ====================
+  // Flower Prediction API
+  // ====================
+
+  /**
+   * Generate flower production prediction
+   * @param {Object} predictionData - Input data for prediction
+   * @returns {Promise} API response with prediction results
+   */
+  async predictFlowers(predictionData) {
+    try {
+      console.log('📊 Generating flower prediction...');
+      const response = await api.post(`${this.baseURL}/predict-flowers`, predictionData);
+      console.log('✅ Prediction generated successfully');
+      return response;
+    } catch (error) {
+      console.error('❌ Error predicting flowers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all flower predictions for user
+   * @param {Object} filters - Optional filters (plantType, pollinationId, page, limit)
+   * @returns {Promise} API response with predictions list
+   */
+  async getFlowerPredictions(filters = {}) {
+    try {
+      console.log('📊 Fetching flower predictions...');
+      const response = await api.get(`${this.baseURL}/predictions`, { params: filters });
+      console.log(`✅ Fetched ${response.data.count} predictions`);
+      return response;
+    } catch (error) {
+      console.error('❌ Error fetching predictions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get single flower prediction by ID
+   * @param {String} predictionId - Prediction ID
+   * @returns {Promise} API response with prediction details
+   */
+  async getFlowerPrediction(predictionId) {
+    try {
+      console.log(`📊 Fetching prediction ${predictionId}...`);
+      const response = await api.get(`${this.baseURL}/predictions/${predictionId}`);
+      console.log('✅ Prediction fetched successfully');
+      return response;
+    } catch (error) {
+      console.error('❌ Error fetching prediction:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete flower prediction
+   * @param {String} predictionId - Prediction ID to delete
+   * @returns {Promise} API response
+   */
+  async deleteFlowerPrediction(predictionId) {
+    try {
+      console.log(`🗑️ Deleting prediction ${predictionId}...`);
+      const response = await api.delete(`${this.baseURL}/predictions/${predictionId}`);
+      console.log('✅ Prediction deleted successfully');
+      return response;
+    } catch (error) {
+      console.error('❌ Error deleting prediction:', error);
+      throw error;
+    }
+  }
 }
 
 export const pollinationService = new PollinationService();

@@ -20,7 +20,11 @@ const {
   updatePollinationStatus,
   updateStatus,
   getPendingNotifications,
-  markNotificationSent
+  markNotificationSent,
+  predictFlowerProduction,
+  getFlowerPredictions,
+  getFlowerPrediction,
+  deleteFlowerPrediction
 } = require('../controllers/pollinationController');
 
 // Import middleware
@@ -42,6 +46,13 @@ router.get('/dashboard/stats', getDashboardStats);
 router.get('/attention/needed', getPlantsNeedingAttention);
 router.get('/upcoming/pollinations', getUpcomingPollinations);
 router.get('/notifications/pending', getPendingNotifications);
+
+// Flower production prediction routes (must be before /:id routes)
+router.post('/predict-flowers', predictFlowerProduction);
+router.get('/predictions', getFlowerPredictions);
+router.route('/predictions/:id')
+  .get(getFlowerPrediction)
+  .delete(deleteFlowerPrediction);
 
 // Main CRUD routes
 router.route('/')

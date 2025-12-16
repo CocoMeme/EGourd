@@ -17,7 +17,9 @@ export const CustomHeader = ({
   user, 
   onNotificationPress, 
   onMenuPress,
-  showAvatar = true 
+  showAvatar = true,
+  title,
+  rightComponent 
 }) => {
   // Get first letter of first name or fallback to 'U'
   const getInitials = () => {
@@ -35,6 +37,30 @@ export const CustomHeader = ({
     return 'User';
   };
 
+  // If title prop is provided, render simple header with title and right component
+  if (title) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <LinearGradient
+          colors={[theme.colors.gradient.start, theme.colors.gradient.end]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.container}
+        >
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>{title}</Text>
+          </View>
+          {rightComponent && (
+            <View style={styles.rightSection}>
+              {rightComponent()}
+            </View>
+          )}
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Default home screen style header
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
@@ -154,5 +180,13 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: theme.spacing.xs,
     marginLeft: theme.spacing.sm,
+  },
+  titleContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: theme.fonts.semiBold,
+    color: '#FFFFFF',
   },
 });

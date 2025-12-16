@@ -1,7 +1,8 @@
-const { Pollination } = require('../models');
+const { Pollination, FlowerPrediction } = require('../models');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const notificationScheduler = require('../utils/notificationScheduler');
+const FlowerPredictionService = require('../services/flowerPredictionService');
 
 // @desc    Get all pollination records for authenticated user
 // @route   GET /api/pollination
@@ -829,6 +830,218 @@ const markNotificationSent = async (req, res) => {
   }
 };
 
+// @desc    Predict flower production based on plant factors
+// @route   POST /api/pollination/predict-flowers
+// @access  Private
+const predictFlowerProduction = async (req, res) => {
+  try {
+    const {
+      pollinationId, // Optional - link to existing plant
+      plantType,
+      plantAge,
+      environmental,
+      care,
+      growth,
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (!plantType || !plantAge || !environmental || !care || !growth) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields for prediction'
+      });
+    }
+
+    // Validate plant type
+    const validPlantTypes = ['ampalaya', 'patola', 'upo', 'kalabasa', 'kundol'];
+    if (!validPlantTypes.includes(plantType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid plant type'
+      });
+    }
+
+    // If pollinationId is provided, verify it exists and belongs to user
+    if (pollinationId) {
+      const pollinationRecord = await Pollination.findOne({
+        _id: pollinationId,
+        user: req.user.id
+      });
+
+      if (!pollinationRecord) {
+        return res.status(404).json({
+          success: false,
+          message: 'Pollination record not found'
+        });
+      }
+    }
+
+    // Generate prediction using the service
+    const predictionResult = FlowerPredictionService.predictFlowerProduction({
+      plantType,
+      plantAge,
+      environmental,
+      care,
+      growth
+    });
+
+    // Save prediction to database
+    const flowerPrediction = new FlowerPrediction({
+      pollination: pollinationId || undefined,
+      plantType,
+      plantAge,
+      environmental,
+      care,
+      growth,
+      prediction: predictionResult,
+      user: req.user.id,
+      notes: notes || undefined
+    });
+
+    await flowerPrediction.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Flower production prediction generated successfully',
+      data: {
+        predictionId: flowerPrediction._id,
+        plantType,
+        plantAge,
+        maleFlowers: predictionResult.maleFlowers,
+        femaleFlowers: predictionResult.femaleFlowers,
+        totalFlowers: {
+          min: predictionResult.maleFlowers.min + predictionResult.femaleFlowers.min,
+          max: predictionResult.maleFlowers.max + predictionResult.femaleFlowers.max,
+          average: predictionResult.maleFlowers.average + predictionResult.femaleFlowers.average
+        },
+        confidence: predictionResult.confidence,
+        influencingFactors: predictionResult.influencingFactors,
+        recommendations: predictionResult.recommendations,
+        createdAt: flowerPrediction.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Predict flower production error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error generating flower production prediction',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get flower production predictions for authenticated user
+// @route   GET /api/pollination/predictions
+// @access  Private
+const getFlowerPredictions = async (req, res) => {
+  try {
+    const { plantType, pollinationId } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Build query
+    const query = { user: req.user.id };
+    
+    if (plantType) {
+      query.plantType = plantType;
+    }
+    
+    if (pollinationId) {
+      query.pollination = pollinationId;
+    }
+
+    const predictions = await FlowerPrediction.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip)
+      .populate('pollination', 'name displayName datePlanted status');
+
+    const total = await FlowerPrediction.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      count: predictions.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      data: predictions
+    });
+  } catch (error) {
+    console.error('Get flower predictions error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching flower predictions',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get single flower prediction by ID
+// @route   GET /api/pollination/predictions/:id
+// @access  Private
+const getFlowerPrediction = async (req, res) => {
+  try {
+    const prediction = await FlowerPrediction.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    }).populate('pollination', 'name displayName datePlanted status gender image');
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prediction not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: prediction
+    });
+  } catch (error) {
+    console.error('Get flower prediction error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching flower prediction',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete flower prediction
+// @route   DELETE /api/pollination/predictions/:id
+// @access  Private
+const deleteFlowerPrediction = async (req, res) => {
+  try {
+    const prediction = await FlowerPrediction.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prediction not found'
+      });
+    }
+
+    await prediction.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Prediction deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete flower prediction error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error deleting flower prediction',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getPollinations,
   getPollination,
@@ -847,5 +1060,9 @@ module.exports = {
   updatePollinationStatus,
   updateStatus,
   getPendingNotifications,
-  markNotificationSent
+  markNotificationSent,
+  predictFlowerProduction,
+  getFlowerPredictions,
+  getFlowerPrediction,
+  deleteFlowerPrediction
 };

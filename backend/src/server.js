@@ -1,5 +1,6 @@
 require('dotenv').config();
 const App = require('./app');
+const os = require('os');
 
 const startServer = async () => {
   try {
@@ -10,15 +11,51 @@ const startServer = async () => {
     // Get port from environment or default to 5000
     const PORT = process.env.PORT || 5000;
     
+    // Get network IP address (prioritize WiFi/Ethernet over VM adapters)
+    const getLocalIP = () => {
+      const interfaces = os.networkInterfaces();
+      const priorities = ['Wi-Fi', 'Ethernet', 'en0', 'eth0'];
+      
+      // First try priority interfaces
+      for (const priority of priorities) {
+        const iface = interfaces[priority];
+        if (iface) {
+          for (const addr of iface) {
+            if (addr.family === 'IPv4' && !addr.internal) {
+              return addr.address;
+            }
+          }
+        }
+      }
+      
+      // Fallback to any non-internal IPv4 that's not a VM adapter
+      for (const name of Object.keys(interfaces)) {
+        if (name.includes('VirtualBox') || name.includes('VMware') || name.includes('vEthernet')) {
+          continue;
+        }
+        for (const addr of interfaces[name]) {
+          if (addr.family === 'IPv4' && !addr.internal && 
+              !addr.address.startsWith('169.254')) {
+            return addr.address;
+          }
+        }
+      }
+      
+      return 'localhost';
+    };
+
+    const localIP = getLocalIP();
+    
     // Start the server
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('🌟 ========================================');
       console.log('🚀 GOURD CLASSIFICATION API SERVER');
       console.log('🌟 ========================================');
       console.log(`📡 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 API URL: http://localhost:${PORT}/api`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
+      console.log(`🔗 Local API URL: http://localhost:${PORT}/api`);
+      console.log(`📱 Mobile API URL: http://${localIP}:${PORT}/api`);
+      console.log(`🏥 Health Check: http://${localIP}:${PORT}/api/health`);
       console.log('🌟 ========================================');
     });
 
