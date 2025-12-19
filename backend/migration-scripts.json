@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "migrate:install-deps": "npm install google-auth-library && npm uninstall firebase-admin",
-    "migrate:run": "node migrate-to-google-oauth.js migrate",
-    "migrate:rollback": "node migrate-to-google-oauth.js rollback"
-  }
-}
