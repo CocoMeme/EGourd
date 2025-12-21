@@ -15,11 +15,13 @@ import {
   Dimensions,
   ActivityIndicator,
   Animated,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { modelServiceTM } from '../../services/modelServiceTM';
 import { geminiService } from '../../services/geminiService';
+import { scanService } from '../../services/scanService';
 
 const { width } = Dimensions.get('window');
 
@@ -331,12 +333,60 @@ export const ResultsScreenTM = ({ route, navigation }) => {
   const [geminiPrediction, setGeminiPrediction] = useState(route.params.geminiPrediction || null);
   const [comparisonResult, setComparisonResult] = useState(route.params.comparisonResult || null);
   const [prediction, setPrediction] = useState(route.params.prediction || null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [imageLoading, setImageLoading] = useState(true);
 
   // Animation for loading
   const spinAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Handler: Save scan to backend
+  const handleSave = async () => {
+    if (!prediction) return;
+    setIsSaving(true);
+    try {
+      // Construct payload compatible with backend (similar to ResultsScreen.js)
+      const scanData = {
+        prediction: prediction.gender || 'unknown',
+        confidence: prediction.confidence || 0,
+
+        // Extended data
+        variety: prediction.variety || null,
+        validationStatus: hasGeminiData ? 'validated' : 'tflite_only',
+
+        aiPrediction: {
+          finalSource: hasGeminiData ? 'gemini' : 'tflite',
+          tflite: {
+            variety: tmPrediction?.variety,
+            gender: tmPrediction?.gender,
+            confidence: tmPrediction?.confidence,
+          },
+          gemini: geminiPrediction ? {
+            variety: geminiPrediction.variety,
+            gender: geminiPrediction.gender,
+            confidence: geminiPrediction.confidence,
+            reasoning: geminiPrediction.geminiData?.reasoning,
+          } : null
+        }
+      };
+
+      await scanService.saveScan(scanData, imageUri);
+
+      Alert.alert(
+        'Success! 🎉',
+        'Scan saved to your history!',
+        [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]
+      );
+    } catch (error) {
+      console.error('Save error:', error);
+      Alert.alert('Save Failed', 'Failed to save scan. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Helper functions
   const getVarietyFromLabel = (label) => {
@@ -670,12 +720,27 @@ export const ResultsScreenTM = ({ route, navigation }) => {
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]}
+            style={[styles.actionButton, styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]}
             onPress={() => navigation.goBack()}
-            disabled={isAnalyzing}
+            disabled={isAnalyzing || isSaving}
           >
             <Ionicons name="camera" size={20} color="#FFF" />
-            <Text style={styles.scanAgainText}>Scan Again</Text>
+            <Text style={styles.actionButtonText}>Scan Again</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.saveButton, (isAnalyzing || isSaving) && styles.buttonDisabled]}
+            onPress={handleSave}
+            disabled={isAnalyzing || isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={20} color="#FFF" />
+                <Text style={styles.actionButtonText}>Save Result</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -688,7 +753,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#FFFFFF', // White background
   },
 
   // Header
@@ -699,13 +764,15 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#FFFFFF', // White header
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    color: '#FFF',
+    color: '#000000', // Dark text
     fontSize: 18,
     fontWeight: '600',
   },
@@ -716,14 +783,14 @@ const styles = StyleSheet.create({
   aiBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
   },
   aiBadgeText: {
-    color: '#FFD700',
+    color: '#FFB300', // Darker gold for visibility on white
     fontSize: 11,
     fontWeight: '600',
   },
@@ -737,7 +804,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: width,
     height: width * 0.75,
-    backgroundColor: '#000',
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -749,7 +816,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'contain', // Changed to contain to see full image
   },
 
   // Loading Overlay
@@ -759,13 +826,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Light overlay
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
   },
   loadingText: {
-    color: '#FFF',
+    color: theme.colors.primary,
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,
@@ -776,22 +843,29 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   loadingCard: {
-    borderLeftColor: 'rgba(255, 255, 255, 0.3)',
+    borderLeftColor: theme.colors.primary,
     minHeight: 200,
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   loadingContent: {
     alignItems: 'center',
     padding: 20,
   },
   loadingStageText: {
-    color: '#FFF',
+    color: '#333333',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 20,
   },
   loadingSubtext: {
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: '#666666',
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -953,17 +1027,27 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F5F5F5',
   },
   sectionTitle: {
-    color: '#FFF',
+    color: '#333333',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 
   // Timeline
@@ -981,7 +1065,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
@@ -1001,23 +1085,24 @@ const styles = StyleSheet.create({
     left: '50%',
     right: '-50%',
     height: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#E0E0E0',
   },
   timelineLineActive: {
     backgroundColor: theme.colors.primary,
   },
   timelineLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#999999',
     fontSize: 9,
     marginTop: 6,
     textAlign: 'center',
   },
   timelineLabelActive: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#555555',
+    fontWeight: '600',
   },
   timelineLabelCurrent: {
     color: '#4CAF50',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   harvestInfo: {
     gap: 8,
@@ -1028,12 +1113,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   harvestText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#555555',
     fontSize: 14,
   },
   harvestHighlight: {
-    color: '#4CAF50',
-    fontWeight: '600',
+    color: '#333333',
+    fontWeight: '700',
   },
   pollinationReady: {
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -1049,14 +1134,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   metricLabel: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#555555',
     fontSize: 12,
     width: 110,
   },
   metricBarContainer: {
     flex: 1,
     height: 10,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#F5F5F5',
     borderRadius: 5,
     marginHorizontal: 12,
     overflow: 'hidden',
@@ -1066,7 +1151,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   metricValue: {
-    color: '#FFF',
+    color: '#333333',
     fontSize: 12,
     fontWeight: '600',
     width: 40,
@@ -1082,17 +1167,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qualityScore: {
-    color: '#FFF',
+    color: '#333333',
     fontSize: 28,
     fontWeight: '700',
   },
   qualityCondition: {
-    color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
   },
   qualityLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: '#777777',
     fontSize: 11,
     marginTop: 4,
     textTransform: 'uppercase',
@@ -1101,10 +1185,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: '#F0F0F0',
   },
   healthTitle: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#555555',
     fontSize: 12,
     marginBottom: 8,
   },
@@ -1114,7 +1198,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   healthTag: {
-    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1139,7 +1223,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   observationItem: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#555555',
     fontSize: 13,
     marginLeft: 24,
     marginBottom: 4,
@@ -1148,13 +1232,13 @@ const styles = StyleSheet.create({
 
   // Reasoning
   reasoningText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#444444',
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 12,
   },
   featureTag: {
-    backgroundColor: 'rgba(33, 150, 243, 0.2)',
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1177,7 +1261,7 @@ const styles = StyleSheet.create({
   },
   tmOnlyText: {
     flex: 1,
-    color: 'rgba(255,255,255,0.7)',
+    color: '#E65100',
     fontSize: 13,
     lineHeight: 20,
   },
@@ -1185,17 +1269,28 @@ const styles = StyleSheet.create({
   // Action Buttons
   actionButtons: {
     padding: 16,
+    flexDirection: 'row',
+    gap: 12,
   },
-  scanAgainButton: {
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: theme.colors.primary,
     padding: 16,
     borderRadius: 12,
   },
-  scanAgainText: {
+  scanAgainButton: {
+    backgroundColor: '#333333',
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  actionButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',

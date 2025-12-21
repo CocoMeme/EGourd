@@ -7,7 +7,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
+import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, StorageSettingsScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 
@@ -41,43 +41,43 @@ const HomeStack = ({ route }) => {
         contentStyle: { backgroundColor: theme.colors.background.primary },
       }}
     >
-      <Stack.Screen 
-        name="HomeMain" 
-        initialParams={{ 
+      <Stack.Screen
+        name="HomeMain"
+        initialParams={{
           showWelcome: route?.params?.showWelcome,
         }}
       >
         {(props) => <HomeScreen {...props} />}
       </Stack.Screen>
-      <Stack.Screen 
-        name="HowToUse" 
+      <Stack.Screen
+        name="HowToUse"
         component={HowToUseScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="Educational" 
+      <Stack.Screen
+        name="Educational"
         component={EducationalScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="NewsMain" 
+      <Stack.Screen
+        name="NewsMain"
         component={NewsScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="Chatbot" 
+      <Stack.Screen
+        name="Chatbot"
         component={ChatbotScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="Community" 
+      <Stack.Screen
+        name="Community"
         component={CommunityScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="CreatePost" 
+      <Stack.Screen
+        name="CreatePost"
         component={CreatePostScreen}
-        options={{ 
+        options={{
           headerShown: false,
           presentation: 'transparentModal',
           cardStyle: { backgroundColor: 'transparent' },
@@ -97,8 +97,8 @@ const HomeStack = ({ route }) => {
           }),
         }}
       />
-      <Stack.Screen 
-        name="PostDetail" 
+      <Stack.Screen
+        name="PostDetail"
         component={PostDetailScreen}
         options={{ headerShown: false }}
       />
@@ -116,27 +116,27 @@ const CameraStack = () => {
         },
       }}
     >
-      <Stack.Screen 
-        name="CameraMain" 
-        component={CameraScreen} 
+      <Stack.Screen
+        name="CameraMain"
+        component={CameraScreen}
         options={{ title: 'Scan Gourd' }}
       />
-      <Stack.Screen 
-        name="CameraScreenTM" 
-        component={CameraScreenTM} 
-        options={{ 
+      <Stack.Screen
+        name="CameraScreenTM"
+        component={CameraScreenTM}
+        options={{
           title: 'TM Test Mode',
-          headerShown: false 
+          headerShown: false
         }}
       />
-      <Stack.Screen 
-        name="Results" 
-        component={ResultsScreen} 
+      <Stack.Screen
+        name="Results"
+        component={ResultsScreen}
         options={{ title: 'Scan Results' }}
       />
-      <Stack.Screen 
-        name="ResultsTM" 
-        component={ResultsScreenTM} 
+      <Stack.Screen
+        name="ResultsTM"
+        component={ResultsScreenTM}
         options={{ title: 'TM Analysis Results', headerShown: false }}
       />
     </Stack.Navigator>
@@ -154,41 +154,41 @@ const PollinationStack = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen 
-        name="PollinationMain" 
-        component={PollinationScreen} 
+      <Stack.Screen
+        name="PollinationMain"
+        component={PollinationScreen}
         options={{ title: 'Pollination Management' }}
       />
-      <Stack.Screen 
-        name="PlantForm" 
-        component={PlantFormScreen} 
-        options={{ 
+      <Stack.Screen
+        name="PlantForm"
+        component={PlantFormScreen}
+        options={{
           title: 'Plant Form',
           headerShown: true,
           presentation: 'modal'
         }}
       />
-      <Stack.Screen 
-        name="PlantDetail" 
-        component={PlantDetailScreen} 
-        options={{ 
+      <Stack.Screen
+        name="PlantDetail"
+        component={PlantDetailScreen}
+        options={{
           title: 'Plant Details',
           headerShown: false
         }}
       />
-      <Stack.Screen 
-        name="PredictFlowers" 
-        component={PredictFlowersScreen} 
-        options={{ 
+      <Stack.Screen
+        name="PredictFlowers"
+        component={PredictFlowersScreen}
+        options={{
           title: 'Predict Flower Production',
           headerShown: true,
           presentation: 'modal'
         }}
       />
-      <Stack.Screen 
-        name="PredictionResults" 
-        component={PredictionResultsScreen} 
-        options={{ 
+      <Stack.Screen
+        name="PredictionResults"
+        component={PredictionResultsScreen}
+        options={{
           title: 'Prediction Results',
           headerShown: true
         }}
@@ -210,15 +210,15 @@ const CommunityStack = () => {
         contentStyle: { backgroundColor: theme.colors.background.primary },
       }}
     >
-      <Stack.Screen 
-        name="CommunityMain" 
-        component={CommunityScreen} 
+      <Stack.Screen
+        name="CommunityMain"
+        component={CommunityScreen}
         options={{ title: 'Community' }}
       />
-      <Stack.Screen 
-        name="CreatePost" 
+      <Stack.Screen
+        name="CreatePost"
         component={CreatePostScreen}
-        options={{ 
+        options={{
           headerShown: false,
           presentation: 'transparentModal',
           cardStyle: { backgroundColor: 'transparent' },
@@ -238,8 +238,8 @@ const CommunityStack = () => {
           }),
         }}
       />
-      <Stack.Screen 
-        name="PostDetail" 
+      <Stack.Screen
+        name="PostDetail"
         component={PostDetailScreen}
         options={{ headerShown: false }}
       />
@@ -262,12 +262,17 @@ const ProfileStack = ({ onAuthChange }) => {
         contentStyle: { backgroundColor: theme.colors.background.secondary },
       }}
     >
-      <Stack.Screen 
-        name="ProfileMain" 
+      <Stack.Screen
+        name="ProfileMain"
         options={{ title: 'Profile' }}
       >
         {(props) => <ProfileScreen {...props} onAuthChange={onAuthChange} />}
       </Stack.Screen>
+      <Stack.Screen
+        name="StorageSettings"
+        component={StorageSettingsScreen}
+        options={{ title: 'Storage & Data', headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
@@ -288,23 +293,23 @@ const AdminStack = () => {
         contentStyle: { backgroundColor: theme.colors.background.secondary },
       }}
     >
-      <Stack.Screen 
-        name="AdminDashboardMain" 
+      <Stack.Screen
+        name="AdminDashboardMain"
         component={AdminDashboardScreen}
         options={{ title: 'Admin Dashboard' }}
       />
-      <Stack.Screen 
-        name="UserManagement" 
+      <Stack.Screen
+        name="UserManagement"
         component={UserManagementScreen}
         options={{ title: 'User Management' }}
       />
-      <Stack.Screen 
-        name="UserDetail" 
+      <Stack.Screen
+        name="UserDetail"
         component={UserDetailScreen}
         options={{ title: 'User Details' }}
       />
-      <Stack.Screen 
-        name="ForumManagement" 
+      <Stack.Screen
+        name="ForumManagement"
         component={ForumManagementScreen}
         options={{ title: 'Forum Management' }}
       />

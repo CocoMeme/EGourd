@@ -19,6 +19,7 @@ export { LoginScreen } from './AccountScreens/LoginScreen';
 export { SignUpScreen } from './AccountScreens/SignUpScreen';
 export { ProfileScreen } from './AccountScreens/ProfileScreen';
 export * from './AccountScreens/VerifyScreen';
+export { StorageSettingsScreen } from './AccountScreens/StorageSettingsScreen';
 
 // Pollination Screens
 export { PollinationScreen } from './PolinationScreens/PollinationScreen';

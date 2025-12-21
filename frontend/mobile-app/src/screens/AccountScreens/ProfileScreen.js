@@ -235,7 +235,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
         await setDeveloperMode(value);
         Alert.alert(
           'Developer Mode ' + (value ? 'Enabled' : 'Disabled'),
-          value 
+          value
             ? 'Camera tab now shows model selection screen for testing quantized and unquantized Teachable Machine models.'
             : 'Camera tab restored to normal scan mode.',
           [{ text: 'OK' }]
@@ -266,6 +266,13 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
       value: 'Light',
       description: 'Switch between light and dark themes',
       action: () => Alert.alert('Appearance', 'Theme selection is coming soon.'),
+    },
+    {
+      id: 'storage',
+      icon: 'server-outline',
+      title: 'Data & Storage',
+      description: 'Manage cache and app data',
+      action: () => navigation.navigate('StorageSettings'),
     },
   ];
 
@@ -455,7 +462,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           ]}
           resizeMode="contain"
         />
-        
+
         <View style={styles.profileHeaderContainer}>
           <View style={styles.avatarContainer}>
             {user?.profilePicture ? (
