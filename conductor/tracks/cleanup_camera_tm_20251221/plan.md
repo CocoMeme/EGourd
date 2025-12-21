@@ -11,9 +11,9 @@
 ## Phase 2: Component Removal and Cleanup
 *Goal: Remove redundant components and references.*
 
-- [ ] Task: Remove `CameraScreenTM.js` file
-- [ ] Task: Remove `CameraScreenTM` imports/routes from `DeveloperNavigator.js`
-- [ ] Task: Remove `CameraScreenTM` export from `screens/index.js`
+- [x] Task: Remove `CameraScreenTM.js` file
+- [x] Task: Remove `CameraScreenTM` imports/routes from `DeveloperNavigator.js`
+- [x] Task: Remove `CameraScreenTM` export from `screens/index.js`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Component Removal and Cleanup' (Protocol in workflow.md)
 
 ## Phase 3: Final Verification
