@@ -7,7 +7,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { HomeScreen, CameraScreen, CameraScreenTM, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, StorageSettingsScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
+import { HomeScreen, CameraScreen, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, StorageSettingsScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 
@@ -120,14 +120,6 @@ const CameraStack = () => {
         name="CameraMain"
         component={CameraScreen}
         options={{ title: 'Scan Gourd' }}
-      />
-      <Stack.Screen
-        name="CameraScreenTM"
-        component={CameraScreenTM}
-        options={{
-          title: 'TM Test Mode',
-          headerShown: false
-        }}
       />
       <Stack.Screen
         name="Results"
