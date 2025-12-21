@@ -1,0 +1,22 @@
+# Track Plan: Cleanup CameraScreenTM and Model Services
+
+## Phase 1: Model Service Consolidation
+*Goal: Establish a single source of truth for the model service.*
+
+- [x] Task: Replace old `modelService.js` with `modelServiceTM.js` content and rename
+- [x] Task: Update `CameraScreen.js` to import from the consolidated `modelService.js`
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Model Service Consolidation' (Protocol in workflow.md)
+
+## Phase 2: Component Removal and Cleanup
+*Goal: Remove redundant components and references.*
+
+- [ ] Task: Remove `CameraScreenTM.js` file
+- [ ] Task: Remove `CameraScreenTM` imports/routes from `DeveloperNavigator.js`
+- [ ] Task: Remove `CameraScreenTM` export from `screens/index.js`
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Component Removal and Cleanup' (Protocol in workflow.md)
+
+## Phase 3: Final Verification
+*Goal: Ensure no regressions in the application.*
+
+- [ ] Task: Verify the build and navigation flow in developer mode
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Final Verification' (Protocol in workflow.md)

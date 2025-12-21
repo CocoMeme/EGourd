@@ -21,7 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy'; // Fixed deprecation
 import { theme } from '../../styles';
-import { modelServiceTM } from '../../services/modelServiceTM';
+import { modelService } from '../../services/modelService';
 // geminiService import removed if not strictly used in this file, but keeping just in case or for consistency. 
 // Actually, CameraScreenTM used it? Let's check original. Yes, imported but not seemingly used in the snippet I saw. 
 // Wait, CameraScreenTM had `import { geminiService } from '../../services/geminiService';` at line 23.
@@ -71,12 +71,12 @@ export const CameraScreen = ({ navigation }) => {
 
       try {
         console.log('🧪 Initializing TM model (CameraScreen)...');
-        await modelServiceTM.initialize();
+        await modelService.initialize();
         setIsModelReady(true);
         console.log('✅ TM model ready');
 
         // Warm up
-        await modelServiceTM.warmUp();
+        await modelService.warmUp();
         console.log('🔥 TM model warmed up');
       } catch (error) {
         console.error('❌ TM model initialization failed:', error);
@@ -194,7 +194,7 @@ export const CameraScreen = ({ navigation }) => {
         lastFrameUri.current = { uri: photo.uri, width: photo.width, height: photo.height };
 
         // Run prediction
-        const result = await modelServiceTM.quickPredict(photo.uri, photo.width, photo.height);
+        const result = await modelService.quickPredict(photo.uri, photo.width, photo.height);
 
         // DEBUG: Log real-time prediction
         // console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`);

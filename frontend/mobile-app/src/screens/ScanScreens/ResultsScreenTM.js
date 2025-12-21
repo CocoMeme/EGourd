@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
-import { modelServiceTM } from '../../services/modelServiceTM';
+import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
 
@@ -447,7 +447,7 @@ export const ResultsScreenTM = ({ route, navigation }) => {
       console.log('🤖 Running TM prediction...');
 
       // Logic Preservation: Pass width and height to fix aspect ratio distortion
-      const tmResult = await modelServiceTM.quickPredict(imageUri, width, height);
+      const tmResult = await modelService.quickPredict(imageUri, width, height);
       const topTmPrediction = tmResult.topPrediction;
 
       // DEBUG: Detailed TM prediction logging
