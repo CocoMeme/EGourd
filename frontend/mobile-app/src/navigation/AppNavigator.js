@@ -7,7 +7,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { HomeScreen, CameraScreen, ResultsScreen, ResultsScreenTM, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, StorageSettingsScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
+import { HomeScreen, CameraScreen, ResultsScreen, HistoryScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, StorageSettingsScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, PredictFlowersScreen, PredictionResultsScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 
@@ -125,11 +125,6 @@ const CameraStack = () => {
         name="Results"
         component={ResultsScreen}
         options={{ title: 'Scan Results' }}
-      />
-      <Stack.Screen
-        name="ResultsTM"
-        component={ResultsScreenTM}
-        options={{ title: 'TM Analysis Results', headerShown: false }}
       />
     </Stack.Navigator>
   );

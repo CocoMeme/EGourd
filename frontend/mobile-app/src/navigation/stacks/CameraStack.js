@@ -2,8 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import {
     CameraScreen,
-    ResultsScreen,
-    ResultsScreenTM
+    ResultsScreen
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -27,11 +26,6 @@ export const CameraStack = () => {
                 name="Results"
                 component={ResultsScreen}
                 options={{ title: 'Scan Results' }}
-            />
-            <Stack.Screen
-                name="ResultsTM"
-                component={ResultsScreenTM}
-                options={{ title: 'TM Analysis Results', headerShown: false }}
             />
         </Stack.Navigator>
     );

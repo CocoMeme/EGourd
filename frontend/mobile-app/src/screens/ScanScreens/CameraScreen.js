@@ -21,7 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy'; // Fixed deprecation
 import { theme } from '../../styles';
-import { modelService } from '../../services/modelService';
+import { modelService, CONFIDENCE_THRESHOLDS } from '../../services/modelService';
 // geminiService import removed if not strictly used in this file, but keeping just in case or for consistency. 
 // Actually, CameraScreenTM used it? Let's check original. Yes, imported but not seemingly used in the snippet I saw. 
 // Wait, CameraScreenTM had `import { geminiService } from '../../services/geminiService';` at line 23.
@@ -273,7 +273,10 @@ export const CameraScreen = ({ navigation }) => {
         }
 
         // Update predictions with animations
-        const topPredictions = result.predictions.slice(0, TOP_N);
+        // Filter: Always keep top 1, but for others require at least 40% confidence
+        const topPredictions = result.predictions
+          .filter((p, i) => i === 0 || p.percentage >= 40)
+          .slice(0, TOP_N);
 
         // Animate bars and positions smoothly
         topPredictions.forEach((pred, index) => {
@@ -392,7 +395,7 @@ export const CameraScreen = ({ navigation }) => {
         });
 
         console.log('✅ Image captured:', photo.uri);
-        navigation.navigate('ResultsTM', {
+        navigation.navigate('Results', {
           imageUri: photo.uri,
           width: photo.width,
           height: photo.height,
@@ -413,23 +416,36 @@ export const CameraScreen = ({ navigation }) => {
     // CRITICAL FIX: Move the file to a safe location to prevent "cleanup" race conditions
     // The scan interval might still be running a "zombie" tick that deletes frames
     try {
+      // Ensure target directory exists
+      const targetDir = FileSystem.cacheDirectory + 'captures/';
+      const dirInfo = await FileSystem.getInfoAsync(targetDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
+      }
+
       const filename = imageUri.split('/').pop();
-      const safeUri = FileSystem.cacheDirectory + 'safe_' + filename;
+      const safeUri = targetDir + 'safe_' + filename;
 
-      await FileSystem.moveAsync({
-        from: imageUri,
-        to: safeUri
-      });
-
-      console.log('🔒 Securely moved capture to:', safeUri.slice(-40));
-      imageUri = safeUri; // Use the new safe URI
+      // Check if source file exists
+      const sourceInfo = await FileSystem.getInfoAsync(imageUri);
+      if (sourceInfo.exists) {
+        await FileSystem.moveAsync({
+          from: imageUri,
+          to: safeUri
+        });
+        console.log('🔒 Securely moved capture to:', safeUri.slice(-40));
+        imageUri = safeUri; // Use the new safe URI
+      } else {
+        console.warn('⚠️ Source file for move not found:', imageUri);
+        // Continue with original URI if move fails (it might still work if not deleted)
+      }
     } catch (error) {
       console.error('⚠️ Failed to move capture to safe location:', error);
       // If move fails, we try with original, but it might crash
     }
 
-    // Navigate IMMEDIATELY
-    navigation.navigate('ResultsTM', {
+    // Navigate IMMEDIATELY to 'Results' (Fixed from 'ResultsTM')
+    navigation.navigate('Results', {
       imageUri: imageUri,
       width: imageWidth,
       height: imageHeight,

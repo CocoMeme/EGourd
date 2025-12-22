@@ -4,7 +4,7 @@
  * Replaces previous modelService and modelServiceTM
  * 
  * @module modelService
- * @version 3.1.0-consolidated
+ * @version 3.2.0-enhanced
  */
 
 import { loadTensorflowModel } from 'react-native-fast-tflite';
@@ -21,6 +21,13 @@ const TM_LABELS = [
   'Upo Smooth Female',         // 5
   'Upo Smooth Male',           // 6
 ];
+
+// Confidence Thresholds
+const CONFIDENCE_THRESHOLDS = {
+  HIGH: 80,
+  MODERATE: 70,
+  LOW: 0
+};
 
 class ModelService {
   constructor() {
@@ -105,8 +112,8 @@ class ModelService {
       
       if (sourceWidth && sourceHeight) {
         const minDimension = Math.min(sourceWidth, sourceHeight);
-        const originX = (sourceWidth - minDimension) / 2;
-        const originY = (sourceHeight - minDimension) / 2;
+        const originX = Math.floor((sourceWidth - minDimension) / 2);
+        const originY = Math.floor((sourceHeight - minDimension) / 2);
         
         actions.push({
           crop: {
@@ -215,10 +222,21 @@ class ModelService {
       
       const topPrediction = predictions[0];
       const processingTime = Date.now() - startTime;
+
+      // Determine confidence level
+      let confidenceLevel = 'low';
+      if (topPrediction.percentage >= CONFIDENCE_THRESHOLDS.HIGH) {
+        confidenceLevel = 'high';
+      } else if (topPrediction.percentage >= CONFIDENCE_THRESHOLDS.MODERATE) {
+        confidenceLevel = 'moderate';
+      }
       
       return {
         predictions,
-        topPrediction,
+        topPrediction: {
+          ...topPrediction,
+          confidenceLevel
+        },
         processingTime
       };
       
@@ -247,3 +265,4 @@ class ModelService {
 }
 
 export const modelService = new ModelService();
+export { CONFIDENCE_THRESHOLDS };

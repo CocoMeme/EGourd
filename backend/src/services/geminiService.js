@@ -121,8 +121,75 @@ function isAvailable() {
   return !!GEMINI_API_KEY;
 }
 
+/**
+ * Generate harvest prediction based on scan and environmental data
+ * @param {Object} scanData - Data from the classification scan
+ * @param {Object} environmentalData - Weather and location context
+ * @returns {Promise<Object>} Structured prediction
+ */
+async function generateHarvestPrediction(scanData, environmentalData = {}) {
+  if (!GEMINI_API_KEY || !model) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+
+  try {
+    const { prediction, confidence, variety } = scanData;
+    const { location, date, weather } = environmentalData;
+
+    const prompt = `
+      Analyze the following gourd scan data and environmental context to provide a harvest prediction:
+      
+      **Scan Data:**
+      - Plant/Fruit Type: ${prediction}
+      - Variety: ${variety || 'Unknown'}
+      - Confidence: ${confidence}
+      
+      **Context:**
+      - Date: ${date || new Date().toDateString()}
+      - Location: ${location || 'Unknown'}
+      - Weather Conditions: ${weather || 'Unknown'}
+
+      Based on this, provide a JSON response with the following structure:
+      {
+        "estimatedHarvestDate": "YYYY-MM-DD (or range)",
+        "daysToHarvest": number (approximate),
+        "confidence": number (0-100),
+        "rationale": "Explanation of why this date was chosen based on typical growth cycles and current conditions.",
+        "recommendations": ["List of 2-3 specific care tips for this stage"]
+      }
+      
+      Ensure the rationale cites specific growth stages for the identified gourd type.
+    `;
+
+    // specific model for json mode if needed, but standard model usually follows instructions well enough 
+    // or we can use generationConfig with responseMimeType if using 1.5+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const response = await result.response;
+    const text = response.text();
+    
+    // Parse JSON if it returns a stringified JSON block (sometimes wrapped in markdown code blocks)
+    let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
+    
+    return JSON.parse(jsonStr);
+
+  } catch (error) {
+    console.error('Gemini Harvest Prediction Error:', error.message);
+    return {
+      error: 'Failed to generate harvest prediction',
+      details: error.message
+    };
+  }
+}
+
 module.exports = { 
   generateMessage,
   getQuickSuggestions,
-  isAvailable
+  isAvailable,
+  generateHarvestPrediction
 };

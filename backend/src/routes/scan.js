@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const scanController = require('../controllers/scanContoller');
+const scanController = require('../controllers/scanController');
+
+// Route to get harvest prediction
+router.post('/predict-harvest', scanController.getHarvestPrediction);
 
 // Route to save a new scan
 router.post('/save', scanController.saveScan);

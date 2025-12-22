@@ -1,4 +1,5 @@
 const Scan = require('../models/Scan');
+const geminiService = require('../services/geminiService');
 
 // Save a new scan
 exports.saveScan = async (req, res) => {
@@ -98,5 +99,27 @@ exports.deleteScan = async (req, res) => {
   } catch (error) {
     console.error('Error deleting scan:', error);
     res.status(500).json({ message: 'Server error while deleting scan', error: error.message });
+  }
+};
+
+// Get harvest prediction from Gemini
+exports.getHarvestPrediction = async (req, res) => {
+  try {
+    const { scanData, environmentalData } = req.body;
+
+    if (!scanData || !scanData.prediction || !scanData.confidence) {
+        return res.status(400).json({ message: 'Missing required scan data for prediction' });
+    }
+
+    const prediction = await geminiService.generateHarvestPrediction(scanData, environmentalData || {});
+
+    if (prediction.error) {
+        return res.status(500).json({ message: prediction.error, details: prediction.details });
+    }
+
+    res.status(200).json(prediction);
+  } catch (error) {
+    console.error('Error getting harvest prediction:', error);
+    res.status(500).json({ message: 'Server error while generating prediction', error: error.message });
   }
 };

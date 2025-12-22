@@ -167,6 +167,32 @@ class ScanService {
   }
 
   /**
+   * Get harvest prediction from Gemini
+   * @param {Object} scanData - Data about the scanned flower
+   * @param {Object} environmentalData - Weather and location context
+   * @returns {Promise<Object>} The prediction object
+   */
+  async getHarvestPrediction(scanData, environmentalData = {}) {
+    try {
+      const response = await authService.authenticatedRequest('/scans/predict-harvest', {
+        method: 'POST',
+        body: JSON.stringify({ scanData, environmentalData }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get harvest prediction');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error getting harvest prediction:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete a scan
    * @param {string} scanId - The ID of the scan to delete
    * @returns {Promise<boolean>} True if deleted successfully
