@@ -3,7 +3,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import {
     PollinationScreen,
     PlantFormScreen,
-    PlantDetailScreen
+    PlantDetailScreen,
+    PredictFlowersScreen,
+    PredictionResultsScreen
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -39,6 +41,23 @@ export const PollinationStack = () => {
                 options={{
                     title: 'Plant Details',
                     headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="PredictFlowers"
+                component={PredictFlowersScreen}
+                options={{
+                    title: 'Predict Flower Production',
+                    headerShown: true,
+                    presentation: 'modal'
+                }}
+            />
+            <Stack.Screen
+                name="PredictionResults"
+                component={PredictionResultsScreen}
+                options={{
+                    title: 'Prediction Results',
+                    headerShown: true
                 }}
             />
         </Stack.Navigator>

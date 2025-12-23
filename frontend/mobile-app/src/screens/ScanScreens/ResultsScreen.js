@@ -367,6 +367,23 @@ export const ResultsScreen = ({ route, navigation }) => {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const handleBack = () => {
+    if (route.params?.returnTo) {
+      navigation.navigate(route.params.returnTo);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handleScanAgain = () => {
+    // If we came from Home (or other non-camera tab), we should switch to Camera tab
+    if (route.params?.returnTo && route.params?.returnTo !== 'CameraMain') {
+      navigation.navigate('Camera', { screen: 'CameraMain' });
+    } else {
+      navigation.goBack();
+    }
+  };
+
   // Handler: Save scan to backend
   const handleSave = async () => {
     if (!prediction) return;
@@ -420,7 +437,7 @@ export const ResultsScreen = ({ route, navigation }) => {
         'Success! 🎉',
         'Scan saved to your history!',
         [
-          { text: 'OK', onPress: () => navigation.goBack() }
+          { text: 'OK', onPress: () => handleBack() }
         ]
       );
     } catch (error) {
@@ -640,7 +657,7 @@ export const ResultsScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Analysis Results</Text>
@@ -800,7 +817,7 @@ export const ResultsScreen = ({ route, navigation }) => {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.actionButton, styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]}
-            onPress={() => navigation.goBack()}
+            onPress={handleScanAgain}
             disabled={isAnalyzing || isSaving}
           >
             <Ionicons name="camera" size={20} color="#FFF" />

@@ -95,26 +95,24 @@ export const HistoryScreen = ({ navigation, route }) => {
           source: scan.aiPrediction?.finalSource || 'tflite',
         };
 
-        // Navigate to the Results screen which is nested inside the Camera tab
-        navigation.navigate('Camera', {
-          screen: 'Results',
-          params: {
-            scanId: scan._id,
-            imageUri: scan.imageUrl,
-            isLoading: false, // Don't re-analyze, just display
-            // Pass all prediction data
-            prediction,
-            tmPrediction,
-            geminiPrediction,
-            // Pass comparison if available - map MongoDB field names to expected format
-            comparisonResult: scan.aiPrediction?.comparison ? {
-              agree: scan.aiPrediction.comparison.modelsAgree,
-              varietyMatch: scan.aiPrediction.comparison.varietyMatch,
-              genderMatch: scan.aiPrediction.comparison.genderMatch,
-              confidenceGap: scan.aiPrediction.comparison.confidenceGap,
-              recommendedSource: scan.aiPrediction.comparison.recommendation,
-            } : null,
-          }
+        // Navigate to the Results screen which is now also part of ProfileStack (via History)
+        navigation.navigate('Results', {
+          scanId: scan._id,
+          imageUri: scan.imageUrl,
+          isLoading: false, // Don't re-analyze, just display
+          returnTo: 'History',
+          // Pass all prediction data
+          prediction,
+          tmPrediction,
+          geminiPrediction,
+          // Pass comparison if available - map MongoDB field names to expected format
+          comparisonResult: scan.aiPrediction?.comparison ? {
+            agree: scan.aiPrediction.comparison.modelsAgree,
+            varietyMatch: scan.aiPrediction.comparison.varietyMatch,
+            genderMatch: scan.aiPrediction.comparison.genderMatch,
+            confidenceGap: scan.aiPrediction.comparison.confidenceGap,
+            recommendedSource: scan.aiPrediction.comparison.recommendation,
+          } : null,
         });
       } catch (error) {
         console.error('Navigation error:', error);

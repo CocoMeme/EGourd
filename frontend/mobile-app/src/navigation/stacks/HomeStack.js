@@ -8,7 +8,8 @@ import {
     ChatbotScreen,
     CommunityScreen,
     CreatePostScreen,
-    PostDetailScreen
+    PostDetailScreen,
+    ResultsScreen
 } from '../../screens';
 import { theme } from '../../styles';
 
@@ -55,6 +56,11 @@ export const HomeStack = ({ route }) => {
             <Stack.Screen
                 name="Chatbot"
                 component={ChatbotScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="Results"
+                component={ResultsScreen}
                 options={{ headerShown: false }}
             />
             {/* Community screens accessible from Home mainly for viewing specific content from feeds on home if any */}

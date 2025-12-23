@@ -353,6 +353,7 @@ export const CameraScreen = ({ navigation }) => {
           width: photo.width,
           height: photo.height,
           isLoading: true,
+          returnTo: 'CameraMain',
         });
       } catch (error) {
         console.error('❌ Capture failed:', error);
@@ -373,6 +374,7 @@ export const CameraScreen = ({ navigation }) => {
       width: imageWidth,
       height: imageHeight,
       isLoading: true,
+      returnTo: 'CameraMain',
     });
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
