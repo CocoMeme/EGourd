@@ -10,7 +10,7 @@ const scanSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  
+
   // ===== CORE PREDICTION DATA (backward compatible) =====
   prediction: {
     type: String,
@@ -20,15 +20,15 @@ const scanSchema = new mongoose.Schema({
     type: Number,
     required: true  // Main confidence score (0-100)
   },
-  
+
   // ===== MULTI-CLASS SUPPORT =====
   variety: {
     type: String,
-    enum: ['Ampalaya Bilog', 'Patola', null],
+    enum: ['Ampalaya Bilog', 'Patola', 'Upo (Smooth)', null],
     default: null,
     description: 'Gourd variety detected'
   },
-  
+
   // ===== VALIDATION TRACKING =====
   validationStatus: {
     type: String,
@@ -36,7 +36,7 @@ const scanSchema = new mongoose.Schema({
     default: 'tflite_only',
     description: 'How the prediction was validated (tflite_only: on-device only, validated: both models agree, manual_override: user chose between conflicting predictions, conflict: models disagreed but not yet resolved)'
   },
-  
+
   // ===== AI PREDICTION METADATA =====
   aiPrediction: {
     // Which model's prediction was ultimately used
@@ -46,7 +46,7 @@ const scanSchema = new mongoose.Schema({
       default: 'tflite',
       description: 'Source of final prediction'
     },
-    
+
     // TFLite model prediction data
     tflite: {
       variety: String,
@@ -56,7 +56,7 @@ const scanSchema = new mongoose.Schema({
       processingTime: Number,    // Milliseconds
       modelType: String          // e.g., 'MobileNetV2 (Multi-Class)'
     },
-    
+
     // Gemini AI prediction data (if available)
     gemini: {
       variety: String,
@@ -65,9 +65,36 @@ const scanSchema = new mongoose.Schema({
       reasoning: String,         // AI's explanation of classification
       keyFeatures: [String],     // Features identified by Gemini
       processingTime: Number,    // Milliseconds
-      modelVersion: String       // e.g., 'gemini-1.5-flash'
+      modelVersion: String,      // e.g., 'gemini-2.5-flash'
+
+      // Extended Gemini analysis data
+      flowerQuality: {
+        overallScore: Number,
+        petalCondition: String,
+        sizeAssessment: String,
+        healthIndicators: [String]
+      },
+      harvestPrediction: {
+        daysToHarvest: Number,
+        currentStage: String,
+        pollinationReady: Boolean,
+        optimalHarvestWindow: String,
+        bestPollinationTime: String
+      },
+      qualityMetrics: {
+        petalQuality: Number,
+        colorScore: Number,
+        developmentScore: Number,
+        healthScore: Number,
+        pollinationPotential: Number
+      },
+      observations: {
+        strengths: [String],
+        concerns: [String],
+        recommendations: [String]
+      }
     },
-    
+
     // Comparison result when both models ran
     comparison: {
       modelsAgree: Boolean,      // Did both models give same result?
@@ -77,7 +104,7 @@ const scanSchema = new mongoose.Schema({
       recommendation: String     // Which model was recommended ('tflite', 'gemini', or 'manual')
     }
   },
-  
+
   // ===== EXISTING FIELDS (unchanged) =====
   diseaseInfo: {
     type: Object,

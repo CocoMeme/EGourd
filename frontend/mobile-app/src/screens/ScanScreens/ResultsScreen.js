@@ -116,7 +116,7 @@ const HarvestTimeline = ({ data, backendData }) => {
             Est. harvest: <Text style={styles.harvestHighlight}>{backendData?.daysToHarvest || data?.daysToHarvest || '--'} days</Text>
           </Text>
         </View>
-        
+
         {(backendData?.estimatedHarvestDate || data?.optimalHarvestWindow) && (
           <View style={styles.harvestRow}>
             <Ionicons name="time-outline" size={20} color={theme.colors.primary} />
@@ -135,10 +135,10 @@ const HarvestTimeline = ({ data, backendData }) => {
 
         {backendData?.recommendations?.length > 0 && (
           <View style={styles.backendRecsContainer}>
-             <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
-             {backendData.recommendations.map((rec, i) => (
-               <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
-             ))}
+            <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
+            {backendData.recommendations.map((rec, i) => (
+              <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
+            ))}
           </View>
         )}
 
@@ -372,7 +372,7 @@ export const ResultsScreen = ({ route, navigation }) => {
     if (!prediction) return;
     setIsSaving(true);
     try {
-      // Construct payload compatible with backend (similar to ResultsScreen.js)
+      // Construct payload compatible with backend
       const scanData = {
         prediction: prediction.gender || 'unknown',
         confidence: prediction.confidence || 0,
@@ -387,16 +387,33 @@ export const ResultsScreen = ({ route, navigation }) => {
             variety: tmPrediction?.variety,
             gender: tmPrediction?.gender,
             confidence: tmPrediction?.confidence,
+            modelType: tmPrediction?.modelType,
+            processingTime: tmPrediction?.processingTime,
           },
-                      gemini: geminiPrediction ? {
-                      variety: geminiPrediction.variety,
-                      gender: geminiPrediction.gender,
-                      confidence: geminiPrediction.confidence,
-                      reasoning: geminiPrediction.geminiData?.reasoning,
-                    } : null,
-                    harvestPrediction: backendPrediction
-                  }
-                };
+          gemini: geminiPrediction ? {
+            variety: geminiPrediction.variety,
+            gender: geminiPrediction.gender,
+            confidence: geminiPrediction.confidence,
+            reasoning: geminiPrediction.geminiData?.reasoning,
+            keyFeatures: geminiPrediction.geminiData?.keyFeatures || [],
+            modelVersion: geminiPrediction.modelVersion || 'gemini-2.5-flash',
+            processingTime: geminiPrediction.processingTime,
+            // Extended Gemini analysis data
+            flowerQuality: geminiPrediction.geminiData?.flowerQuality,
+            harvestPrediction: geminiPrediction.geminiData?.harvestPrediction,
+            qualityMetrics: geminiPrediction.geminiData?.qualityMetrics,
+            observations: geminiPrediction.geminiData?.observations,
+          } : null,
+          harvestPrediction: backendPrediction,
+          comparison: comparisonResult ? {
+            modelsAgree: comparisonResult.agree,
+            varietyMatch: comparisonResult.varietyMatch,
+            genderMatch: comparisonResult.genderMatch,
+            confidenceGap: comparisonResult.confidenceGap,
+            recommendation: comparisonResult.recommendedSource,
+          } : null,
+        }
+      };
       await scanService.saveScan(scanData, imageUri);
 
       Alert.alert(
@@ -431,9 +448,21 @@ export const ResultsScreen = ({ route, navigation }) => {
     return 'unknown';
   };
 
-  // Run analysis when screen loads (if in loading state)
+  // Sync state when route params change (important for navigation from history)
   useEffect(() => {
-    if (initialLoading && imageUri) {
+    // Update all states from route params
+    setTmPrediction(route.params.tmPrediction || null);
+    setGeminiPrediction(route.params.geminiPrediction || null);
+    setComparisonResult(route.params.comparisonResult || null);
+    setPrediction(route.params.prediction || null);
+    setIsAnalyzing(route.params.isLoading || false);
+    setAnalysisError(null);
+    setBackendPrediction(null);
+
+    // Reset fade animation
+    fadeAnim.setValue(0);
+
+    if (route.params.isLoading && route.params.imageUri) {
       runAnalysis();
     } else {
       // Fade in results immediately if already loaded
@@ -443,7 +472,7 @@ export const ResultsScreen = ({ route, navigation }) => {
         useNativeDriver: true,
       }).start();
     }
-  }, []);
+  }, [route.params.imageUri, route.params.scanId]); // Re-run when image or scan ID changes
 
   // Spin animation for loading
   useEffect(() => {
@@ -719,8 +748,8 @@ export const ResultsScreen = ({ route, navigation }) => {
             {hasGeminiData && !isNotFlower && (
               <>
                 {/* Harvest Timeline */}
-                <HarvestTimeline 
-                  data={geminiData.harvestPrediction} 
+                <HarvestTimeline
+                  data={geminiData.harvestPrediction}
                   backendData={backendPrediction}
                 />
 

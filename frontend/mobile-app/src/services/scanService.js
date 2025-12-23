@@ -1,7 +1,39 @@
 import { API_BASE_URL } from '../config/api';
 import { authService } from './authService';
+import * as ImageManipulator from 'expo-image-manipulator';
+
+// Max dimensions and quality for upload compression
+const MAX_UPLOAD_WIDTH = 1200;
+const MAX_UPLOAD_HEIGHT = 1200;
+const UPLOAD_QUALITY = 0.7; // 70% quality - good balance of size and quality
 
 class ScanService {
+  /**
+   * Compress an image before upload to stay under backend size limit
+   * @param {string} imageUri - The local URI of the image
+   * @returns {Promise<string>} The URI of the compressed image
+   */
+  async compressImage(imageUri) {
+    try {
+      console.log('📦 Compressing image for upload...');
+
+      const result = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: MAX_UPLOAD_WIDTH, height: MAX_UPLOAD_HEIGHT } }],
+        {
+          compress: UPLOAD_QUALITY,
+          format: ImageManipulator.SaveFormat.JPEG
+        }
+      );
+
+      console.log('✅ Image compressed successfully');
+      return result.uri;
+    } catch (error) {
+      console.warn('⚠️ Image compression failed, using original:', error.message);
+      return imageUri; // Fallback to original if compression fails
+    }
+  }
+
   /**
    * Upload an image to the server
    * @param {string} imageUri - The local URI of the image
@@ -14,15 +46,16 @@ class ScanService {
         throw new Error('User not authenticated');
       }
 
+      // Compress the image before upload to stay under 5MB limit
+      const compressedUri = await this.compressImage(imageUri);
+
       const formData = new FormData();
-      const filename = imageUri.split('/').pop();
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      const filename = `scan_${Date.now()}.jpg`; // Use consistent naming
 
       formData.append('image', {
-        uri: imageUri,
+        uri: compressedUri,
         name: filename,
-        type,
+        type: 'image/jpeg',
       });
 
       const response = await fetch(`${API_BASE_URL}/uploads/image`, {
@@ -56,7 +89,7 @@ class ScanService {
   async saveScan(scanData, imageUri = null) {
     try {
       let user = authService.getCurrentUser();
-      
+
       // If user is not loaded but we might have a token, try to fetch profile
       if (!user && authService.getToken()) {
         const result = await authService.fetchProfile();
@@ -111,7 +144,7 @@ class ScanService {
   async getScanHistory() {
     try {
       let user = authService.getCurrentUser();
-      
+
       // If user is not loaded but we might have a token, try to fetch profile
       if (!user && authService.getToken()) {
         const result = await authService.fetchProfile();

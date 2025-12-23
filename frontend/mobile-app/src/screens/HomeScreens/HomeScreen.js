@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { 
-  WelcomeHeader, 
-  QuickActionCard, 
+import {
+  WelcomeHeader,
+  QuickActionCard,
   RecentScanCard,
   TipCard,
   CustomAlert,
@@ -25,10 +25,10 @@ export const HomeScreen = ({ navigation, route }) => {
     readyGourds: 0,
     pollinationsCount: 0,
   });
-  
+
   // User state
   const [user, setUser] = useState(null);
-  
+
   // Load user data
   useEffect(() => {
     loadUserData();
@@ -50,7 +50,7 @@ export const HomeScreen = ({ navigation, route }) => {
 
   const handleMenuPress = () => {
     Alert.alert(
-      'Menu Options', 
+      'Menu Options',
       'What would you like to do?',
       [
         { text: 'How to Use', onPress: () => navigation.navigate('HowToUse') },
@@ -61,7 +61,7 @@ export const HomeScreen = ({ navigation, route }) => {
       ]
     );
   };
-  
+
   const [recentScans, setRecentScans] = useState([]);
   const [loadingScans, setLoadingScans] = useState(true);
 
@@ -72,7 +72,7 @@ export const HomeScreen = ({ navigation, route }) => {
   const [selectedNews, setSelectedNews] = useState(null);
   const [loadingNews, setLoadingNews] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const summaryStats = [
     { id: 'total', label: 'Total scans', value: stats.totalScans || 0 },
     { id: 'ready', label: 'Ready', value: stats.readyGourds || 0 },
@@ -134,12 +134,12 @@ export const HomeScreen = ({ navigation, route }) => {
       const statsData = await pollinationService.getDashboardStats();
       if (statsData.success) {
         const { statusBreakdown } = statsData.data;
-        
+
         // Calculate specific counts from breakdown
         // statusBreakdown is array of { _id: 'status', count: number }
         const pollinatedCount = statusBreakdown.find(s => s._id === 'pollinated')?.count || 0;
         const fruitingCount = statusBreakdown.find(s => s._id === 'fruiting')?.count || 0;
-        
+
         setStats(prev => ({
           ...prev,
           readyGourds: fruitingCount,
@@ -155,7 +155,7 @@ export const HomeScreen = ({ navigation, route }) => {
     try {
       setLoadingScans(true);
       const history = await scanService.getScanHistory();
-      
+
       // Update total scans count
       setStats(prev => ({
         ...prev,
@@ -174,7 +174,7 @@ export const HomeScreen = ({ navigation, route }) => {
   const fetchNews = async () => {
     try {
       setLoadingNews(true);
-      
+
       // Fetch latest news (limited to 5)
       const newsResponse = await getAllNews({ limit: 5 });
       if (newsResponse.success) {
@@ -205,28 +205,28 @@ export const HomeScreen = ({ navigation, route }) => {
     setRefreshing(true);
     try {
       console.log('🔄 Refreshing data and reconnecting to backend...');
-      
+
       // Check backend connection first
       const connectionCheck = await connectionService.checkBackendConnection();
-      
+
       if (!connectionCheck.connected) {
         console.log('⚠️  Backend not connected, attempting to reconnect...');
-        
+
         // Try to reconnect with retries
         const reconnectResult = await connectionService.reconnectToBackend(3, 2000);
-        
+
         if (!reconnectResult.success) {
           throw new Error('Failed to reconnect to backend server');
         }
-        
+
         console.log(`✅ Reconnected after ${reconnectResult.attempts} attempt(s)`);
       } else {
         console.log('✅ Backend connection is healthy');
       }
-      
+
       // Reload user data
       await loadUserData();
-      
+
       // Reload news data
       await fetchNews();
 
@@ -235,23 +235,23 @@ export const HomeScreen = ({ navigation, route }) => {
 
       // Reload pollination stats
       await fetchPollinationStats();
-      
+
       console.log('✅ Refresh completed successfully');
-      
+
     } catch (error) {
       console.error('❌ Error refreshing data:', error);
-      
+
       Alert.alert(
         'Connection Error',
         'Unable to reconnect to the server. Please check your connection and try again.',
         [
-          { 
-            text: 'Retry', 
-            onPress: () => onRefresh() 
+          {
+            text: 'Retry',
+            onPress: () => onRefresh()
           },
-          { 
-            text: 'Cancel', 
-            style: 'cancel' 
+          {
+            text: 'Cancel',
+            style: 'cancel'
           }
         ]
       );
@@ -273,7 +273,7 @@ export const HomeScreen = ({ navigation, route }) => {
           buttons: [],
         });
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [route?.params?.showWelcome]);
@@ -287,7 +287,7 @@ export const HomeScreen = ({ navigation, route }) => {
           setSelectedNews(popupNews[currentPopupIndex]);
         }
       }, 800);
-      
+
       return () => clearTimeout(timer);
     }
   }, [alert.visible, popupNews, currentPopupIndex, route?.params?.showWelcome]);
@@ -308,7 +308,7 @@ export const HomeScreen = ({ navigation, route }) => {
     if (currentPopupIndex < popupNews.length - 1) {
       const nextIndex = currentPopupIndex + 1;
       setCurrentPopupIndex(nextIndex);
-      
+
       // Show next popup news after a short delay
       setTimeout(() => {
         setSelectedNews(popupNews[nextIndex]);
@@ -334,26 +334,67 @@ export const HomeScreen = ({ navigation, route }) => {
   };
 
   const handleScanPress = (scan) => {
+    // Build tmPrediction from saved data
+    const tmPrediction = scan.aiPrediction?.tflite ? {
+      variety: scan.aiPrediction.tflite.variety,
+      gender: scan.aiPrediction.tflite.gender,
+      confidence: scan.aiPrediction.tflite.confidence,
+      modelType: scan.aiPrediction.tflite.modelType || 'Teachable Machine',
+      processingTime: scan.aiPrediction.tflite.processingTime || 0,
+    } : null;
+
+    // Build geminiPrediction from saved data
+    const geminiPrediction = scan.aiPrediction?.gemini ? {
+      variety: scan.aiPrediction.gemini.variety,
+      gender: scan.aiPrediction.gemini.gender,
+      confidence: scan.aiPrediction.gemini.confidence,
+      geminiData: {
+        reasoning: scan.aiPrediction.gemini.reasoning,
+        keyFeatures: scan.aiPrediction.gemini.keyFeatures || [],
+        flowerQuality: scan.aiPrediction.gemini.flowerQuality,
+        harvestPrediction: scan.aiPrediction.gemini.harvestPrediction || scan.aiPrediction.harvestPrediction,
+        qualityMetrics: scan.aiPrediction.gemini.qualityMetrics,
+        observations: scan.aiPrediction.gemini.observations,
+      },
+      modelType: scan.aiPrediction.gemini.modelVersion || 'Gemini AI',
+    } : null;
+
+    // Build the main prediction object
+    const prediction = {
+      gender: scan.prediction,
+      variety: scan.variety,
+      confidence: scan.confidence,
+      isNotFlower: scan.prediction === 'unknown' || scan.prediction === 'not_flower',
+      timestamp: scan.date,
+      source: scan.aiPrediction?.finalSource || 'tflite',
+    };
+
+    // Navigate to the Results screen which is nested inside the Camera tab
     navigation.navigate('Camera', {
       screen: 'Results',
       params: {
         scanId: scan._id,
         imageUri: scan.imageUrl,
-        prediction: {
-          gender: scan.prediction,
-          confidence: scan.confidence,
-          timestamp: scan.date,
-          modelType: 'MobileNetV2',
-          modelVersion: '1.0.0',
-          processingTime: 0
-        }
+        isLoading: false, // Don't re-analyze, just display
+        // Pass all prediction data
+        prediction,
+        tmPrediction,
+        geminiPrediction,
+        // Pass comparison if available - map MongoDB field names to expected format
+        comparisonResult: scan.aiPrediction?.comparison ? {
+          agree: scan.aiPrediction.comparison.modelsAgree,
+          varietyMatch: scan.aiPrediction.comparison.varietyMatch,
+          genderMatch: scan.aiPrediction.comparison.genderMatch,
+          confidenceGap: scan.aiPrediction.comparison.confidenceGap,
+          recommendedSource: scan.aiPrediction.comparison.recommendation,
+        } : null,
       }
     });
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
@@ -367,21 +408,21 @@ export const HomeScreen = ({ navigation, route }) => {
           />
         }
       >
-        <WelcomeHeader 
-          userName={userName} 
+        <WelcomeHeader
+          userName={userName}
           user={user}
           navigation={navigation}
           onNotificationPress={handleNotificationPress}
           onMenuPress={handleMenuPress}
           isRefreshing={refreshing}
         />
-        
+
         <View style={styles.content}>
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>Quick tools</Text>
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.toolsScrollContent}
             >

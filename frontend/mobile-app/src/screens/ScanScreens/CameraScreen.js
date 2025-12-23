@@ -1,8 +1,7 @@
 /**
- * CameraScreen - Teachable Machine Scanner (Replaced old Gemini Camera)
+ * CameraScreen - Teachable Machine Scanner
  * Real-time flower classification using TM floating point model
  * Features: Real-time scanning, Capture with Gemini AI analysis
- * Storage Optimization: Auto-cleanup of unused frames
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -19,20 +18,13 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system/legacy'; // Fixed deprecation
 import { theme } from '../../styles';
-import { modelService, CONFIDENCE_THRESHOLDS } from '../../services/modelService';
-// geminiService import removed if not strictly used in this file, but keeping just in case or for consistency. 
-// Actually, CameraScreenTM used it? Let's check original. Yes, imported but not seemingly used in the snippet I saw. 
-// Wait, CameraScreenTM had `import { geminiService } from '../../services/geminiService';` at line 23.
+import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const TOP_N = 3; // Show top 3 predictions
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Cleanup Configuration
-const RECENT_FRAMES_BUFFER = 7; // Keep last 7 frames for stability checks
 
 export const CameraScreen = ({ navigation }) => {
   const [facing, setFacing] = useState('back');
@@ -70,7 +62,7 @@ export const CameraScreen = ({ navigation }) => {
       stopScanning();
 
       try {
-        console.log('🧪 Initializing TM model (CameraScreen)...');
+        console.log('🧪 Initializing TM model...');
         await modelService.initialize();
         setIsModelReady(true);
         console.log('✅ TM model ready');
@@ -128,34 +120,6 @@ export const CameraScreen = ({ navigation }) => {
   }, [isModelReady, isCapturing]);
 
   /**
-   * Helper: Delete image file from storage if it's not needed anymore
-   */
-  const deleteFrame = async (uri) => {
-    if (!uri) return;
-
-    // Safety: Don't delete if it's the currently tracked "Best Frame"
-    if (uri === bestFrame.current.uri) return;
-
-    // Safety: Don't delete if it's currently in the "Recent Predictions" buffer
-    // (Note: we usually call this on the frame that *just left* the buffer, so strictly it's not there,
-    // but good to be safe if calling from elsewhere)
-    const isRecent = recentPredictions.current.some(p => p.uri === uri);
-    if (isRecent) return;
-
-    // Safety: Don't delete if we are capturing and this is the frame we might need
-    // (This is a simplified check, but strict stopping of scanInterval is the main fix)
-    if (isCapturing) return;
-
-    try {
-      // usage of getInfoAsync is deprecated and unnecessary with idempotent: true
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-      // console.log('🗑️ Cleanup:', uri.split('/').pop());
-    } catch (error) {
-      console.log('⚠️ Cleanup failed (ignored):', error.message);
-    }
-  };
-
-  /**
    * Start real-time scanning
    */
   const startScanning = useCallback(() => {
@@ -180,30 +144,23 @@ export const CameraScreen = ({ navigation }) => {
         });
 
         // Logic Preservation: Check if stopped during async capture
-        if (!scanIntervalRef.current) {
-          // If we stopped, delete this stray frame immediately
-          deleteFrame(photo.uri);
-          return;
-        }
+        if (!scanIntervalRef.current) return;
 
         // Save the last frame URI for instant capture
-        // Check if we need to delete the PREVIOUS lastFrameUri (if it's not best/recent)
-        if (lastFrameUri.current.uri && lastFrameUri.current.uri !== photo.uri) {
-          deleteFrame(lastFrameUri.current.uri);
-        }
         lastFrameUri.current = { uri: photo.uri, width: photo.width, height: photo.height };
 
         // Run prediction
         const result = await modelService.quickPredict(photo.uri, photo.width, photo.height);
 
         // DEBUG: Log real-time prediction
-        // console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`);
+        console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`, '| Frame:', photo.uri.slice(-20));
 
         // Track stability: count consecutive same predictions
         const currentLabel = result.topPrediction.label;
         const currentConfidence = result.topPrediction.percentage;
 
         // Add to recent predictions 
+        // Logic Preservation: Increased buffer to 7 for better "recent" selection
         recentPredictions.current.push({
           label: currentLabel,
           confidence: currentConfidence,
@@ -211,17 +168,12 @@ export const CameraScreen = ({ navigation }) => {
           width: photo.width,
           height: photo.height
         });
-
-        // CLEANUP: If buffer full, remove oldest and delete its file
-        if (recentPredictions.current.length > RECENT_FRAMES_BUFFER) {
-          const removed = recentPredictions.current.shift();
-          // Safety: Check if scanning is still active before deleting (though deleteFrame has checks too)
-          if (scanIntervalRef.current && removed && removed.uri) {
-            deleteFrame(removed.uri);
-          }
+        if (recentPredictions.current.length > 7) {
+          recentPredictions.current.shift();
         }
 
         // Check for stable prediction 
+        // Logic Preservation: Increased to 5 frames for better stability
         const recent = recentPredictions.current;
         const lastFive = recent.slice(-5);
         const stableNow = lastFive.length >= 5 && lastFive.every(p => p.label === currentLabel);
@@ -231,8 +183,6 @@ export const CameraScreen = ({ navigation }) => {
 
         // Update best frame if:
         if (stableNow && currentLabel !== 'Not Flower') {
-          const oldBestUri = bestFrame.current.uri;
-
           if (currentLabel === bestFrame.current.label) {
             // Same label - update if higher confidence
             if (currentConfidence > bestFrame.current.confidence) {
@@ -245,11 +195,6 @@ export const CameraScreen = ({ navigation }) => {
                 count: lastFive.length
               };
               console.log('🏆 BEST FRAME updated (higher confidence):', currentLabel, `${currentConfidence.toFixed(1)}%`);
-
-              // If we replaced the best frame, the old one might be garbage now
-              if (oldBestUri && oldBestUri !== photo.uri) {
-                deleteFrame(oldBestUri);
-              }
             }
           } else {
             // Different label - update if this stable prediction is more confident
@@ -263,20 +208,12 @@ export const CameraScreen = ({ navigation }) => {
                 count: lastFive.length
               };
               console.log('🏆 BEST FRAME changed to:', currentLabel, `${currentConfidence.toFixed(1)}%`);
-
-              // If we replaced the best frame, the old one might be garbage now
-              if (oldBestUri && oldBestUri !== photo.uri) {
-                deleteFrame(oldBestUri);
-              }
             }
           }
         }
 
         // Update predictions with animations
-        // Filter: Always keep top 1, but for others require at least 40% confidence
-        const topPredictions = result.predictions
-          .filter((p, i) => i === 0 || p.percentage >= 40)
-          .slice(0, TOP_N);
+        const topPredictions = result.predictions.slice(0, TOP_N);
 
         // Animate bars and positions smoothly
         topPredictions.forEach((pred, index) => {
@@ -327,6 +264,28 @@ export const CameraScreen = ({ navigation }) => {
   }, []);
 
   /**
+   * Helper: Extract variety from TM label
+   */
+  const getVarietyFromLabel = (label) => {
+    if (!label) return null;
+    if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
+    if (label.includes('Patola')) return 'Patola';
+    if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label === 'Not Flower') return null;
+    return null;
+  };
+
+  /**
+   * Helper: Extract gender from TM label
+   */
+  const getGenderFromLabel = (label) => {
+    if (!label) return 'unknown';
+    if (label.includes('Male')) return 'male';
+    if (label.includes('Female')) return 'female';
+    return 'unknown';
+  };
+
+  /**
    * Handle Capture - Uses the BEST STABLE frame from real-time scanning
    * Prioritizes frames where the prediction was stable
    * Falls back to best recent frame, then last frame
@@ -337,14 +296,8 @@ export const CameraScreen = ({ navigation }) => {
     // Set capturing flag to prevent double-taps
     setIsCapturing(true);
 
-    // CRITICAL FIX: Stop scanning FIRST and ensure it knows we are capturing
-    // This prevents any pending intervals from deleting our frame
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
-      setIsScanning(false);
-      console.log('🛑 Stopped scanning immediately for capture');
-    }
+    // Stop scanning FIRST
+    stopScanning();
 
     console.log('📸 Capturing image...');
 
@@ -413,48 +366,13 @@ export const CameraScreen = ({ navigation }) => {
     console.log('🟢 CAPTURE:', selectionReason);
     console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
 
-    // CRITICAL FIX: Move the file to a safe location to prevent "cleanup" race conditions
-    // The scan interval might still be running a "zombie" tick that deletes frames
-    try {
-      // Ensure target directory exists
-      const targetDir = FileSystem.cacheDirectory + 'captures/';
-      const dirInfo = await FileSystem.getInfoAsync(targetDir);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
-      }
-
-      const filename = imageUri.split('/').pop();
-      const safeUri = targetDir + 'safe_' + filename;
-
-      // Check if source file exists
-      const sourceInfo = await FileSystem.getInfoAsync(imageUri);
-      if (sourceInfo.exists) {
-        await FileSystem.moveAsync({
-          from: imageUri,
-          to: safeUri
-        });
-        console.log('🔒 Securely moved capture to:', safeUri.slice(-40));
-        imageUri = safeUri; // Use the new safe URI
-      } else {
-        console.warn('⚠️ Source file for move not found:', imageUri);
-        // Continue with original URI if move fails (it might still work if not deleted)
-      }
-    } catch (error) {
-      console.error('⚠️ Failed to move capture to safe location:', error);
-      // If move fails, we try with original, but it might crash
-    }
-
-    // Navigate IMMEDIATELY to 'Results' (Fixed from 'ResultsTM')
+    // Navigate IMMEDIATELY - no waiting!
+    // Logic Preservation: Passing width and height to fix distortion
     navigation.navigate('Results', {
       imageUri: imageUri,
       width: imageWidth,
       height: imageHeight,
       isLoading: true,
-      // Pass the prediction we *already* have to save time? 
-      // Actually ResultsScreenTM re-runs analysis. 
-      // If we want to skip re-running TM, we could pass it.
-      // But user wants "keep all progress on logic", and current logic in ResultsScreenTM runs it.
-      // So we keep it as is.
     });
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
@@ -521,19 +439,19 @@ export const CameraScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* 1. Header Removed as requested */}
-      { /* <View style={styles.header}> ... </View> */}
-
-      <View style={styles.settingsOverlay}>
-        <TouchableOpacity style={styles.backButtonOverlay} onPress={() => navigation.goBack()}>
+      {/* 1. Header (Fixed at top) */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <View style={[styles.badgeOverlay, { backgroundColor: '#4CAF50' }]}>
-          <Text style={styles.badgeText}>Real-time Scan</Text>
+        <View style={styles.headerCenter}>
+          <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
+            <Text style={styles.badgeText}>TM Model</Text>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.settingsButtonOverlay} onPress={toggleCameraFacing}>
+        <TouchableOpacity style={styles.settingsButton} onPress={toggleCameraFacing}>
           <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -642,34 +560,31 @@ const styles = StyleSheet.create({
     paddingTop: 40, // Status bar padding
   },
 
-  // Header Overlay replacing the old header block
-  settingsOverlay: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    zIndex: 50, // Higher than camera
+  // Header
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    height: 80,
+    zIndex: 10,
   },
-  backButtonOverlay: {
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Semi-transparent bg for visibility
-    borderRadius: 20,
+  headerCenter: {
+    alignItems: 'center',
   },
-  settingsButtonOverlay: {
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 20,
-  },
-  badgeOverlay: {
+  badge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  settingsButton: {
+    padding: 8,
   },
 
   // Camera Container
@@ -883,5 +798,9 @@ const styles = StyleSheet.create({
   },
   captureInnerStable: {
     backgroundColor: 'rgba(76, 175, 80, 0.2)',
+  },
+  captureHintStable: {
+    color: '#4CAF50',
+    fontWeight: '600',
   },
 });
