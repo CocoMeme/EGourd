@@ -9,6 +9,7 @@
 5. **User Experience First:** Every decision should prioritize user experience
 6. **Automated Track Commits:** A SINGLE automated commit and push MUST be performed by the agent ONLY after the entire track is completed and archived. No intermediate commits.
 7. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools.
+8. **Resilient AI by Default:** All AI integrations must implement tiered fallbacks (e.g., Smartest -> Fastest) to handle usage limits automatically without user intervention.
 
 ## Task Workflow
 
@@ -23,7 +24,7 @@ All tasks follow a high-velocity lifecycle:
 3. **Implementation & Verification (Consolidated):**
    - Create or update the relevant test file.
    - Implement the application code.
-   - **Entry Point Check:** When creating, deleting, or moving mobile app files, always verify `frontend/mobile-app/index.js` and other relevant index files (e.g., in `screens` or `components`) to ensure no routing or import errors occur.
+   - **Entry Point & Resiliency Check:** When creating, deleting, or moving mobile app files, always verify `frontend/mobile-app/index.js` and other relevant index files. For AI tasks, ensure tiered model fallbacks are implemented.
    - **Targeted Testing:** Execute *only* the specific test file(s) related to the current tasks (e.g., `node path/to/spec.js`). 
    - Ensure tests pass and verify behavior matches the spec.
 
@@ -59,3 +60,12 @@ All tasks follow a high-velocity lifecycle:
 2.  **Automated Commit & Push:** 
     - Generate a conventional commit message (e.g., `feat: [Track Name] implementation`).
     - Run `git commit -m "..."` and `git push`.
+
+## Quality Gates
+
+- [ ] Targeted tests pass
+- [ ] Code coverage >80%
+- [ ] Follows project style guidelines
+- [ ] AI features implement tiered fallbacks
+- [ ] Public functions documented
+
