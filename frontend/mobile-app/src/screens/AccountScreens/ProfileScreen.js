@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
   profileBanner: {
     paddingVertical: 30,
     paddingHorizontal: theme.spacing.lg,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: theme.borderRadius.large,
+    borderBottomRightRadius: theme.borderRadius.large,
     marginBottom: -20, // Negative margin to overlap with tabs container slightly if desired, or just space it
     zIndex: 1,
   },
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
     marginHorizontal: theme.spacing.md,
-    borderRadius: 15,
+    borderRadius: theme.borderRadius.large,
     padding: 5,
     // Shadow for the floating tabs look
     shadowColor: '#000',
