@@ -2,8 +2,6 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { 
     ProfileScreen, 
-    StorageSettingsScreen, 
-    HistoryScreen, 
     ResultsScreen 
 } from '../../screens';
 import { theme } from '../../styles';
@@ -31,16 +29,6 @@ export const ProfileStack = ({ onAuthChange }) => {
             >
                 {(props) => <ProfileScreen {...props} onAuthChange={onAuthChange} />}
             </Stack.Screen>
-            <Stack.Screen
-                name="StorageSettings"
-                component={StorageSettingsScreen}
-                options={{ title: 'Storage & Data', headerShown: false }}
-            />
-            <Stack.Screen
-                name="History"
-                component={HistoryScreen}
-                options={{ title: 'Scan History', headerShown: false }}
-            />
             <Stack.Screen
                 name="Results"
                 component={ResultsScreen}
