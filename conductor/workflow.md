@@ -7,7 +7,7 @@
 3. **Optimized Test-Driven Development:** Focus on writing robust tests and implementation together to minimize execution cycles.
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
 5. **User Experience First:** Every decision should prioritize user experience
-6. **Automated Track Commits:** A SINGLE automated commit and push MUST be performed by the agent ONLY after the entire track is completed. No intermediate commits.
+6. **Automated Track Commits:** A SINGLE automated commit and push MUST be performed by the agent ONLY after the entire track is completed and archived. No intermediate commits.
 7. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools.
 
 ## Task Workflow
@@ -44,30 +44,17 @@ All tasks follow a high-velocity lifecycle:
 
 1.  **Full Suite Execution:** Run the **entire** project test suite to ensure no regressions.
 2.  **Mark Phase Complete:** Update the phase heading in `plan.md` to `[x]` and stage it.
-3.  **Summary:** Inform the user the phase is complete and verified. Provide non-blocking suggestions for manual checks if applicable, then proceed to the next phase immediately.
+3.  **Summary:** Inform the user the phase is complete and verified. Proceed to the next phase immediately.
 
 ### Track Completion & Finalization Protocol
 
 **Trigger:** Executed after all phases/tasks in `plan.md` are marked complete.
 
-1.  **Automated Commit & Push:** 
+1.  **Archive Track:** 
+    - Move the track's folder from `conductor/tracks/<track_id>` to `conductor/archive/<track_id>`.
+    - Update `conductor/tracks.md` to mark the track as `[x] Completed` and update its link to the archive location.
+    - Stage the file moves and updates (`git add .`).
+
+2.  **Automated Commit & Push:** 
     - Generate a conventional commit message (e.g., `feat: [Track Name] implementation`).
     - Run `git commit -m "..."` and `git push`.
-2.  **Finalize Track Status:** Update `conductor/tracks.md` to `[x]` and stage it.
-
-## Quality Gates
-
-- [ ] Targeted tests pass
-- [ ] Code coverage >80%
-- [ ] Follows project style guidelines
-- [ ] Public functions documented
-
-## Development Commands
-
-- Backend: `npm test path/to/test.spec.js` (Targeted) | `npm test` (Full Suite)
-- Mobile: `npx expo start`
-
-## Commit Guidelines (Automated)
-
-Format: `<type>(<scope>): <description>`
-Types: `feat`, `fix`, `chore`, `test`, `docs`
