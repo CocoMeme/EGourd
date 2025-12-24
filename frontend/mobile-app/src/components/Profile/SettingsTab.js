@@ -240,12 +240,6 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={{ width: 24 }} />
-                <Text style={styles.headerTitle}>Settings</Text>
-                <View style={{ width: 24 }} />
-            </View>
-
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}

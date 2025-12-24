@@ -148,13 +148,6 @@ export const HistoryTab = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
-            {/* Header Style from StorageSettingsScreen */}
-            <View style={styles.header}>
-                <View style={{ width: 24 }} />
-                <Text style={styles.headerTitle}>Scan History</Text>
-                <View style={{ width: 24 }} />
-            </View>
-
             <FlatList
                 data={filteredScans}
                 renderItem={renderItem}

@@ -1,0 +1,8 @@
+{
+  "track_id": "refactor_profile_20251224",
+  "type": "refactor",
+  "status": "new",
+  "created_at": "2025-12-24T12:35:00Z",
+  "updated_at": "2025-12-24T12:35:00Z",
+  "description": "Refactor ProfileScreen.js into tabs and merge StorageSettingsScreen.js"
+}

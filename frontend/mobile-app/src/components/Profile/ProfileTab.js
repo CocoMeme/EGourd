@@ -158,13 +158,6 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
 
     return (
         <View style={styles.container}>
-            {/* Header Style from StorageSettingsScreen - No back button for main Profile tab */}
-            <View style={styles.header}>
-                <View style={{ width: 24 }} /> 
-                <Text style={styles.headerTitle}>Profile</Text>
-                <View style={{ width: 24 }} />
-            </View>
-
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
