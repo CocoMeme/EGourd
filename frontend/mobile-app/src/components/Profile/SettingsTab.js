@@ -109,7 +109,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
         }
     };
 
-    const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description, toggleValue, onToggle }) => (
+    const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description, toggleValue, onToggle, valueStyle }) => (
         <TouchableOpacity
             style={[styles.profileItem, isLast && styles.profileItemLast]}
             onPress={onPress}
@@ -121,16 +121,18 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                     <Ionicons name={icon} size={20} color={theme.colors.primary} />
                 </View>
                 <View style={styles.profileItemTextGroup}>
-                    <Text style={styles.profileItemTitle}>{title}</Text>
+                    <View style={styles.titleRow}>
+                        <Text style={styles.profileItemTitle}>{title}</Text>
+                        {badge && (
+                            <View style={[styles.badge, { backgroundColor: badgeColor || theme.colors.primary }]}>
+                                <Text style={styles.badgeText}>{badge}</Text>
+                            </View>
+                        )}
+                    </View>
                     {description && <Text style={styles.profileItemDescription}>{description}</Text>}
                 </View>
             </View>
             <View style={styles.profileItemRight}>
-                {badge && (
-                    <View style={[styles.badge, { backgroundColor: badgeColor || theme.colors.primary }]}>
-                        <Text style={styles.badgeText}>{badge}</Text>
-                    </View>
-                )}
                 {toggleValue !== undefined ? (
                     <Switch
                         value={toggleValue}
@@ -142,7 +144,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                 ) : (
                     <>
                         {!!value && (
-                            <Text style={styles.profileItemValue} numberOfLines={1}>
+                            <Text style={[styles.profileItemValue, valueStyle]} numberOfLines={1}>
                                 {value}
                             </Text>
                         )}
@@ -207,7 +209,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
             id: 'version',
             icon: 'information-circle-outline',
             title: 'App Version',
-            value: 'v1.0.0',
+            value: 'v1.12.07',
         },
         {
             id: 'support',
@@ -220,7 +222,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
             id: 'model',
             icon: 'cube-outline',
             title: 'Model Version',
-            value: 'v1.10.30',
+            value: 'v2.12.07',
         },
         {
             id: 'privacy',
@@ -264,29 +266,24 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                     ))}
                 </View>
 
-                {/* Storage Section (Merged) */}
+                {/* Storage Section */}
                 <View style={styles.sectionCard}>
                     <Text style={styles.sectionTitle}>Storage & Data</Text>
-                    <View style={styles.storageContainer}>
-                        <View style={styles.usageRow}>
-                            <View style={styles.usageIcon}>
-                                <Ionicons name="images-outline" size={24} color={theme.colors.primary} />
-                            </View>
-                            <View style={styles.usageInfo}>
-                                <Text style={styles.usageLabel}>Cache & Temporary Files</Text>
-                                <Text style={styles.usageDesc}>Images from camera, temporary downloads</Text>
-                            </View>
-                            {loading ? (
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
-                            ) : (
-                                <Text style={styles.usageSize}>{formatSize(cacheSize)}</Text>
-                            )}
-                        </View>
-                        <View style={styles.divider} />
-                        <TouchableOpacity style={styles.actionButton} onPress={handleClearCache}>
-                            <Text style={styles.actionButtonText}>Clear Cache</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <ProfileItem
+                        icon="images-outline"
+                        title="Cache & Temporary Files"
+                        description="Images from camera, temporary downloads"
+                        value={loading ? "Calculating..." : formatSize(cacheSize)}
+                        valueStyle={styles.boldValue}
+                        isLast={true}
+                    />
+                    <TouchableOpacity
+                        style={[styles.actionButton, loading && { opacity: 0.5 }]}
+                        onPress={handleClearCache}
+                        disabled={loading}
+                    >
+                        <Text style={styles.actionButtonText}>Clear Cache</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.sectionCard}>
@@ -309,8 +306,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                     onPress={handleLogout}
                     disabled={logoutLoading}
                 >
-                    <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={styles.logoutIcon} />
-                    <Text style={styles.logoutText}>{logoutLoading ? 'Logging out...' : 'Logout'}</Text>
+                    <Text style={styles.logoutText}>{logoutLoading ? 'Logging out...' : 'LOGOUT'}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -338,13 +334,13 @@ const styles = StyleSheet.create({
         color: theme.colors.text.primary,
     },
     content: { flex: 1 },
-    scrollContent: { paddingBottom: theme.spacing.xl },
+    // scrollContent: { paddingBottom: theme.spacing.sm },
     sectionCard: {
         backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.large,
-        marginHorizontal: theme.spacing.lg,
-        marginTop: theme.spacing.lg,
-        padding: theme.spacing.lg,
+        borderRadius: theme.borderRadius.medium,
+        marginHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.md,
+        padding: theme.spacing.md,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -370,7 +366,7 @@ const styles = StyleSheet.create({
     profileIconWrap: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 5,
         backgroundColor: 'rgba(85, 156, 73, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -380,6 +376,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: theme.fonts.medium,
         color: theme.colors.text.primary,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     profileItemDescription: {
         fontSize: 12,
@@ -393,79 +393,51 @@ const styles = StyleSheet.create({
         marginRight: theme.spacing.xs,
     },
     badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
         borderRadius: 4,
-        marginRight: 8,
+        marginLeft: theme.spacing.xs,
     },
     badgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
     logoutButton: {
-        backgroundColor: theme.colors.error,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: theme.spacing.md,
-        marginHorizontal: theme.spacing.lg,
-        marginVertical: theme.spacing.xl,
+        height: 48,
         borderRadius: theme.borderRadius.medium,
+        backgroundColor: 'rgba(244, 67, 54, 0.08)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(244, 67, 54, 0.15)',
+        marginHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.lg,
+        marginBottom: theme.spacing.xl,
     },
     logoutButtonDisabled: { opacity: 0.6 },
-    logoutIcon: { marginRight: theme.spacing.sm },
     logoutText: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: theme.colors.error,
+        fontSize: 14,
         fontFamily: theme.fonts.bold,
+        letterSpacing: 0.5,
     },
-    // Storage Specific Styles
-    storageContainer: {
-        backgroundColor: theme.colors.background.primary,
+
+    actionButton: {
+        height: 48,
         borderRadius: theme.borderRadius.medium,
-        padding: theme.spacing.md,
-        borderWidth: 1,
-        borderColor: 'rgba(85, 156, 73, 0.1)',
-    },
-    usageRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: theme.spacing.md,
-    },
-    usageIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        backgroundColor: 'rgba(85, 156, 73, 0.08)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: theme.spacing.md,
-    },
-    usageInfo: { flex: 1 },
-    usageLabel: {
-        fontSize: 14,
-        fontFamily: theme.fonts.semiBold,
-        color: theme.colors.text.primary,
-    },
-    usageDesc: {
-        fontSize: 11,
-        color: theme.colors.text.secondary,
-        marginTop: 2,
-    },
-    usageSize: {
-        fontSize: 14,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: theme.colors.background.secondary,
-        marginVertical: theme.spacing.sm,
-    },
-    actionButton: {
-        paddingVertical: theme.spacing.xs,
-        alignItems: 'center',
+        marginTop: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: 'rgba(85, 156, 73, 0.15)',
     },
     actionButtonText: {
-        color: theme.colors.error,
-        fontSize: 13,
-        fontFamily: theme.fonts.semiBold,
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontFamily: theme.fonts.bold,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
+    boldValue: {
+        fontFamily: theme.fonts.bold,
+        color: theme.colors.text.primary,
     },
 });

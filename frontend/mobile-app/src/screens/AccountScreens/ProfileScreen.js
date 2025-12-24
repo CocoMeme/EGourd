@@ -62,7 +62,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
         >
           <Ionicons
             name="person-outline"
-            size={20}
+            size={18}
             color={activeTab === 'profile' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'profile' && styles.activeTabText]}>
@@ -75,7 +75,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
         >
           <Ionicons
             name="time-outline"
-            size={20}
+            size={18}
             color={activeTab === 'history' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
@@ -88,7 +88,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
         >
           <Ionicons
             name="settings-outline"
-            size={20}
+            size={18}
             color={activeTab === 'settings' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
@@ -118,11 +118,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.md,
-    gap: theme.spacing.xs,
+    gap: 10,
   },
   activeTab: { borderBottomWidth: 3, borderBottomColor: theme.colors.primary },
   tabText: {
-    fontSize: theme.typography.body.fontSize,
+    fontSize: 16,
     fontFamily: theme.typography.body.fontFamily,
     color: theme.colors.text.secondary,
   },
