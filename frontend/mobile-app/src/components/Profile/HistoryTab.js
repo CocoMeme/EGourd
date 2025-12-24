@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { scanService } from '../../services';
 import { RecentScanCard } from '../../components';
-import { StandardHeader } from './shared';
 
 export const HistoryTab = ({ navigation, route }) => {
     const [scans, setScans] = useState([]);
@@ -149,7 +148,6 @@ export const HistoryTab = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
-            <StandardHeader title="Scan History" />
             <FlatList
                 data={filteredScans}
                 renderItem={renderItem}

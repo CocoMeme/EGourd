@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Image,
     Alert,
     Modal,
     TextInput,
@@ -14,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { authService } from '../../services';
-import { ProfileItem, ProfileSection, StandardHeader } from './shared';
+import { ProfileItem, ProfileSection } from './shared';
 
 export const ProfileTab = ({ user, navigation, loadUserData }) => {
     const [verificationModalVisible, setVerificationModalVisible] = useState(false);
@@ -112,29 +111,11 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
 
     return (
         <View style={styles.container}>
-            <StandardHeader title="Profile" />
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* User Avatar Section */}
-                <View style={styles.userInfoSection}>
-                    <View style={styles.avatarContainer}>
-                        {user?.profilePicture ? (
-                            <Image source={{ uri: user.profilePicture }} style={styles.avatarImage} />
-                        ) : (
-                            <View style={styles.avatarPlaceholder}>
-                                <Ionicons name="person" size={40} color={theme.colors.primary} />
-                            </View>
-                        )}
-                    </View>
-                    <Text style={styles.userName}>
-                        {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
-                    </Text>
-                    <Text style={styles.userEmail}>{user?.email || ''}</Text>
-                </View>
-
                 <ProfileSection title="Account Status" style={styles.statusCard}>
                     <View style={styles.statusRow}>
                         <View style={styles.statusIconWrap}>
@@ -263,50 +244,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingBottom: theme.spacing.xl,
-    },
-    userInfoSection: {
-        alignItems: 'center',
-        paddingVertical: theme.spacing.xl,
-        backgroundColor: theme.colors.surface,
-        borderBottomLeftRadius: theme.borderRadius.large,
-        borderBottomRightRadius: theme.borderRadius.large,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-        marginBottom: theme.spacing.md,
-    },
-    avatarContainer: {
-        marginBottom: theme.spacing.md,
-    },
-    avatarImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    avatarPlaceholder: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: theme.profile.icon.background,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    userName: {
-        fontSize: 20,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-        marginBottom: 2,
-    },
-    userEmail: {
-        fontSize: 14,
-        fontFamily: theme.fonts.regular,
-        color: theme.colors.text.secondary,
     },
     statusCard: {
         borderWidth: 1,

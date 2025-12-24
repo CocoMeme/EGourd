@@ -11,7 +11,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { theme } from '../../styles';
 import { authService } from '../../services';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
-import { ProfileItem, ProfileSection, StandardHeader } from './shared';
+import { ProfileItem, ProfileSection } from './shared';
 
 export const SettingsTab = ({ navigation, onAuthChange }) => {
     const [loading, setLoading] = useState(false);
@@ -192,7 +192,6 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
 
     return (
         <View style={styles.container}>
-            <StandardHeader title="Settings" />
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}

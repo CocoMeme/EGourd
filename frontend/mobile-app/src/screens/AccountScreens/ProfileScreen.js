@@ -4,9 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Image,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services';
 import { theme } from '../../styles';
@@ -54,15 +56,47 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      {/* Tabs Navigation - Placed at the top since the big header is gone */}
+      {/* Redesigned Profile Banner */}
+      <LinearGradient
+        colors={[theme.colors.gradient.start, theme.colors.gradient.end]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.profileBanner}
+      >
+        <View style={styles.bannerOverlay}>
+          <View style={styles.avatarContainer}>
+            {user?.profilePicture ? (
+              <Image source={{ uri: user.profilePicture }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={40} color={theme.colors.primary} />
+              </View>
+            )}
+            <TouchableOpacity style={styles.editAvatarButton}>
+              <Ionicons name="camera" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>
+              {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+            </Text>
+            <View style={styles.emailContainer}>
+              <Ionicons name="mail-outline" size={14} color="rgba(255, 255, 255, 0.8)" />
+              <Text style={styles.userEmail}>{user?.email || ''}</Text>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Tabs Navigation */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'profile' && styles.activeTab]}
           onPress={() => setActiveTab('profile')}
         >
           <Ionicons
-            name="person-outline"
-            size={18}
+            name={activeTab === 'profile' ? "person" : "person-outline"}
+            size={20}
             color={activeTab === 'profile' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'profile' && styles.activeTabText]}>
@@ -74,8 +108,8 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           onPress={() => setActiveTab('history')}
         >
           <Ionicons
-            name="time-outline"
-            size={18}
+            name={activeTab === 'history' ? "time" : "time-outline"}
+            size={20}
             color={activeTab === 'history' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
@@ -87,8 +121,8 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           onPress={() => setActiveTab('settings')}
         >
           <Ionicons
-            name="settings-outline"
-            size={18}
+            name={activeTab === 'settings' ? "settings" : "settings-outline"}
+            size={20}
             color={activeTab === 'settings' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
@@ -106,28 +140,109 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background.secondary },
+  profileBanner: {
+    paddingVertical: 30,
+    paddingHorizontal: theme.spacing.lg,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: -20, // Negative margin to overlap with tabs container slightly if desired, or just space it
+    zIndex: 1,
+  },
+  bannerOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  avatarPlaceholder: {
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  editAvatarButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: theme.colors.accent,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  userInfo: {
+    marginLeft: 20,
+    flex: 1,
+  },
+  userName: {
+    fontSize: 22,
+    fontFamily: theme.fonts.bold,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  emailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  userEmail: {
+    fontSize: 14,
+    fontFamily: theme.fonts.regular,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.background.secondary,
+    marginHorizontal: theme.spacing.md,
+    borderRadius: 15,
+    padding: 5,
+    // Shadow for the floating tabs look
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginTop: 0, 
+    zIndex: 2,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    gap: theme.spacing.sm,
+    paddingVertical: 12,
+    gap: 8,
+    borderRadius: 10,
   },
-  activeTab: { borderBottomWidth: 3, borderBottomColor: theme.colors.primary },
+  activeTab: { 
+    backgroundColor: 'rgba(85, 156, 73, 0.1)',
+  },
   tabText: {
-    fontSize: theme.typography.profileItemTitle.fontSize,
-    fontFamily: theme.fonts.regular,
+    fontSize: 14,
+    fontFamily: theme.fonts.medium,
     color: theme.colors.text.secondary,
   },
-  activeTabText: { color: theme.colors.primary, fontFamily: theme.fonts.semiBold },
+  activeTabText: { 
+    color: theme.colors.primary, 
+    fontFamily: theme.fonts.bold 
+  },
   contentContainer: {
     flex: 1,
+    marginTop: 10,
   },
 });
