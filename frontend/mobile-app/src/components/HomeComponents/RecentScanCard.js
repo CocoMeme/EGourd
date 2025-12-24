@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    borderRadius: theme.profile.card.borderRadius,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
@@ -130,9 +130,9 @@ const styles = StyleSheet.create({
     // Subtle shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: theme.profile.card.shadowOpacity,
+    shadowRadius: theme.profile.card.shadowRadius,
+    elevation: theme.profile.card.elevation,
   },
   imageContainer: {
     marginRight: 12,

@@ -6,14 +6,12 @@ import {
     TouchableOpacity,
     Alert,
     ScrollView,
-    Switch,
-    ActivityIndicator
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import { theme } from '../../styles';
 import { authService } from '../../services';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
+import { ProfileItem, ProfileSection, StandardHeader } from './shared';
 
 export const SettingsTab = ({ navigation, onAuthChange }) => {
     const [loading, setLoading] = useState(false);
@@ -109,54 +107,6 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
         }
     };
 
-    const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description, toggleValue, onToggle, valueStyle }) => (
-        <TouchableOpacity
-            style={[styles.profileItem, isLast && styles.profileItemLast]}
-            onPress={onPress}
-            disabled={!onPress || toggleValue !== undefined}
-            activeOpacity={onPress ? 0.8 : 1}
-        >
-            <View style={styles.profileItemLeft}>
-                <View style={styles.profileIconWrap}>
-                    <Ionicons name={icon} size={20} color={theme.colors.primary} />
-                </View>
-                <View style={styles.profileItemTextGroup}>
-                    <View style={styles.titleRow}>
-                        <Text style={styles.profileItemTitle}>{title}</Text>
-                        {badge && (
-                            <View style={[styles.badge, { backgroundColor: badgeColor || theme.colors.primary }]}>
-                                <Text style={styles.badgeText}>{badge}</Text>
-                            </View>
-                        )}
-                    </View>
-                    {description && <Text style={styles.profileItemDescription}>{description}</Text>}
-                </View>
-            </View>
-            <View style={styles.profileItemRight}>
-                {toggleValue !== undefined ? (
-                    <Switch
-                        value={toggleValue}
-                        onValueChange={onToggle}
-                        trackColor={{ false: '#767577', true: '#FF9800' }}
-                        thumbColor={toggleValue ? '#FFFFFF' : '#f4f3f4'}
-                        ios_backgroundColor="#767577"
-                    />
-                ) : (
-                    <>
-                        {!!value && (
-                            <Text style={[styles.profileItemValue, valueStyle]} numberOfLines={1}>
-                                {value}
-                            </Text>
-                        )}
-                        {onPress && (
-                            <Ionicons name="chevron-forward" size={18} color={theme.colors.text.secondary} />
-                        )}
-                    </>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
-
     const preferenceItems = [
         {
             id: 'developerMode',
@@ -242,13 +192,13 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
 
     return (
         <View style={styles.container}>
+            <StandardHeader title="Settings" />
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>Preferences</Text>
+                <ProfileSection title="Preferences">
                     {preferenceItems.map((item, index) => (
                         <ProfileItem
                             key={item.id}
@@ -264,11 +214,9 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                             isLast={index === preferenceItems.length - 1}
                         />
                     ))}
-                </View>
+                </ProfileSection>
 
-                {/* Storage Section */}
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>Storage & Data</Text>
+                <ProfileSection title="Storage & Data">
                     <ProfileItem
                         icon="images-outline"
                         title="Cache & Temporary Files"
@@ -278,16 +226,15 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                         isLast={true}
                     />
                     <TouchableOpacity
-                        style={[styles.actionButton, loading && { opacity: 0.5 }]}
+                        style={[styles.actionButton, loading && { opacity: 0.5 } ]}
                         onPress={handleClearCache}
                         disabled={loading}
                     >
                         <Text style={styles.actionButtonText}>Clear Cache</Text>
                     </TouchableOpacity>
-                </View>
+                </ProfileSection>
 
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>About</Text>
+                <ProfileSection title="About">
                     {aboutItems.map((item, index) => (
                         <ProfileItem
                             key={item.id}
@@ -299,7 +246,7 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                             isLast={index === aboutItems.length - 1}
                         />
                     ))}
-                </View>
+                </ProfileSection>
 
                 <TouchableOpacity
                     style={[styles.logoutButton, logoutLoading && styles.logoutButtonDisabled]}
@@ -318,110 +265,30 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.secondary,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-    },
     content: { flex: 1 },
-    // scrollContent: { paddingBottom: theme.spacing.sm },
-    sectionCard: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.medium,
-        marginHorizontal: theme.spacing.md,
-        marginTop: theme.spacing.md,
-        padding: theme.spacing.md,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.md,
-    },
-    profileItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: theme.spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.background.secondary,
-    },
-    profileItemLast: { borderBottomWidth: 0 },
-    profileItemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    profileIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 5,
-        backgroundColor: 'rgba(85, 156, 73, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    profileItemTextGroup: { marginLeft: theme.spacing.md, flex: 1 },
-    profileItemTitle: {
-        fontSize: 14,
-        fontFamily: theme.fonts.medium,
-        color: theme.colors.text.primary,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    profileItemDescription: {
-        fontSize: 12,
-        color: theme.colors.text.secondary,
-        marginTop: 2,
-    },
-    profileItemRight: { flexDirection: 'row', alignItems: 'center' },
-    profileItemValue: {
-        fontSize: 14,
-        color: theme.colors.text.secondary,
-        marginRight: theme.spacing.xs,
-    },
-    badge: {
-        paddingHorizontal: 6,
-        paddingVertical: 1,
-        borderRadius: 4,
-        marginLeft: theme.spacing.xs,
-    },
-    badgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
+    scrollContent: { paddingBottom: theme.spacing.xl },
     logoutButton: {
-        height: 48,
-        borderRadius: theme.borderRadius.medium,
+        height: theme.profile.button.height,
+        borderRadius: theme.profile.button.borderRadius,
         backgroundColor: 'rgba(244, 67, 54, 0.08)',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(244, 67, 54, 0.15)',
-        marginHorizontal: theme.spacing.md,
+        marginHorizontal: theme.profile.card.margin,
         marginTop: theme.spacing.lg,
         marginBottom: theme.spacing.xl,
     },
     logoutButtonDisabled: { opacity: 0.6 },
     logoutText: {
         color: theme.colors.error,
-        fontSize: 14,
+        fontSize: theme.profile.button.fontSize,
         fontFamily: theme.fonts.bold,
-        letterSpacing: 0.5,
+        letterSpacing: theme.profile.button.letterSpacing,
     },
-
     actionButton: {
-        height: 48,
-        borderRadius: theme.borderRadius.medium,
+        height: theme.profile.button.height,
+        borderRadius: theme.profile.button.borderRadius,
         backgroundColor: 'rgba(85, 156, 73, 0.08)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -431,9 +298,9 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         color: theme.colors.primary,
-        fontSize: 14,
+        fontSize: theme.profile.button.fontSize,
         fontFamily: theme.fonts.bold,
-        letterSpacing: 0.5,
+        letterSpacing: theme.profile.button.letterSpacing,
         textTransform: 'uppercase',
     },
     boldValue: {

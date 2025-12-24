@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { scanService } from '../../services';
 import { RecentScanCard } from '../../components';
+import { StandardHeader } from './shared';
 
 export const HistoryTab = ({ navigation, route }) => {
     const [scans, setScans] = useState([]);
@@ -90,7 +91,7 @@ export const HistoryTab = ({ navigation, route }) => {
                     scanId: scan._id,
                     imageUri: scan.imageUrl,
                     isLoading: false,
-                    returnTo: 'ProfileMain', // Changed from History to Profile since it's now a tab in Profile
+                    returnTo: 'ProfileMain',
                     prediction,
                     tmPrediction,
                     geminiPrediction,
@@ -148,6 +149,7 @@ export const HistoryTab = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
+            <StandardHeader title="Scan History" />
             <FlatList
                 data={filteredScans}
                 renderItem={renderItem}
@@ -177,21 +179,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: theme.colors.background.secondary,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
     },
     listContent: {
         padding: theme.spacing.md,

@@ -10,11 +10,11 @@ import {
     Modal,
     TextInput,
     ActivityIndicator,
-    Switch
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { authService } from '../../services';
+import { ProfileItem, ProfileSection, StandardHeader } from './shared';
 
 export const ProfileTab = ({ user, navigation, loadUserData }) => {
     const [verificationModalVisible, setVerificationModalVisible] = useState(false);
@@ -80,52 +80,6 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
         }
     };
 
-    const ProfileItem = ({ icon, title, value, onPress, badge, badgeColor, isLast = false, description, toggleValue, onToggle }) => (
-        <TouchableOpacity
-            style={[styles.profileItem, isLast && styles.profileItemLast]}
-            onPress={onPress}
-            disabled={!onPress || toggleValue !== undefined}
-            activeOpacity={onPress ? 0.8 : 1}
-        >
-            <View style={styles.profileItemLeft}>
-                <View style={styles.profileIconWrap}>
-                    <Ionicons name={icon} size={20} color={theme.colors.primary} />
-                </View>
-                <View style={styles.profileItemTextGroup}>
-                    <Text style={styles.profileItemTitle}>{title}</Text>
-                    {description && <Text style={styles.profileItemDescription}>{description}</Text>}
-                </View>
-            </View>
-            <View style={styles.profileItemRight}>
-                {badge && (
-                    <View style={[styles.badge, { backgroundColor: badgeColor || theme.colors.primary }]}>
-                        <Text style={styles.badgeText}>{badge}</Text>
-                    </View>
-                )}
-                {toggleValue !== undefined ? (
-                    <Switch
-                        value={toggleValue}
-                        onValueChange={onToggle}
-                        trackColor={{ false: '#767577', true: '#FF9800' }}
-                        thumbColor={toggleValue ? '#FFFFFF' : '#f4f3f4'}
-                        ios_backgroundColor="#767577"
-                    />
-                ) : (
-                    <>
-                        {!!value && (
-                            <Text style={styles.profileItemValue} numberOfLines={1}>
-                                {value}
-                            </Text>
-                        )}
-                        {onPress && (
-                            <Ionicons name="chevron-forward" size={18} color={theme.colors.text.secondary} />
-                        )}
-                    </>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
-
     const profileDetails = [
         { id: 'firstName', icon: 'person-outline', title: 'First Name', value: user?.firstName || '-' },
         { id: 'lastName', icon: 'person-outline', title: 'Last Name', value: user?.lastName || '-' },
@@ -158,12 +112,13 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
 
     return (
         <View style={styles.container}>
+            <StandardHeader title="Profile" />
             <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* User Avatar Section (Replaced the Gradient Header) */}
+                {/* User Avatar Section */}
                 <View style={styles.userInfoSection}>
                     <View style={styles.avatarContainer}>
                         {user?.profilePicture ? (
@@ -180,7 +135,7 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                     <Text style={styles.userEmail}>{user?.email || ''}</Text>
                 </View>
 
-                <View style={[styles.sectionCard, styles.statusCard]}>
+                <ProfileSection title="Account Status" style={styles.statusCard}>
                     <View style={styles.statusRow}>
                         <View style={styles.statusIconWrap}>
                             <Ionicons
@@ -190,7 +145,7 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                             />
                         </View>
                         <View style={styles.statusTextGroup}>
-                            <Text style={styles.statusTitle}>Account status</Text>
+                            <Text style={styles.statusTitle}>Verification</Text>
                             <Text style={styles.statusDescription}>
                                 {isVerified ? 'Your email is verified and secure.' : 'Verify your email to unlock all features.'}
                             </Text>
@@ -201,10 +156,9 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                             </TouchableOpacity>
                         )}
                     </View>
-                </View>
+                </ProfileSection>
 
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>Profile information</Text>
+                <ProfileSection title="Profile Information">
                     {profileDetails.map((item) => (
                         <ProfileItem
                             key={item.id}
@@ -223,10 +177,10 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                         isLast
                         description={isVerified ? 'Everything looks good.' : 'Tap to verify your email.'}
                     />
-                </View>
+                </ProfileSection>
 
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>Quick actions</Text>
+                <View style={styles.quickActionsContainer}>
+                    <Text style={styles.sectionTitle}>Quick Actions</Text>
                     <View style={styles.quickActionsRow}>
                         {quickActions.map((action) => (
                             <TouchableOpacity
@@ -304,21 +258,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.secondary,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-    },
     content: {
         flex: 1,
     },
@@ -352,7 +291,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(85, 156, 73, 0.1)',
+        backgroundColor: theme.profile.icon.background,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
@@ -366,28 +305,9 @@ const styles = StyleSheet.create({
     },
     userEmail: {
         fontSize: 14,
-        fontFamily: theme.typography.body.fontFamily,
+        fontFamily: theme.fonts.regular,
         color: theme.colors.text.secondary,
     },
-    sectionCard: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.large,
-        marginHorizontal: theme.spacing.lg,
-        marginTop: theme.spacing.lg,
-        padding: theme.spacing.lg,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontFamily: theme.fonts.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.md,
-    },
-    // Status Card
     statusCard: {
         borderWidth: 1,
         borderColor: 'rgba(85, 156, 73, 0.15)',
@@ -429,59 +349,16 @@ const styles = StyleSheet.create({
         fontFamily: theme.fonts.semiBold,
         fontSize: 12,
     },
-    // Profile Item
-    profileItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: theme.spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.background.secondary,
+    quickActionsContainer: {
+        paddingHorizontal: theme.profile.card.margin,
+        marginTop: theme.spacing.lg,
     },
-    profileItemLast: {
-        borderBottomWidth: 0,
-    },
-    profileItemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    profileIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(85, 156, 73, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    profileItemTextGroup: {
-        marginLeft: theme.spacing.md,
-        flex: 1,
-    },
-    profileItemTitle: {
-        fontSize: 14,
-        fontFamily: theme.fonts.medium,
+    sectionTitle: {
+        fontSize: theme.typography.profileTitle.fontSize,
+        fontFamily: theme.typography.profileTitle.fontFamily,
         color: theme.colors.text.primary,
+        marginBottom: theme.spacing.md,
     },
-    profileItemDescription: {
-        fontSize: 12,
-        color: theme.colors.text.secondary,
-        marginTop: 2,
-    },
-    profileItemRight: { flexDirection: 'row', alignItems: 'center' },
-    profileItemValue: {
-        fontSize: 14,
-        color: theme.colors.text.secondary,
-        marginRight: theme.spacing.xs,
-    },
-    badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginRight: 8,
-    },
-    badgeText: {
-        fontSize: 10,
-        color: '#FFFFFF',
-        fontWeight: '700',
-    },
-    // Quick Actions
     quickActionsRow: {
         flexDirection: 'row',
         gap: theme.spacing.md,
@@ -490,11 +367,14 @@ const styles = StyleSheet.create({
     quickAction: {
         flex: 1,
         minWidth: '30%',
-        backgroundColor: theme.colors.background.primary,
-        borderRadius: theme.borderRadius.medium,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.profile.card.borderRadius,
         padding: theme.spacing.md,
-        borderWidth: 1,
-        borderColor: 'rgba(85, 156, 73, 0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: theme.profile.card.shadowOpacity,
+        shadowRadius: theme.profile.card.shadowRadius,
+        elevation: theme.profile.card.elevation,
     },
     quickActionIconWrap: {
         width: 34,
@@ -515,7 +395,6 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: theme.colors.text.secondary,
     },
-    // Modal
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',

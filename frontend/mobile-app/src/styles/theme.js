@@ -33,6 +33,39 @@ export const theme = {
     medium: 8,
     large: 16,
   },
+  profile: {
+    card: {
+      borderRadius: 8, // theme.borderRadius.medium
+      margin: 16, // theme.spacing.md
+      padding: 16, // theme.spacing.md
+      elevation: 2,
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+    },
+    item: {
+      paddingVertical: 16, // theme.spacing.md
+      fontSize: 14,
+      descriptionSize: 12,
+      valueSize: 14,
+    },
+    icon: {
+      size: 36,
+      borderRadius: 6,
+      background: 'rgba(85, 156, 73, 0.1)',
+    },
+    badge: {
+      borderRadius: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      fontSize: 10,
+    },
+    button: {
+      height: 48,
+      borderRadius: 8,
+      fontSize: 14,
+      letterSpacing: 0.5,
+    }
+  },
   shadows: {
     small: {
       shadowColor: '#000',
@@ -96,6 +129,18 @@ export const theme = {
       fontFamily: 'Poppins_500Medium',
     },
     caption: {
+      fontSize: 12,
+      fontFamily: 'Poppins_400Regular',
+    },
+    profileTitle: {
+      fontSize: 16,
+      fontFamily: 'Poppins_700Bold',
+    },
+    profileItemTitle: {
+      fontSize: 14,
+      fontFamily: 'Poppins_500Medium',
+    },
+    profileItemDescription: {
       fontSize: 12,
       fontFamily: 'Poppins_400Regular',
     },
