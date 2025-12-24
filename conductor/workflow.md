@@ -23,6 +23,7 @@ All tasks follow a high-velocity lifecycle:
 3. **Implementation & Verification (Consolidated):**
    - Create or update the relevant test file.
    - Implement the application code.
+   - **Entry Point Check:** When creating, deleting, or moving mobile app files, always verify `frontend/mobile-app/index.js` and other relevant index files (e.g., in `screens` or `components`) to ensure no routing or import errors occur.
    - **Targeted Testing:** Execute *only* the specific test file(s) related to the current tasks (e.g., `node path/to/spec.js`). 
    - Ensure tests pass and verify behavior matches the spec.
 
