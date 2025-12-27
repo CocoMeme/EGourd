@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
     marginHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.large,
+    borderRadius: theme.borderRadius.medium,
     padding: 5,
     // Shadow for the floating tabs look
     shadowColor: '#000',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     gap: 8,
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.medium,
   },
   activeTab: { 
     backgroundColor: 'rgba(85, 156, 73, 0.1)',

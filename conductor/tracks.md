@@ -10,4 +10,12 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 ## [x] Track: Standardize Profile Tab UI & Styles
+
 *Link: [./conductor/archive/standardize_profile_ui_20251224/](./conductor/archive/standardize_profile_ui_20251224/)*
+
+
+
+---
+
+## [x] Track: Documentation Overhaul (Main README & Developer Guide)
+*Link: [./conductor/archive/documentation_overhaul_20251227/](./conductor/archive/documentation_overhaul_20251227/)*

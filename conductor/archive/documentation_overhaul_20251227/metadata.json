@@ -1,0 +1,8 @@
+{
+  "track_id": "documentation_overhaul_20251227",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2025-12-27T12:48:00Z",
+  "updated_at": "2025-12-27T12:48:00Z",
+  "description": "update the README.md in the main directory to reflect what we actualy did in our project. Include installation section that has the main commands used to set it up, use the set-up_instruction.md for reference. Make sure that the update is consice, clear, do not include emojies. And you can also create table for ease reading."
+}
