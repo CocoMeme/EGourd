@@ -1,0 +1,8 @@
+{
+  "track_id": "project_cleanup_20251227",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2025-12-27T17:31:00Z",
+  "updated_at": "2025-12-27T17:31:00Z",
+  "description": "refactor the whole files in /docs folder (except for the /docs/training_model). We have too many and outdated document. I also noticed that duplicate .gitignore in /backend folder. Can you just merge it to the our .gitignore in the main directory? What are you additional recommendation for cleaning up our project?"
+}

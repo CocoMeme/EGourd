@@ -19,3 +19,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Documentation Overhaul (Main README & Developer Guide)
 *Link: [./conductor/archive/documentation_overhaul_20251227/](./conductor/archive/documentation_overhaul_20251227/)*
+
+---
+
+## [x] Track: Project Cleanup & Documentation Refactor
+*Link: [./conductor/archive/project_cleanup_20251227/](./conductor/archive/project_cleanup_20251227/)*
