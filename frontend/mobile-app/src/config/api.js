@@ -1,11 +1,46 @@
 // ⚠️ SINGLE SOURCE OF TRUTH FOR API CONFIGURATION ⚠️
-// To change the backend URL, ONLY edit the .env file:
-// EXPO_PUBLIC_API_URL=http://YOUR_IP:5000/api
+// Set the backend URL via environment variable:
+// EXPO_PUBLIC_API_URL=https://<your-render-service>.onrender.com/api
+//
+// Notes:
+// - The mobile app expects API routes to be under `/api`.
+// - You may provide either `https://host` or `https://host/api`; we normalize it.
 
-// Get API URL from environment variable with fallback
+const normalizeApiBaseUrl = (rawUrl) => {
+  const trimmed = (rawUrl || '').trim();
+  if (!trimmed) return '';
+
+  // Remove trailing slashes to avoid accidental double-slashes when concatenating.
+  const withoutTrailingSlashes = trimmed.replace(/\/+$/, '');
+
+  // If the caller already included an /api segment (e.g., /api or /api/v1), keep it.
+  if (/\/api(\/|$)/i.test(withoutTrailingSlashes)) {
+    return withoutTrailingSlashes;
+  }
+
+  // Otherwise, append /api.
+  return `${withoutTrailingSlashes}/api`;
+};
+
 export const getApiUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.66:5000/api';
-  return apiUrl;
+  const configured = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_URL);
+  if (configured) return configured;
+
+  // Dev fallback: safe for emulators/simulators. For physical devices, set EXPO_PUBLIC_API_URL.
+  if (__DEV__) {
+    const fallback = normalizeApiBaseUrl('http://localhost:5000/api');
+    console.warn(
+      '⚠️ EXPO_PUBLIC_API_URL is not set; falling back to',
+      fallback,
+      '(emulator-only). Set EXPO_PUBLIC_API_URL in frontend/mobile-app/.env for real devices.'
+    );
+    return fallback;
+  }
+
+  throw new Error(
+    'EXPO_PUBLIC_API_URL is required in non-development builds. ' +
+      'Set it to your deployed backend (e.g., https://<service>.onrender.com/api).'
+  );
 };
 
 // Export for direct use

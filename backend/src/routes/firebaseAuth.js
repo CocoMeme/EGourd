@@ -209,7 +209,7 @@ router.post('/login', [
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
-
+        { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -326,7 +326,7 @@ router.post('/register', [
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
-
+        { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     res.status(201).json({
       success: true,
       message: 'User registered successfully',

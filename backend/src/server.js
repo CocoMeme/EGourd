@@ -1,9 +1,12 @@
 require('dotenv').config();
 const App = require('./app');
 const os = require('os');
+const validateEnv = require('./config/validateEnv');
 
 const startServer = async () => {
   try {
+    validateEnv();
+
     // Create and initialize the app
     const appInstance = new App();
     const app = await appInstance.initialize();

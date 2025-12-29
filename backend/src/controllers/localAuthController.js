@@ -43,7 +43,7 @@ const register = async (req, res) => {
         email: newUser.email,
       },
       process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     // Remove sensitive information from response
@@ -150,7 +150,7 @@ const login = async (req, res) => {
         email: user.email,
       },
       process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     // Remove sensitive information from response

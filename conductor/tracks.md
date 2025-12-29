@@ -24,3 +24,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Project Cleanup & Documentation Refactor
 *Link: [./conductor/archive/project_cleanup_20251227/](./conductor/archive/project_cleanup_20251227/)*
+
+---
+
+## [ ] Track: Deployment Readiness Audit (Backend & Mobile)
+*Link: [./conductor/tracks/deployment_readiness_20251229/](./conductor/tracks/deployment_readiness_20251229/)*
