@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "797245365582-biikceh5addrnmp5otqa2pcceg71a79e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coandrei.egourd",
+            "certificate_hash": "9f14a9a82c020acfed818b9324fccefb92c07609"
+          }
+        },
+        {
           "client_id": "797245365582-hoooojlrjk6559t0fc04qj3uandjvi62.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

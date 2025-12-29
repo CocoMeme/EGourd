@@ -2,20 +2,32 @@ const nodemailer = require('nodemailer');
 
 /**
  * Email Service using Brevo (formerly Sendinblue)
- * Handles sending verification emails, password reset, and other transactional emails
+ * Supports both SMTP and HTTP API (fallback for platforms like Render that block SMTP)
  */
 class EmailService {
   constructor() {
     this.transporter = null;
     this.initialized = false;
+    this.useHttpApi = false;
+    this.brevoApiKey = process.env.BREVO_API_KEY;
     this.initializeTransporter();
   }
 
   /**
    * Initialize Nodemailer transporter with Brevo SMTP settings
+   * Falls back to HTTP API if BREVO_API_KEY is provided
    */
   initializeTransporter() {
     try {
+      // Check if we should use HTTP API (for platforms like Render that block SMTP)
+      if (this.brevoApiKey) {
+        this.useHttpApi = true;
+        this.initialized = true;
+        console.log('✅ Email service initialized with Brevo HTTP API');
+        return;
+      }
+
+      // Fall back to SMTP
       this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
         port: parseInt(process.env.EMAIL_PORT) || 587,
@@ -26,7 +38,10 @@ class EmailService {
         },
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        connectionTimeout: 10000, // 10 second timeout
+        greetingTimeout: 10000,
+        socketTimeout: 15000
       });
 
       this.initialized = true;
@@ -38,11 +53,61 @@ class EmailService {
   }
 
   /**
-   * Verify SMTP connection
+   * Send email using Brevo HTTP API
+   * @param {Object} mailOptions - Email options (from, to, subject, html, text)
+   */
+  async sendViaHttpApi(mailOptions) {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': this.brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: {
+          name: process.env.EMAIL_FROM_NAME || 'eGourd',
+          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@egourd.com'
+        },
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject,
+        htmlContent: mailOptions.html,
+        textContent: mailOptions.text
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return { messageId: data.messageId || 'brevo-api-' + Date.now() };
+  }
+
+  /**
+   * Send email (auto-selects SMTP or HTTP API)
+   * @param {Object} mailOptions - Email options
+   */
+  async sendMail(mailOptions) {
+    if (this.useHttpApi) {
+      return this.sendViaHttpApi(mailOptions);
+    }
+    return this.transporter.sendMail(mailOptions);
+  }
+
+  /**
+   * Verify SMTP connection (skipped for HTTP API)
    */
   async verifyConnection() {
     if (!this.initialized) {
       throw new Error('Email service not initialized');
+    }
+
+    // HTTP API doesn't need connection verification
+    if (this.useHttpApi) {
+      console.log('✅ Using Brevo HTTP API - no connection verification needed');
+      return true;
     }
 
     try {
@@ -70,7 +135,7 @@ class EmailService {
    */
   async sendVerificationPin(email, pin, userName = 'User') {
     if (!this.initialized) {
-      throw new Error('Email service not initialized. Check EMAIL_USER and EMAIL_PASS in .env');
+      throw new Error('Email service not initialized. Check BREVO_API_KEY or EMAIL_USER/EMAIL_PASS in .env');
     }
 
     const mailOptions = {
@@ -82,10 +147,9 @@ class EmailService {
     };
 
     try {
-      console.log(`[EmailService] Attempting to send verification email to: ${email}`);
-      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`[EmailService] Attempting to send verification email to: ${email} (using ${this.useHttpApi ? 'HTTP API' : 'SMTP'})`);
+      const info = await this.sendMail(mailOptions);
       console.log(`✅ [EmailService] Success! MessageID: ${info.messageId}`);
-      console.log(`[EmailService] Full Response:`, JSON.stringify(info));
 
       return {
         success: true,
@@ -126,7 +190,7 @@ class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await this.sendMail(mailOptions);
       console.log(`✅ Password reset email sent to ${email}:`, info.messageId);
       return {
         success: true,
@@ -157,7 +221,7 @@ class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await this.sendMail(mailOptions);
       console.log(`✅ Welcome email sent to ${email}:`, info.messageId);
       return {
         success: true,

@@ -18,7 +18,9 @@
     },
     "preview": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://egourd.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://egourd.onrender.com",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyA-yi_M_XXWW6bXNiq36YwXtjNAseAahO0",
+        "EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION": "true"
       },
       "distribution": "internal",
       "android": {
@@ -30,7 +32,9 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://egourd.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://egourd.onrender.com",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyA-yi_M_XXWW6bXNiq36YwXtjNAseAahO0",
+        "EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION": "true"
       },
       "android": {
         "buildType": "apk"
