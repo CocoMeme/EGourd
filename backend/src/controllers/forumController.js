@@ -75,8 +75,8 @@ exports.getAllPosts = async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('author', 'username firstName lastName email emailVerified')
-      .populate('comments.user', 'username firstName lastName email emailVerified')
+      .populate('author', 'username firstName lastName email emailVerified profilePicture')
+      .populate('comments.user', 'username firstName lastName email emailVerified profilePicture')
       .lean();
 
     // Get total count for pagination
@@ -89,6 +89,7 @@ exports.getAllPosts = async (req, res) => {
       author: {
         username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
         verified: post.author?.emailVerified || false,
+        profilePicture: post.author?.profilePicture || null,
       },
       likeCount: post.likes?.length || 0,
       commentCount: post.comments?.length || 0,
@@ -121,9 +122,9 @@ exports.getPostById = async (req, res) => {
     const { id } = req.params;
 
     const post = await ForumPost.findById(id)
-      .populate('author', 'username firstName lastName email emailVerified')
-      .populate('comments.user', 'username firstName lastName email emailVerified')
-      .populate('likes.user', 'username firstName lastName');
+      .populate('author', 'username firstName lastName email emailVerified profilePicture')
+      .populate('comments.user', 'username firstName lastName email emailVerified profilePicture')
+      .populate('likes.user', 'username firstName lastName profilePicture');
 
     if (!post) {
       return res.status(404).json({
@@ -142,6 +143,7 @@ exports.getPostById = async (req, res) => {
       author: {
         username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
         verified: post.author?.emailVerified || false,
+        profilePicture: post.author?.profilePicture || null,
       },
       likes: post.likes?.length || 0,
       comments: post.comments?.map(comment => ({
@@ -149,6 +151,7 @@ exports.getPostById = async (req, res) => {
         user: {
           username: comment.user?.username || (comment.user?.firstName && comment.user?.lastName ? `${comment.user.firstName} ${comment.user.lastName}` : comment.user?.email?.split('@')[0]) || 'Anonymous',
           verified: comment.user?.emailVerified || false,
+          profilePicture: comment.user?.profilePicture || null,
         },
         likes: comment.likes?.length || 0,
         timestamp: getRelativeTime(comment.createdAt),
@@ -252,7 +255,7 @@ exports.createPost = async (req, res) => {
     await post.save();
 
     // Populate author info
-    await post.populate('author', 'username firstName lastName email emailVerified');
+    await post.populate('author', 'username firstName lastName email emailVerified profilePicture');
 
     console.log('Post created - Author after populate:', post.author);
 
@@ -262,6 +265,7 @@ exports.createPost = async (req, res) => {
       author: {
         username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
         verified: post.author?.emailVerified || false,
+        profilePicture: post.author?.profilePicture || null,
       },
       likeCount: 0,
       commentCount: 0,
@@ -314,7 +318,7 @@ exports.updatePost = async (req, res) => {
     if (image !== undefined) post.image = image;
 
     await post.save();
-    await post.populate('author', 'username firstName lastName email emailVerified');
+    await post.populate('author', 'username firstName lastName email emailVerified profilePicture');
 
     res.status(200).json({
       success: true,

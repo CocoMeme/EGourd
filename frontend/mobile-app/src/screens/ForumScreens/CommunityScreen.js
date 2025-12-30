@@ -356,9 +356,16 @@ const CommunityScreen = ({ navigation }) => {
                 {/* Post Header */}
                 <View style={styles.postHeader}>
                   <View style={styles.authorInfo}>
-                    <View style={styles.avatarPlaceholder}>
-                      <Ionicons name="person" size={20} color={theme.colors.text.secondary} />
-                    </View>
+                    {post.author?.profilePicture ? (
+                      <Image 
+                        source={{ uri: post.author.profilePicture }} 
+                        style={styles.authorAvatar}
+                      />
+                    ) : (
+                      <View style={styles.avatarPlaceholder}>
+                        <Ionicons name="person" size={20} color={theme.colors.text.secondary} />
+                      </View>
+                    )}
                     <View style={styles.authorDetails}>
                       <View style={styles.authorNameRow}>
                         <Text style={styles.authorName}>{post.author?.username || 'Anonymous'}</Text>
@@ -756,6 +763,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.sm,
+  },
+  authorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: theme.spacing.sm,
+    backgroundColor: theme.colors.background.secondary,
   },
   authorDetails: {
     flex: 1,
