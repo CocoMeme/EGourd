@@ -19,7 +19,14 @@ export const CustomHeader = ({
   onMenuPress,
   showAvatar = true,
   title,
-  rightComponent 
+  rightComponent,
+  // New props for enhanced headers
+  onBackPress,
+  showBackButton = false,
+  subtitle,
+  centerComponent,
+  variant = 'default', // 'default', 'scanner', 'simple'
+  backgroundColor,
 }) => {
   // Get first letter of first name or fallback to 'U'
   const getInitials = () => {
@@ -37,6 +44,38 @@ export const CustomHeader = ({
     return 'User';
   };
 
+  // Scanner variant - dark background, minimal UI
+  if (variant === 'scanner') {
+    return (
+      <View style={[styles.scannerContainer, backgroundColor && { backgroundColor }]}>
+        <View style={styles.scannerContent}>
+          {/* Left - Back Button */}
+          <TouchableOpacity 
+            style={styles.scannerButton} 
+            onPress={onBackPress}
+          >
+            <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {/* Center - Title or Custom Component */}
+          <View style={styles.scannerCenter}>
+            {centerComponent ? centerComponent() : (
+              <>
+                {title && <Text style={styles.scannerTitle}>{title}</Text>}
+                {subtitle && <Text style={styles.scannerSubtitle}>{subtitle}</Text>}
+              </>
+            )}
+          </View>
+
+          {/* Right - Custom Component or Empty */}
+          <View style={styles.scannerRight}>
+            {rightComponent ? rightComponent() : <View style={styles.scannerButton} />}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   // If title prop is provided, render simple header with title and right component
   if (title) {
     return (
@@ -47,8 +86,19 @@ export const CustomHeader = ({
           end={{ x: 1, y: 1 }}
           style={styles.container}
         >
-          <View style={styles.titleContainer}>
+          {/* Back button if enabled */}
+          {showBackButton && (
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={onBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+          
+          <View style={[styles.titleContainer, showBackButton && { marginLeft: theme.spacing.sm }]}>
             <Text style={styles.title}>{title}</Text>
+            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           </View>
           {rightComponent && (
             <View style={styles.rightSection}>
@@ -181,6 +231,10 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
     marginLeft: theme.spacing.sm,
   },
+  backButton: {
+    padding: theme.spacing.xs,
+    marginRight: theme.spacing.xs,
+  },
   titleContainer: {
     flex: 1,
   },
@@ -188,5 +242,50 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: theme.fonts.semiBold,
     color: '#FFFFFF',
+  },
+  subtitle: {
+    fontSize: 12,
+    fontFamily: theme.fonts.regular,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+  },
+  // Scanner variant styles
+  scannerContainer: {
+    backgroundColor: '#000000',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + theme.spacing.xs : theme.spacing.lg,
+  },
+  scannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    height: 56,
+  },
+  scannerButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scannerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannerTitle: {
+    fontSize: 16,
+    fontFamily: theme.fonts.semiBold,
+    color: '#FFFFFF',
+  },
+  scannerSubtitle: {
+    fontSize: 11,
+    fontFamily: theme.fonts.regular,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+  },
+  scannerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

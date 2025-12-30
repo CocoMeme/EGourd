@@ -13,7 +13,8 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions
+  Dimensions,
+  StatusBar
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
+import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const TOP_N = 3; // Show top 3 predictions
@@ -88,11 +90,17 @@ export const CameraScreen = ({ navigation }) => {
   }, []);
 
   // Reset state and restart scanning when screen comes into focus
+  // Also hide tab bar when on this screen
   useFocusEffect(
     useCallback(() => {
       console.log('📱 CameraScreen focused - resetting state');
       setIsCapturing(false);
       setIsStable(false);
+
+      // Hide tab bar when on camera screen
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
 
       // Reset best frame tracking for fresh scan
       bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
@@ -108,8 +116,20 @@ export const CameraScreen = ({ navigation }) => {
         // IMPORTANT: Stop scanning when screen loses focus
         console.log('📱 CameraScreen unfocused - stopping scanning');
         stopScanning();
+        
+        // Show tab bar again when leaving
+        navigation.getParent()?.setOptions({
+          tabBarStyle: {
+            backgroundColor: theme.colors.surface,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.background.secondary,
+            height: 70,
+            paddingBottom: 12,
+            paddingTop: 8,
+          }
+        });
       };
-    }, [isModelReady, startScanning, stopScanning])
+    }, [isModelReady, startScanning, stopScanning, navigation])
   );
 
   // Start scanning when model is ready
@@ -441,22 +461,25 @@ export const CameraScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* 1. Header (Fixed at top) */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
-            <Text style={styles.badgeText}>TM Model</Text>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* 1. Header using CustomHeader scanner variant */}
+      <CustomHeader
+        variant="scanner"
+        onBackPress={() => navigation.goBack()}
+        centerComponent={() => (
+          <View style={styles.headerBadge}>
+            <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
+              <Text style={styles.badgeText}>TM Model</Text>
+            </View>
           </View>
-        </View>
-
-        <TouchableOpacity style={styles.settingsButton} onPress={toggleCameraFacing}>
-          <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+        )}
+        rightComponent={() => (
+          <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
+            <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
+      />
 
       {/* 2. Camera Viewport (Square 1:1) */}
       <View style={styles.cameraContainer}>
@@ -466,7 +489,6 @@ export const CameraScreen = ({ navigation }) => {
           ref={cameraRef}
           animateShutter={false}
         />
-        {/* Guidebox Removed */}
       </View>
 
       {/* 3. Predictions (Fills remaining space) */}
@@ -544,11 +566,6 @@ export const CameraScreen = ({ navigation }) => {
               <Ionicons name="camera" size={28} color={isStable ? "#4CAF50" : "#000"} />
             </View>
           </TouchableOpacity>
-          <Text style={[styles.captureHint, isStable && styles.captureHintStable]}>
-            {!isModelReady ? 'Loading model...' :
-              isStable ? '✓ Stable detection - Tap to capture!' :
-                'Hold steady for best results'}
-          </Text>
         </View>
       </View>
     </View>
@@ -559,20 +576,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-    paddingTop: 40, // Status bar padding
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    height: 80,
-    zIndex: 10,
-  },
-  headerCenter: {
+  // Header badge and flip button
+  headerBadge: {
     alignItems: 'center',
   },
   badge: {
@@ -585,8 +592,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  settingsButton: {
-    padding: 8,
+  flipButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Camera Container
@@ -594,7 +604,7 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH,
     position: 'relative',
-    backgroundColor: '#1a1a1a', // Placeholder color
+    backgroundColor: '#1a1a1a',
   },
   camera: {
     flex: 1,
@@ -602,12 +612,12 @@ const styles = StyleSheet.create({
 
   // Predictions container
   predictionsContainer: {
-    flex: 1, // Fill remaining space
+    flex: 1,
     backgroundColor: '#121212',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: theme.spacing.lg,
-    marginTop: -24, // Overlap slightly with camera
+    marginTop: -24,
     zIndex: 20,
   },
   predictionsHeader: {
@@ -732,11 +742,6 @@ const styles = StyleSheet.create({
   captureButtonDisabled: {
     opacity: 0.5,
   },
-  captureHint: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-    marginTop: 8,
-  },
 
   // Loading state
   loadingContainer: {
@@ -800,9 +805,5 @@ const styles = StyleSheet.create({
   },
   captureInnerStable: {
     backgroundColor: 'rgba(76, 175, 80, 0.2)',
-  },
-  captureHintStable: {
-    color: '#4CAF50',
-    fontWeight: '600',
   },
 });

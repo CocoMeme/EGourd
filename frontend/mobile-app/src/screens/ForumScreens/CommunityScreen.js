@@ -10,7 +10,6 @@ const CommunityScreen = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState([]);
-  const [popularTopics, setPopularTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -57,22 +56,9 @@ const CommunityScreen = ({ navigation }) => {
     }
   };
 
-  // Fetch popular topics
-  const fetchPopularTopics = async () => {
-    try {
-      const response = await forumService.getPopularTopics(4);
-      if (response.success) {
-        setPopularTopics(response.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching topics:', err);
-    }
-  };
-
   // Initial load
   useEffect(() => {
     fetchPosts();
-    fetchPopularTopics();
   }, [selectedCategory]);
 
   // Search debounce effect
@@ -92,7 +78,6 @@ const CommunityScreen = ({ navigation }) => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchPosts();
-    fetchPopularTopics();
   };
 
   // Handle like post
@@ -251,10 +236,10 @@ const CommunityScreen = ({ navigation }) => {
       >
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
+          <Ionicons name="search" size={18} color={theme.colors.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search posts, topics, or users..."
+            placeholder="Search posts..."
             placeholderTextColor={theme.colors.text.secondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -279,7 +264,7 @@ const CommunityScreen = ({ navigation }) => {
             >
               <Ionicons 
                 name={category.icon} 
-                size={18} 
+                size={16} 
                 color={selectedCategory === category.id ? '#fff' : theme.colors.text.secondary} 
               />
               <Text style={[
@@ -291,26 +276,6 @@ const CommunityScreen = ({ navigation }) => {
             </TouchableOpacity>
           ))}
         </ScrollView>
-
-        {/* Popular Topics */}
-        {popularTopics.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Popular Topics</Text>
-            <View style={styles.topicsGrid}>
-              {popularTopics.map((topic, index) => (
-                <TouchableOpacity key={index} style={styles.topicCard}>
-                  <View style={styles.topicIconContainer}>
-                    <Ionicons name="pricetag" size={16} color={theme.colors.primary} />
-                  </View>
-                  <View style={styles.topicInfo}>
-                    <Text style={styles.topicName}>#{topic._id}</Text>
-                    <Text style={styles.topicCount}>{topic.count} posts</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         {/* Forum Posts */}
         <View style={styles.section}>
@@ -601,7 +566,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
     paddingBottom: 100,
   },
   searchContainer: {
@@ -609,35 +574,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.medium,
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.background.secondary,
   },
   searchIcon: {
-    marginRight: theme.spacing.sm,
+    marginRight: theme.spacing.xs,
   },
   searchInput: {
     flex: 1,
-    height: 48,
-    fontSize: 14,
+    height: 40,
+    fontSize: 13,
     fontFamily: theme.fonts.regular,
     color: theme.colors.text.primary,
   },
   categoriesContainer: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
   },
   categoriesContent: {
-    paddingRight: theme.spacing.lg,
+    paddingRight: theme.spacing.md,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.large,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.medium,
+    paddingVertical: 6,
+    paddingHorizontal: theme.spacing.sm,
+    marginRight: theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.background.secondary,
   },
@@ -646,16 +611,16 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   categoryChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: theme.fonts.medium,
     color: theme.colors.text.secondary,
-    marginLeft: theme.spacing.xs,
+    marginLeft: 4,
   },
   categoryChipTextActive: {
     color: '#fff',
   },
   section: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',

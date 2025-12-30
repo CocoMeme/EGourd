@@ -161,7 +161,7 @@ export const PollinationScreen = ({ navigation }) => {
         style={styles.headerButton}
         onPress={() => navigation.navigate('PredictFlowers', {})}
       >
-        <Ionicons name="analytics-outline" size={24} color={theme.colors.primary} />
+        <Ionicons name="analytics-outline" size={22} color="#FFFFFF" />
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.headerButton}
@@ -169,15 +169,15 @@ export const PollinationScreen = ({ navigation }) => {
       >
         <Ionicons 
           name={showFilter ? 'funnel' : 'funnel-outline'} 
-          size={24} 
-          color={showFilter ? theme.colors.primary : theme.colors.text.secondary} 
+          size={22} 
+          color="#FFFFFF"
         />
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.headerButton}
         onPress={handleAddPlant}
       >
-        <Ionicons name="add" size={24} color={theme.colors.primary} />
+        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
