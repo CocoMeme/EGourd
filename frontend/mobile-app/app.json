@@ -21,6 +21,9 @@
         "NSCameraUsageDescription": "EGourd needs camera access to scan ampalaya flowers and classify gender for optimal harvest.",
         "NSPhotoLibraryUsageDescription": "EGourd needs photo library access to select ampalaya flower images for analysis.",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -35,9 +38,15 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -66,6 +75,9 @@
       "eas": {
         "projectId": "79fa9567-ea5a-4e31-a508-d5d97117d4f8"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/79fa9567-ea5a-4e31-a508-d5d97117d4f8"
     }
   }
 }
