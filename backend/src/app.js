@@ -73,10 +73,12 @@ class App {
   }
 
   configureRoutes() {
-    // Health check endpoint
+    // Health check endpoint (lightweight - no DB ping for routine checks)
     this.app.get('/api/health', async (req, res) => {
       try {
-        const dbHealth = await database.healthCheck();
+        // Skip DB ping unless ?full=true is passed
+        const fullCheck = req.query.full === 'true';
+        const dbHealth = await database.healthCheck(!fullCheck);
         const health = {
           status: 'healthy',
           timestamp: new Date().toISOString(),

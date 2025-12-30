@@ -70,12 +70,14 @@ class Database {
     return states[mongoose.connection.readyState];
   }
 
-  async healthCheck() {
+  async healthCheck(skipPing = false) {
     try {
       const state = this.getConnectionState();
       if (state === 'connected') {
-        // Test the connection
-        await mongoose.connection.db.admin().ping();
+        // Only ping DB if explicitly requested (not for routine health checks)
+        if (!skipPing) {
+          await mongoose.connection.db.admin().ping();
+        }
         return {
           status: 'healthy',
           state: state,
