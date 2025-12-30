@@ -140,17 +140,29 @@ export const CameraScreen = ({ navigation }) => {
   }, [isModelReady, isCapturing]);
 
   /**
-   * Start real-time scanning
+   * Start real-time scanning using recursive loop (smoother than setInterval)
    */
   const startScanning = useCallback(() => {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    if (scanIntervalRef.current) {
+      scanIntervalRef.current = false; // Signal to stop any existing loop
+    }
 
-    console.log('🎥 Starting TM real-time scanning...');
+    console.log('🎥 Starting TM real-time scanning (recursive loop)...');
     setIsScanning(true);
+    scanIntervalRef.current = true; // Use as running flag
 
-    scanIntervalRef.current = setInterval(async () => {
-      // Logic Preservation: Added strict check for null scanIntervalRef
-      if (!cameraRef.current || !isModelReady || isPaused) return;
+    const scanLoop = async () => {
+      // Check if we should stop
+      if (!scanIntervalRef.current) return;
+
+      // Skip if camera not ready or paused
+      if (!cameraRef.current || !isModelReady || isPaused) {
+        // Schedule next iteration after delay
+        setTimeout(scanLoop, SCAN_INTERVAL);
+        return;
+      }
+
+      const frameStartTime = Date.now();
 
       try {
         // Capture frame with decent quality for accurate predictions
@@ -163,7 +175,7 @@ export const CameraScreen = ({ navigation }) => {
           shutterSound: false,
         });
 
-        // Logic Preservation: Check if stopped during async capture
+        // Check if stopped during async capture
         if (!scanIntervalRef.current) return;
 
         // Save the last frame URI for instant capture
@@ -171,6 +183,9 @@ export const CameraScreen = ({ navigation }) => {
 
         // Run prediction
         const result = await modelService.quickPredict(photo.uri, photo.width, photo.height);
+
+        // Check if stopped during prediction
+        if (!scanIntervalRef.current) return;
 
         // DEBUG: Log real-time prediction
         console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`, '| Frame:', photo.uri.slice(-20));
@@ -268,7 +283,17 @@ export const CameraScreen = ({ navigation }) => {
       } catch (error) {
         console.log('TM scan error (ignored):', error.message);
       }
-    }, SCAN_INTERVAL);
+
+      // Schedule next frame: wait remaining time if frame was fast, otherwise continue immediately
+      if (scanIntervalRef.current) {
+        const elapsed = Date.now() - frameStartTime;
+        const delay = Math.max(0, SCAN_INTERVAL - elapsed);
+        setTimeout(scanLoop, delay);
+      }
+    };
+
+    // Start the loop
+    scanLoop();
   }, [isModelReady, isPaused]);
 
   /**
@@ -277,8 +302,7 @@ export const CameraScreen = ({ navigation }) => {
   const stopScanning = useCallback(() => {
     if (scanIntervalRef.current) {
       console.log('🛑 Stopping TM scanning');
-      clearInterval(scanIntervalRef.current);
-      scanIntervalRef.current = null;
+      scanIntervalRef.current = false; // Signal the recursive loop to stop
       setIsScanning(false);
     }
   }, []);

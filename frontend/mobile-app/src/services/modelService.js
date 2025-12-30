@@ -161,14 +161,15 @@ class ModelService {
         }
         return pixels;
       } else {
-        // For float32 input: 0-1
+        // For float32 input: MobileNet normalization (-1 to 1)
+        // Formula: (value - 127.5) / 127.5 = value/127.5 - 1
         const pixels = new Float32Array(targetWidth * targetHeight * 3);
         let pixelIndex = 0;
         
         for (let i = 0; i < rawImageData.data.length; i += 4) {
-          pixels[pixelIndex++] = rawImageData.data[i] / 255.0;     // R
-          pixels[pixelIndex++] = rawImageData.data[i + 1] / 255.0; // G
-          pixels[pixelIndex++] = rawImageData.data[i + 2] / 255.0; // B
+          pixels[pixelIndex++] = (rawImageData.data[i] - 127.5) / 127.5;     // R
+          pixels[pixelIndex++] = (rawImageData.data[i + 1] - 127.5) / 127.5; // G
+          pixels[pixelIndex++] = (rawImageData.data[i + 2] - 127.5) / 127.5; // B
         }
         return pixels;
       }
