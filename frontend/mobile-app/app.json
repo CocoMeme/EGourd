@@ -77,7 +77,10 @@
       }
     },
     "updates": {
-      "url": "https://u.expo.dev/79fa9567-ea5a-4e31-a508-d5d97117d4f8"
+      "enabled": true,
+      "url": "https://u.expo.dev/79fa9567-ea5a-4e31-a508-d5d97117d4f8",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
