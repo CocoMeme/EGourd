@@ -24,7 +24,13 @@ const {
   predictFlowerProduction,
   getFlowerPredictions,
   getFlowerPrediction,
-  deleteFlowerPrediction
+  deleteFlowerPrediction,
+  predictYield,
+  getYieldPredictions,
+  getYieldPrediction,
+  recordActualYield,
+  getYieldPredictionStats,
+  deleteYieldPrediction
 } = require('../controllers/pollinationController');
 
 // Import middleware
@@ -53,6 +59,16 @@ router.get('/predictions', getFlowerPredictions);
 router.route('/predictions/:id')
   .get(getFlowerPrediction)
   .delete(deleteFlowerPrediction);
+
+// Yield prediction routes (must be before /:id routes)
+router.post('/predict-yield', predictYield);
+router.get('/yield-predictions/stats', getYieldPredictionStats);
+router.get('/yield-predictions', getYieldPredictions);
+router.route('/yield-predictions/:id')
+  .get(getYieldPrediction)
+  .put(recordActualYield)
+  .delete(deleteYieldPrediction);
+router.put('/yield-predictions/:id/actual-yield', recordActualYield);
 
 // Main CRUD routes
 router.route('/')

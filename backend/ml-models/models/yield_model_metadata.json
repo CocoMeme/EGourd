@@ -1,0 +1,46 @@
+{
+  "trained_at": "2026-01-02T00:17:57.592526",
+  "version": "1.0",
+  "feature_names": [
+    "plant_type",
+    "plant_age_days",
+    "vine_length_cm",
+    "node_count",
+    "male_flower_count",
+    "female_flower_count",
+    "temperature_celsius",
+    "soil_moisture_percent"
+  ],
+  "performance_metrics": {
+    "train": {
+      "mae": 0.2815983723840321,
+      "rmse": 0.3845164467751364,
+      "r2": 0.9832600680391762
+    },
+    "test": {
+      "mae": 0.6080745086295657,
+      "rmse": 0.8378720191700957,
+      "r2": 0.9208887487899019
+    },
+    "cv_mae": 0.6168506445761214,
+    "cv_mae_std": 0.019427510660907192
+  },
+  "model_params": {
+    "n_estimators": 200,
+    "max_depth": 20,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2
+  },
+  "plant_types": [
+    "ampalaya_bilog",
+    "cucumber",
+    "patola",
+    "upo_smooth"
+  ],
+  "label_encodings": {
+    "0": "ampalaya_bilog",
+    "1": "cucumber",
+    "2": "patola",
+    "3": "upo_smooth"
+  }
+}

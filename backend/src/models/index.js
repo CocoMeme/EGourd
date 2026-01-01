@@ -4,6 +4,7 @@ const News = require('./News');
 const Pollination = require('./Pollination');
 const ForumPost = require('./ForumPost');
 const FlowerPrediction = require('./FlowerPrediction');
+const YieldPrediction = require('./YieldPrediction');
 
 module.exports = {
   User,
@@ -11,4 +12,5 @@ module.exports = {
   Pollination,
   ForumPost,
   FlowerPrediction,
+  YieldPrediction,
 };

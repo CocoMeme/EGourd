@@ -159,6 +159,12 @@ export const PollinationScreen = ({ navigation }) => {
     <View style={styles.headerRight}>
       <TouchableOpacity 
         style={styles.headerButton}
+        onPress={() => navigation.navigate('PredictYield', {})}
+      >
+        <Ionicons name="pulse-outline" size={22} color="#FFFFFF" />
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.headerButton}
         onPress={() => navigation.navigate('PredictFlowers', {})}
       >
         <Ionicons name="analytics-outline" size={22} color="#FFFFFF" />

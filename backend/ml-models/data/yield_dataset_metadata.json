@@ -1,0 +1,78 @@
+{
+  "generated_at": "2026-01-02T00:15:46.959285",
+  "version": "1.0",
+  "plant_types": [
+    "ampalaya_bilog",
+    "upo_smooth",
+    "patola",
+    "cucumber"
+  ],
+  "features": [
+    "plant_age_days",
+    "vine_length_cm",
+    "node_count",
+    "male_flower_count",
+    "female_flower_count",
+    "temperature_celsius",
+    "soil_moisture_percent"
+  ],
+  "target": "yield_kg",
+  "plant_specifications": {
+    "ampalaya_bilog": {
+      "base_yield_kg": 2.5,
+      "optimal_age": [
+        50,
+        70
+      ],
+      "yield_per_female_flower": 0.18,
+      "optimal_temp": [
+        25,
+        30
+      ],
+      "vine_length_factor": 0.008,
+      "node_factor": 0.05
+    },
+    "upo_smooth": {
+      "base_yield_kg": 4.5,
+      "optimal_age": [
+        60,
+        80
+      ],
+      "yield_per_female_flower": 0.35,
+      "optimal_temp": [
+        24,
+        29
+      ],
+      "vine_length_factor": 0.012,
+      "node_factor": 0.08
+    },
+    "patola": {
+      "base_yield_kg": 2.0,
+      "optimal_age": [
+        55,
+        75
+      ],
+      "yield_per_female_flower": 0.15,
+      "optimal_temp": [
+        25,
+        31
+      ],
+      "vine_length_factor": 0.007,
+      "node_factor": 0.04
+    },
+    "cucumber": {
+      "base_yield_kg": 3.0,
+      "optimal_age": [
+        45,
+        65
+      ],
+      "yield_per_female_flower": 0.2,
+      "optimal_temp": [
+        20,
+        28
+      ],
+      "vine_length_factor": 0.006,
+      "node_factor": 0.06
+    }
+  }
+}

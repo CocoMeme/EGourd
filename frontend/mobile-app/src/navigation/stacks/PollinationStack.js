@@ -5,7 +5,9 @@ import {
     PlantFormScreen,
     PlantDetailScreen,
     PredictFlowersScreen,
-    PredictionResultsScreen
+    PredictionResultsScreen,
+    PredictYieldScreen,
+    YieldResultsScreen
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -58,6 +60,22 @@ export const PollinationStack = () => {
                 options={{
                     title: 'Prediction Results',
                     headerShown: true
+                }}
+            />
+            <Stack.Screen
+                name="PredictYield"
+                component={PredictYieldScreen}
+                options={{
+                    title: 'Predict Crop Yield',
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="YieldResults"
+                component={YieldResultsScreen}
+                options={{
+                    title: 'Yield Prediction Results',
+                    headerShown: false
                 }}
             />
         </Stack.Navigator>
