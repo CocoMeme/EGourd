@@ -1,0 +1,89 @@
+{
+  "trained_at": "2026-01-01T23:18:33.709750",
+  "version": "1.0",
+  "feature_names": [
+    "plant_type",
+    "plant_age",
+    "temperature",
+    "humidity",
+    "sunlight_hours",
+    "soil_ph",
+    "soil_type",
+    "watering_frequency",
+    "fertilizer_type",
+    "fertilizer_frequency",
+    "pest_control",
+    "height",
+    "leaf_count",
+    "stem_thickness",
+    "health_rating"
+  ],
+  "performance_metrics": {
+    "male": {
+      "train": {
+        "mae": 2.4974721449621153,
+        "rmse": 3.2458646087138283,
+        "r2": 0.925324746828593
+      },
+      "test": {
+        "mae": 5.591688454449903,
+        "rmse": 7.002741863287424,
+        "r2": 0.6522495933240753
+      },
+      "cv_mae": 5.603024740958285,
+      "cv_mae_std": 0.12380590503715254
+    },
+    "female": {
+      "train": {
+        "mae": 1.4415355357262252,
+        "rmse": 1.8815286702124008,
+        "r2": 0.9129217132354017
+      },
+      "test": {
+        "mae": 3.19035449511806,
+        "rmse": 4.008320801545752,
+        "r2": 0.5875647649128901
+      },
+      "cv_mae": 3.236233675746697,
+      "cv_mae_std": 0.060440903225233364
+    }
+  },
+  "model_params": {
+    "n_estimators": 200,
+    "max_depth": 20,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2
+  },
+  "categorical_features": [
+    "plant_type",
+    "soil_type",
+    "fertilizer_type",
+    "pest_control"
+  ],
+  "label_encodings": {
+    "plant_type": {
+      "0": "ampalaya_bilog",
+      "1": "cucumber",
+      "2": "patola",
+      "3": "upo_smooth"
+    },
+    "soil_type": {
+      "0": "clay",
+      "1": "loamy",
+      "2": "sandy",
+      "3": "silty"
+    },
+    "fertilizer_type": {
+      "0": "chemical",
+      "1": "mixed",
+      "2": "none",
+      "3": "organic"
+    },
+    "pest_control": {
+      "0": "as-needed",
+      "1": "intensive",
+      "2": "none",
+      "3": "regular"
+    }
+  }
+}

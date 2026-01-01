@@ -2,7 +2,7 @@ const { Pollination, FlowerPrediction } = require('../models');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const notificationScheduler = require('../utils/notificationScheduler');
-const FlowerPredictionService = require('../services/flowerPredictionService');
+const MLFlowerPredictionService = require('../services/mlFlowerPredictionService');
 
 // @desc    Get all pollination records for authenticated user
 // @route   GET /api/pollination
@@ -854,7 +854,7 @@ const predictFlowerProduction = async (req, res) => {
     }
 
     // Validate plant type
-    const validPlantTypes = ['ampalaya', 'patola', 'upo', 'kalabasa', 'kundol'];
+    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'];
     if (!validPlantTypes.includes(plantType)) {
       return res.status(400).json({
         success: false,
@@ -877,8 +877,8 @@ const predictFlowerProduction = async (req, res) => {
       }
     }
 
-    // Generate prediction using the service
-    const predictionResult = FlowerPredictionService.predictFlowerProduction({
+    // Generate prediction using ML service
+    const predictionResult = await MLFlowerPredictionService.predictFlowerProduction({
       plantType,
       plantAge,
       environmental,

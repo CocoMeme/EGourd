@@ -1,0 +1,23 @@
+{
+  "plantType": "ampalaya_bilog",
+  "plantAge": 50,
+  "environmental": {
+    "temperature": 28,
+    "humidity": 70,
+    "sunlightHours": 7,
+    "soilPH": 6.5,
+    "soilType": "loamy"
+  },
+  "care": {
+    "wateringFrequency": 4,
+    "fertilizerType": "organic",
+    "fertilizerFrequency": 2,
+    "pestControl": "regular"
+  },
+  "growth": {
+    "height": 220,
+    "leafCount": 45,
+    "stemThickness": 15,
+    "healthRating": 4
+  }
+}
