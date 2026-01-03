@@ -333,6 +333,32 @@ export const HomeScreen = ({ navigation, route }) => {
     navigation.navigate('History', { filter: type });
   };
 
+  const handleDeleteScan = async (scanId) => {
+    Alert.alert(
+      'Delete Scan',
+      'Are you sure you want to delete this scan?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await scanService.deleteScan(scanId);
+              // Remove from local state
+              setRecentScans(prev => prev.filter(scan => scan._id !== scanId));
+              // Refresh stats
+              fetchStats();
+            } catch (error) {
+              console.error('Error deleting scan:', error);
+              Alert.alert('Error', 'Failed to delete scan. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleScanPress = (scan) => {
     // Build tmPrediction from saved data
     const tmPrediction = scan.aiPrediction?.tflite ? {
@@ -510,7 +536,11 @@ export const HomeScreen = ({ navigation, route }) => {
                   imageUri={scan.imageUrl}
                   result={`${scan.prediction} Flower`}
                   date={scan.date}
+                  confidence={scan.confidence}
+                  name={scan.name}
+                  gender={scan.prediction}
                   onPress={() => handleScanPress(scan)}
+                  onDelete={() => handleDeleteScan(scan._id)}
                 />
               ))}
             </View>

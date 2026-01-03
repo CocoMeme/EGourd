@@ -247,6 +247,32 @@ class ScanService {
       throw error;
     }
   }
+
+  /**
+   * Update a scan (name, notes, etc.)
+   * @param {string} scanId - The ID of the scan to update
+   * @param {Object} updates - The fields to update (name, notes)
+   * @returns {Promise<Object>} The updated scan object
+   */
+  async updateScan(scanId, updates) {
+    try {
+      const response = await authService.authenticatedRequest(`/scans/${scanId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update scan');
+      }
+
+      return data.scan;
+    } catch (error) {
+      console.error('Error updating scan:', error);
+      throw error;
+    }
+  }
 }
 
 export const scanService = new ScanService();

@@ -85,8 +85,8 @@ class ModelService {
    */
   async loadModel() {
     try {
-      console.log('📦 Loading tm_floating_point/model_unquant.tflite...');
-      const modelSource = require('../../assets/models/tm_floating_point/model_unquant.tflite');
+      console.log('📦 Loading tflite_model_2026-01-03/model_unquant.tflite...');
+      const modelSource = require('../../assets/models/tflite_model_2026-01-03/model_unquant.tflite');
 
       this.model = await loadTensorflowModel(modelSource);
       
@@ -250,7 +250,10 @@ class ModelService {
   }
 
   async quickPredict(imageUri, sourceWidth, sourceHeight) {
-    return this.predictWithAllProbabilities(imageUri, sourceWidth, sourceHeight);
+    const result = await this.predictWithAllProbabilities(imageUri, sourceWidth, sourceHeight);
+    // Track performance metrics
+    this.trackPerformance(result.processingTime);
+    return result;
   }
 
   async warmUp() {
@@ -264,6 +267,41 @@ class ModelService {
     } catch (e) {
       console.log('Warmup failed (ignoring):', e.message);
     }
+  }
+
+  /**
+   * Track inference performance over recent predictions
+   * @param {number} time - Processing time in ms
+   * @returns {number} Average processing time
+   */
+  trackPerformance(time) {
+    if (!this.recentTimes) this.recentTimes = [];
+    this.recentTimes.push(time);
+    if (this.recentTimes.length > 10) this.recentTimes.shift();
+    
+    const avg = this.recentTimes.reduce((a, b) => a + b, 0) / this.recentTimes.length;
+    
+    // Warn if inference is getting slow
+    if (avg > 150 && this.recentTimes.length >= 5) {
+      console.warn('⚠️ Slow inference detected. Avg:', Math.round(avg), 'ms');
+    }
+    
+    return avg;
+  }
+
+  /**
+   * Get current performance stats
+   */
+  getPerformanceStats() {
+    if (!this.recentTimes || this.recentTimes.length === 0) {
+      return { avg: 0, min: 0, max: 0, count: 0 };
+    }
+    return {
+      avg: Math.round(this.recentTimes.reduce((a, b) => a + b, 0) / this.recentTimes.length),
+      min: Math.round(Math.min(...this.recentTimes)),
+      max: Math.round(Math.max(...this.recentTimes)),
+      count: this.recentTimes.length
+    };
   }
 }
 

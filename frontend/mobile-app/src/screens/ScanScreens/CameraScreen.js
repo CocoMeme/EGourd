@@ -86,6 +86,12 @@ export const CameraScreen = ({ navigation }) => {
 
     return () => {
       stopScanning();
+      // Memory cleanup
+      recentPredictions.current = [];
+      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+      lastFrameUri.current = { uri: null, width: 0, height: 0 };
+      animatedBars.current = {};
+      animatedPositions.current = {};
     };
   }, []);
 
