@@ -11,6 +11,14 @@ import * as FileSystem from 'expo-file-system/legacy';
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const ENABLE_GEMINI = process.env.EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION === 'true';
 
+// Debug: Log environment variables on module load
+console.log('🔧 Gemini Config:', {
+  apiKeyExists: !!GEMINI_API_KEY,
+  apiKeyLength: GEMINI_API_KEY?.length || 0,
+  enabledEnvVar: process.env.EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION,
+  isEnabled: ENABLE_GEMINI,
+});
+
 // Gemini configuration - Using latest Gemini 2.5 Flash (Free Tier)
 const GEMINI_CONFIG = {
   model: 'gemini-2.5-flash',

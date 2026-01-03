@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
+import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
@@ -655,21 +656,19 @@ export const ResultsScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Analysis Results</Text>
-        <View style={styles.headerRight}>
-          {hasGeminiData && !isAnalyzing && (
-            <View style={styles.aiBadge}>
-              <Ionicons name="sparkles" size={14} color="#FFD700" />
-              <Text style={styles.aiBadgeText}>AI Enhanced</Text>
-            </View>
-          )}
-        </View>
-      </View>
+      {/* Header using CustomHeader for consistency */}
+      <CustomHeader
+        variant="simple"
+        title="Scan Results"
+        showBackButton={true}
+        onBackPress={handleBack}
+        rightComponent={hasGeminiData && !isAnalyzing ? () => (
+          <View style={styles.aiBadge}>
+            <Ionicons name="sparkles" size={14} color="#FFD700" />
+            <Text style={styles.aiBadgeText}>AI Enhanced</Text>
+          </View>
+        ) : null}
+      />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Image Preview */}
@@ -852,30 +851,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', // White background
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF', // White header
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    color: '#000000', // Dark text
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  headerRight: {
-    minWidth: 100,
-    alignItems: 'flex-end',
-  },
+  // AI Badge (used in CustomHeader rightComponent)
   aiBadge: {
     flexDirection: 'row',
     alignItems: 'center',

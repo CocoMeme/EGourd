@@ -11,6 +11,7 @@ export const CameraStack = () => {
     return (
         <Stack.Navigator
             screenOptions={{
+                headerShown: false, // Custom headers are used in each screen
                 headerTitleStyle: {
                     fontFamily: 'Poppins_600SemiBold',
                     fontSize: 18,
@@ -20,12 +21,12 @@ export const CameraStack = () => {
             <Stack.Screen
                 name="CameraMain"
                 component={CameraScreen}
-                options={{ title: 'Scan Gourd' }}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="Results"
                 component={ResultsScreen}
-                options={{ title: 'Scan Results' }}
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     );
