@@ -14,6 +14,9 @@ router.get('/history/:userId', scanController.getScanHistory);
 // Route to get a single scan by ID
 router.get('/:id', scanController.getScanById);
 
+// Route to update a scan (name, notes, etc.)
+router.put('/:id', scanController.updateScan);
+
 // Route to delete a scan
 router.delete('/:id', scanController.deleteScan);
 

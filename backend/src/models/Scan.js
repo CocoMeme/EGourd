@@ -24,9 +24,16 @@ const scanSchema = new mongoose.Schema({
   // ===== MULTI-CLASS SUPPORT =====
   variety: {
     type: String,
-    enum: ['Ampalaya Bilog', 'Patola', 'Upo (Smooth)', null],
+    enum: ['Ampalaya Bilog', 'Patola', 'Upo (Smooth)', 'Cucumber', null],
     default: null,
     description: 'Gourd variety detected'
+  },
+
+  // ===== USER-EDITABLE NAME =====
+  name: {
+    type: String,
+    default: '',
+    description: 'User-editable name for the scan'
   },
 
   // ===== VALIDATION TRACKING =====
@@ -124,6 +131,18 @@ const scanSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Pre-save hook to generate default name if not provided
+scanSchema.pre('save', function(next) {
+  if (!this.name || this.name === '') {
+    const variety = this.variety || 'Unknown';
+    const gender = this.prediction || 'unknown';
+    const date = new Date(this.date || Date.now());
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    this.name = `${variety} ${gender} ${dateStr}`;
+  }
+  next();
 });
 
 module.exports = mongoose.model('Scan', scanSchema);
