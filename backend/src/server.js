@@ -1,4 +1,22 @@
-require('dotenv').config();
+// Load environment variables from Render secret file or local .env
+const path = require('path');
+const fs = require('fs');
+
+// Check for Render's secret file first, then fall back to local .env
+const renderSecretPath = '/etc/secrets/.env';
+const localEnvPath = path.join(__dirname, '../.env');
+
+if (fs.existsSync(renderSecretPath)) {
+  console.log('📦 Loading environment from Render secret file:', renderSecretPath);
+  require('dotenv').config({ path: renderSecretPath });
+} else if (fs.existsSync(localEnvPath)) {
+  console.log('📦 Loading environment from local .env file');
+  require('dotenv').config({ path: localEnvPath });
+} else {
+  console.log('⚠️ No .env file found, using system environment variables');
+  require('dotenv').config();
+}
+
 const App = require('./app');
 const os = require('os');
 const validateEnv = require('./config/validateEnv');
