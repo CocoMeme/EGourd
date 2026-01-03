@@ -315,6 +315,7 @@ export const CameraScreen = ({ navigation }) => {
     if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
     if (label.includes('Patola')) return 'Patola';
     if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label.includes('Cucumber')) return 'Cucumber';
     if (label === 'Not Flower') return null;
     return null;
   };

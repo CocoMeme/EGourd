@@ -33,6 +33,7 @@ const VARIETY_COLORS = {
   'Ampalaya Bilog': '#27AE60',
   'Patola': '#F39C12',
   'Upo (Smooth)': '#3498DB',
+  'Cucumber': '#8BC34A',
 };
 
 // Gender colors

@@ -11,7 +11,7 @@ import { loadTensorflowModel } from 'react-native-fast-tflite';
 import * as ImageManipulator from 'expo-image-manipulator';
 import jpeg from 'jpeg-js';
 
-// Labels from labels.txt (7 classes - 200 epoch trained model)
+// Labels from labels.txt (9 classes - includes Cucumber)
 const TM_LABELS = [
   'Ampalaya Bilog Male',       // 0
   'Ampalaya Bilog Female',     // 1
@@ -20,6 +20,8 @@ const TM_LABELS = [
   'Patola Male',               // 4
   'Upo Smooth Female',         // 5
   'Upo Smooth Male',           // 6
+  'Cucumber Female',           // 7
+  'Cucumber Male',             // 8
 ];
 
 // Confidence Thresholds
