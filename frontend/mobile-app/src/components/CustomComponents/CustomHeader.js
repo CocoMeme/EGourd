@@ -25,7 +25,7 @@ export const CustomHeader = ({
   showBackButton = false,
   subtitle,
   centerComponent,
-  variant = 'default', // 'default', 'scanner'
+  variant = 'default', // 'default', 'scanner', 'results', 'management'
   backgroundColor,
 }) => {
   // Get first letter of first name or fallback to 'U'
@@ -43,6 +43,66 @@ export const CustomHeader = ({
     }
     return 'User';
   };
+
+  // Results variant - Clean minimal header for scan results
+  if (variant === 'results') {
+    return (
+      <View style={[styles.resultsContainer, backgroundColor && { backgroundColor }]}>
+        <View style={styles.resultsContent}>
+          {/* Left - Back Button */}
+          <TouchableOpacity 
+            style={styles.resultsBackButton} 
+            onPress={onBackPress}
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+
+          {/* Center - Title */}
+          <View style={styles.resultsCenter}>
+            {title && <Text style={styles.resultsTitle}>{title}</Text>}
+            {subtitle && <Text style={styles.resultsSubtitle}>{subtitle}</Text>}
+          </View>
+
+          {/* Right - Custom Component */}
+          <View style={styles.resultsRight}>
+            {rightComponent ? rightComponent() : <View style={styles.resultsPlaceholder} />}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Management variant - Modern header for management screens
+  if (variant === 'management') {
+    return (
+      <SafeAreaView style={styles.managementSafeArea}>
+        <View style={styles.managementContainer}>
+          {/* Left - Back Button (optional) */}
+          {showBackButton && (
+            <TouchableOpacity 
+              style={styles.managementBackButton} 
+              onPress={onBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+          )}
+
+          {/* Center - Title */}
+          <View style={[styles.managementCenter, !showBackButton && { marginLeft: 16 }]}>
+            {title && <Text style={styles.managementTitle}>{title}</Text>}
+            {subtitle && <Text style={styles.managementSubtitle}>{subtitle}</Text>}
+          </View>
+
+          {/* Right - Action Buttons */}
+          {rightComponent && (
+            <View style={styles.managementRight}>
+              {rightComponent()}
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Scanner variant - dark background, minimal UI
   if (variant === 'scanner') {
@@ -272,5 +332,89 @@ const styles = StyleSheet.create({
   scannerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // Results variant styles
+  resultsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : theme.spacing.sm,
+  },
+  resultsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    height: 56,
+  },
+  resultsBackButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultsCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultsTitle: {
+    fontSize: 17,
+    fontFamily: theme.fonts.semiBold,
+    color: '#333',
+  },
+  resultsSubtitle: {
+    fontSize: 11,
+    fontFamily: theme.fonts.regular,
+    color: '#666',
+    marginTop: 2,
+  },
+  resultsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 44,
+  },
+  resultsPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+  // Management variant styles
+  managementSafeArea: {
+    backgroundColor: '#4CAF50',
+  },
+  managementContainer: {
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    minHeight: 50,
+  },
+  managementBackButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  managementCenter: {
+    flex: 1,
+  },
+  managementTitle: {
+    fontSize: 18,
+    fontFamily: theme.fonts.bold,
+    color: '#FFFFFF',
+  },
+  managementSubtitle: {
+    fontSize: 12,
+    fontFamily: theme.fonts.regular,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 1,
+  },
+  managementRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });

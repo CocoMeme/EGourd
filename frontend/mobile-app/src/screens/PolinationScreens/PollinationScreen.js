@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   Alert, 
   RefreshControl,
-  ActivityIndicator 
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -27,6 +28,8 @@ export const PollinationScreen = ({ navigation }) => {
     sort: 'newest'
   });
   const [showFilter, setShowFilter] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(200)).current; // Start off-screen to the right
 
   // Fetch plants data
   const fetchPlants = async (showLoader = true) => {
@@ -112,6 +115,17 @@ export const PollinationScreen = ({ navigation }) => {
     );
   };
 
+  const toggleMenu = () => {
+    const toValue = menuOpen ? 200 : 0;
+    setMenuOpen(!menuOpen);
+    Animated.spring(slideAnim, {
+      toValue,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 8,
+    }).start();
+  };
+
   const handleAddPlant = () => {
     console.log('🌱 Add Plant button pressed');
     console.log('📱 Navigation object:', navigation);
@@ -157,33 +171,51 @@ export const PollinationScreen = ({ navigation }) => {
   // Header right component
   const headerRight = () => (
     <View style={styles.headerRight}>
+      {/* Sliding Menu */}
+      <Animated.View style={[styles.slidingMenu, { transform: [{ translateX: slideAnim }] }]}>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => {
+            toggleMenu();
+            navigation.navigate('PredictYield', {});
+          }}
+        >
+          <Ionicons name="pulse-outline" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => {
+            toggleMenu();
+            navigation.navigate('PredictFlowers', {});
+          }}
+        >
+          <Ionicons name="analytics-outline" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => {
+            toggleMenu();
+            setShowFilter(!showFilter);
+          }}
+        >
+          <Ionicons 
+            name={showFilter ? 'funnel' : 'funnel-outline'} 
+            size={20} 
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Menu Toggle Button */}
       <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={() => navigation.navigate('PredictYield', {})}
-      >
-        <Ionicons name="pulse-outline" size={22} color="#FFFFFF" />
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={() => navigation.navigate('PredictFlowers', {})}
-      >
-        <Ionicons name="analytics-outline" size={22} color="#FFFFFF" />
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={() => setShowFilter(!showFilter)}
+        style={styles.menuToggle}
+        onPress={toggleMenu}
       >
         <Ionicons 
-          name={showFilter ? 'funnel' : 'funnel-outline'} 
-          size={22} 
+          name={menuOpen ? 'close' : 'ellipsis-horizontal'} 
+          size={24} 
           color="#FFFFFF"
         />
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.headerButton}
-        onPress={handleAddPlant}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
@@ -200,7 +232,9 @@ export const PollinationScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <CustomHeader
-        title="Pollination Management"
+        variant="management"
+        title="Pollination"
+        subtitle={`${filteredPlants.length} ${filteredPlants.length === 1 ? 'plant' : 'plants'}`}
         rightComponent={headerRight}
       />
 
@@ -281,10 +315,32 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
+    height: 36,
+    overflow: 'visible',
   },
-  headerButton: {
-    padding: theme.spacing.sm,
-    marginLeft: theme.spacing.xs,
+  slidingMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    position: 'absolute',
+    right: 48,
+  },
+  menuButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  menuToggle: {
+    width: 40,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   listContent: {
     padding: theme.spacing.md,

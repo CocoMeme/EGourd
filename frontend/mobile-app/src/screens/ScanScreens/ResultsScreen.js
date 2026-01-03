@@ -659,14 +659,13 @@ export const ResultsScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       {/* Header using CustomHeader for consistency */}
       <CustomHeader
-        variant="simple"
+        variant="results"
         title="Scan Results"
-        showBackButton={true}
         onBackPress={handleBack}
         rightComponent={hasGeminiData && !isAnalyzing ? () => (
           <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={14} color="#FFD700" />
-            <Text style={styles.aiBadgeText}>AI Enhanced</Text>
+            <Ionicons name="sparkles" size={14} color="#FFB300" />
+            <Text style={styles.aiBadgeText}>AI</Text>
           </View>
         ) : null}
       />
@@ -856,16 +855,18 @@ const styles = StyleSheet.create({
   aiBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
-    paddingHorizontal: 10,
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 16,
     gap: 4,
+    borderWidth: 1,
+    borderColor: '#FFD54F',
   },
   aiBadgeText: {
-    color: '#FFB300', // Darker gold for visibility on white
+    color: '#F57C00',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   // Scroll View
