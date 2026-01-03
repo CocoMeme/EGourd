@@ -1,20 +1,26 @@
 /**
  * Gemini AI Service
- * Integrates Google Gemini 3.0 Flash for flower classification validation
+ * Integrates Google Gemini 2.5 Flash for flower classification validation
  * Works alongside TFLite model for enhanced accuracy
+ * Supports multiple API keys with automatic fallback
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as FileSystem from 'expo-file-system/legacy';
 
-// Get API key from environment
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+// Get API keys from environment - supports multiple keys for fallback
+const GEMINI_API_KEYS = [
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY,           // Primary key
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY_2,         // Fallback 1
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY_3,         // Fallback 2
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY_4,         // Fallback 3
+].filter(key => key && key.length > 0);
+
 const ENABLE_GEMINI = process.env.EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION === 'true';
 
 // Debug: Log environment variables on module load
 console.log('🔧 Gemini Config:', {
-  apiKeyExists: !!GEMINI_API_KEY,
-  apiKeyLength: GEMINI_API_KEY?.length || 0,
+  apiKeysCount: GEMINI_API_KEYS.length,
   enabledEnvVar: process.env.EXPO_PUBLIC_ENABLE_GEMINI_VALIDATION,
   isEnabled: ENABLE_GEMINI,
 });
@@ -34,12 +40,21 @@ class GeminiService {
     this.model = null;
     this.isInitialized = false;
     this.isEnabled = ENABLE_GEMINI;
+    this.currentKeyIndex = 0;
+    this.apiKeys = GEMINI_API_KEYS;
   }
 
   /**
-   * Initialize Gemini AI
+   * Initialize Gemini AI with the current API key
+   * @param {number} keyIndex - Index of the API key to use (defaults to current)
    */
-  async initialize() {
+  async initialize(keyIndex = this.currentKeyIndex) {
+    // Reset initialization state if switching keys
+    if (keyIndex !== this.currentKeyIndex) {
+      this.isInitialized = false;
+      this.currentKeyIndex = keyIndex;
+    }
+
     if (this.isInitialized) return;
 
     if (!this.isEnabled) {
@@ -47,15 +62,21 @@ class GeminiService {
       return;
     }
 
-    if (!GEMINI_API_KEY) {
-      console.warn('⚠️ Gemini API key not found. Gemini validation disabled.');
+    if (this.apiKeys.length === 0) {
+      console.warn('⚠️ No Gemini API keys found. Gemini validation disabled.');
       this.isEnabled = false;
       return;
     }
 
+    const apiKey = this.apiKeys[keyIndex];
+    if (!apiKey) {
+      console.warn(`⚠️ API key at index ${keyIndex} not found.`);
+      return;
+    }
+
     try {
-      console.log('🤖 Initializing Gemini AI...');
-      this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      console.log(`🤖 Initializing Gemini AI with key ${keyIndex + 1}/${this.apiKeys.length}...`);
+      this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({
         model: GEMINI_CONFIG.model,
         generationConfig: {
@@ -69,8 +90,36 @@ class GeminiService {
       console.log('✅ Gemini AI initialized successfully');
     } catch (error) {
       console.error('❌ Gemini initialization failed:', error);
+      // Try next key if available
+      if (keyIndex + 1 < this.apiKeys.length) {
+        console.log(`🔄 Trying fallback API key ${keyIndex + 2}...`);
+        return this.initialize(keyIndex + 1);
+      }
       this.isEnabled = false;
     }
+  }
+
+  /**
+   * Switch to the next available API key
+   * @returns {boolean} True if switched successfully, false if no more keys
+   */
+  switchToNextKey() {
+    if (this.currentKeyIndex + 1 < this.apiKeys.length) {
+      this.currentKeyIndex++;
+      this.isInitialized = false;
+      console.log(`🔄 Switching to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+      return true;
+    }
+    console.warn('⚠️ No more fallback API keys available');
+    return false;
+  }
+
+  /**
+   * Reset to the primary API key
+   */
+  resetToFirstKey() {
+    this.currentKeyIndex = 0;
+    this.isInitialized = false;
   }
 
   /**
@@ -129,21 +178,22 @@ LOOK SPECIFICALLY FOR THIS BULGE. Do not classify as MALE unless you are absolut
       }
 
       // Prepare simplified prompt to avoid response truncation
-      const prompt = `Analyze this gourd flower image. Identify the variety and gender.
+      const prompt = `Analyze this gourd/vegetable flower image. Identify the variety and gender.
 ${contextString}
 
-**Varieties:** ampalaya_bilog (yellow, 5 petals), patola (large yellow), upo_smooth (white)
+**Varieties:** ampalaya_bilog (yellow, 5 petals), patola (large yellow), upo_smooth (white), cucumber (yellow, small)
 **Gender:** male (stamens, thin stem, no base bulge) | female (ovary bulge at base, pistil)
 
 **CRITICAL IDENTIFICATION TIPS (Visual Rules):**
-- **UJO (Bottle Gourd):** Flowers are **WHITE**. If it is yellow, it is NOT Upo.
-- **AMPALAYA (Bitter Gourd):** Small yellow flowers, thin stems.
-- **PATOLA (Sponge Gourd):** LARGE bright yellow flowers.
+- **UPO (Bottle Gourd):** Flowers are **WHITE**. If it is yellow, it is NOT Upo.
+- **AMPALAYA (Bitter Gourd):** Small yellow flowers, thin stems, deeply lobed petals.
+- **PATOLA (Sponge Gourd):** LARGE bright yellow flowers, wide petals.
+- **CUCUMBER:** Small yellow flowers, 5 rounded petals, thinner than patola.
 - **MALE vs FEMALE:** Look for the "baby fruit" (ovary bulge) behind the flower base. No bulge = MALE.
 
 Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
 {
-  "variety": "ampalaya_bilog" | "patola" | "upo_smooth" | "not_flower",
+  "variety": "ampalaya_bilog" | "patola" | "upo_smooth" | "cucumber" | "not_flower",
   "gender": "male" | "female" | "unknown",
   "confidence": 0.0-1.0,
   "reasoning": "One sentence explanation citing color and shape",
@@ -153,16 +203,43 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
   "qualityMetrics": {"healthScore": 0-100, "pollinationPotential": 0-100}
 }`;
 
-      // Call Gemini API
-      const result = await this.model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64Image,
-          },
-        },
-      ]);
+      // Call Gemini API with retry logic for rate limits
+      let result;
+      let retryCount = 0;
+      const maxRetries = this.apiKeys.length;
+
+      while (retryCount < maxRetries) {
+        try {
+          result = await this.model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64Image,
+              },
+            },
+          ]);
+          break; // Success, exit retry loop
+        } catch (apiError) {
+          const errorMessage = apiError.message || '';
+          const isRateLimitError = errorMessage.includes('429') || 
+                                   errorMessage.includes('quota') || 
+                                   errorMessage.includes('rate') ||
+                                   errorMessage.includes('Resource has been exhausted');
+          
+          if (isRateLimitError && this.switchToNextKey()) {
+            console.log(`⚠️ API rate limit hit, switching to fallback key...`);
+            await this.initialize();
+            retryCount++;
+          } else {
+            throw apiError; // Re-throw if not a rate limit error or no more keys
+          }
+        }
+      }
+
+      if (!result) {
+        throw new Error('All API keys exhausted or rate limited');
+      }
 
       const response = await result.response;
       const text = response.text();
@@ -268,6 +345,8 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
       varietyDisplay = 'Patola';
     } else if (variety === 'upo_smooth') {
       varietyDisplay = 'Upo (Smooth)';
+    } else if (variety === 'cucumber') {
+      varietyDisplay = 'Cucumber';
     }
 
     // Build predicted class (matches multi-class model format)
@@ -351,6 +430,8 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
       'patola_male',
       'upo_smooth_female',
       'upo_smooth_male',
+      'cucumber_female',
+      'cucumber_male',
       'not_flower',
     ];
 
@@ -451,7 +532,9 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
       isInitialized: this.isInitialized,
       isAvailable: this.isAvailable(),
       model: GEMINI_CONFIG.model,
-      apiKeyConfigured: !!GEMINI_API_KEY,
+      apiKeysConfigured: this.apiKeys.length,
+      currentKeyIndex: this.currentKeyIndex + 1,
+      totalKeys: this.apiKeys.length,
     };
   }
 }
