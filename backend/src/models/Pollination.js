@@ -6,8 +6,8 @@ const pollinationSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Plant name is required'],
     enum: {
-      values: ['ampalaya', 'patola', 'upo', 'kalabasa', 'kundol'],
-      message: 'Plant name must be one of: ampalaya, patola, upo, kalabasa, kundol'
+      values: ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'],
+      message: 'Plant name must be one of: ampalaya_bilog, upo_smooth, patola, cucumber'
     }
   },
 

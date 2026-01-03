@@ -21,6 +21,8 @@ export { PlantFormScreen } from './PolinationScreens/PlantFormScreen';
 export { PlantDetailScreen } from './PolinationScreens/PlantDetailScreen';
 export { PredictFlowersScreen } from './PolinationScreens/PredictFlowersScreen';
 export { PredictionResultsScreen } from './PolinationScreens/PredictionResultsScreen';
+export { default as PredictYieldScreen } from './PolinationScreens/PredictYieldScreen';
+export { default as YieldResultsScreen } from './PolinationScreens/YieldResultsScreen';
 
 // Forum Screens
 export { default as CommunityScreen } from './ForumScreens/CommunityScreen';

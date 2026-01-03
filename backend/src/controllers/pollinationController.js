@@ -1,8 +1,9 @@
-const { Pollination, FlowerPrediction } = require('../models');
+const { Pollination, FlowerPrediction, YieldPrediction } = require('../models');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const notificationScheduler = require('../utils/notificationScheduler');
-const FlowerPredictionService = require('../services/flowerPredictionService');
+const MLFlowerPredictionService = require('../services/mlFlowerPredictionService');
+const MLYieldPredictionService = require('../services/mlYieldPredictionService');
 
 // @desc    Get all pollination records for authenticated user
 // @route   GET /api/pollination
@@ -854,7 +855,7 @@ const predictFlowerProduction = async (req, res) => {
     }
 
     // Validate plant type
-    const validPlantTypes = ['ampalaya', 'patola', 'upo', 'kalabasa', 'kundol'];
+    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'];
     if (!validPlantTypes.includes(plantType)) {
       return res.status(400).json({
         success: false,
@@ -877,8 +878,8 @@ const predictFlowerProduction = async (req, res) => {
       }
     }
 
-    // Generate prediction using the service
-    const predictionResult = FlowerPredictionService.predictFlowerProduction({
+    // Generate prediction using ML service
+    const predictionResult = await MLFlowerPredictionService.predictFlowerProduction({
       plantType,
       plantAge,
       environmental,
@@ -1042,6 +1043,316 @@ const deleteFlowerPrediction = async (req, res) => {
   }
 };
 
+// @desc    Predict crop yield using ML model
+// @route   POST /api/pollination/predict-yield
+// @access  Private
+const predictYield = async (req, res) => {
+  try {
+    const {
+      pollinationId,
+      plantType,
+      plantAgeDays,
+      vineLengthCm,
+      nodeCount,
+      maleFlowerCount,
+      femaleFlowerCount,
+      temperatureCelsius,
+      soilMoisturePercent,
+      notes
+    } = req.body;
+
+    let inputData;
+
+    // If pollinationId provided, fetch data from existing plant
+    if (pollinationId) {
+      const pollination = await Pollination.findOne({
+        _id: pollinationId,
+        user: req.user.id
+      });
+
+      if (!pollination) {
+        return res.status(404).json({
+          success: false,
+          message: 'Pollination record not found'
+        });
+      }
+
+      // Format data from pollination record
+      inputData = MLYieldPredictionService.formatPollinationDataForPrediction(pollination);
+      
+      // Override with any manually provided values
+      if (plantAgeDays !== undefined) inputData.plant_age_days = plantAgeDays;
+      if (vineLengthCm !== undefined) inputData.vine_length_cm = vineLengthCm;
+      if (nodeCount !== undefined) inputData.node_count = nodeCount;
+      if (maleFlowerCount !== undefined) inputData.male_flower_count = maleFlowerCount;
+      if (femaleFlowerCount !== undefined) inputData.female_flower_count = femaleFlowerCount;
+      if (temperatureCelsius !== undefined) inputData.temperature_celsius = temperatureCelsius;
+      if (soilMoisturePercent !== undefined) inputData.soil_moisture_percent = soilMoisturePercent;
+    } else {
+      // Manual entry - validate required fields
+      const validation = MLYieldPredictionService.validateInput({
+        plant_type: plantType,
+        plant_age_days: plantAgeDays,
+        vine_length_cm: vineLengthCm,
+        node_count: nodeCount,
+        male_flower_count: maleFlowerCount,
+        female_flower_count: femaleFlowerCount,
+        temperature_celsius: temperatureCelsius,
+        soil_moisture_percent: soilMoisturePercent
+      });
+
+      if (!validation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid input data',
+          errors: validation.errors
+        });
+      }
+
+      inputData = {
+        plant_type: plantType,
+        plant_age_days: parseFloat(plantAgeDays),
+        vine_length_cm: parseFloat(vineLengthCm),
+        node_count: parseFloat(nodeCount),
+        male_flower_count: parseFloat(maleFlowerCount),
+        female_flower_count: parseFloat(femaleFlowerCount),
+        temperature_celsius: parseFloat(temperatureCelsius),
+        soil_moisture_percent: parseFloat(soilMoisturePercent)
+      };
+    }
+
+    // Call ML prediction service
+    const predictionResult = await MLYieldPredictionService.predictYield(inputData);
+
+    if (!predictionResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Prediction failed',
+        error: predictionResult.error
+      });
+    }
+
+    // Save prediction to database
+    const yieldPrediction = new YieldPrediction({
+      user: req.user.id,
+      pollination: pollinationId || null,
+      plantType: inputData.plant_type,
+      plantAgedays: inputData.plant_age_days,
+      vineLengthCm: inputData.vine_length_cm,
+      nodeCount: inputData.node_count,
+      maleFlowerCount: inputData.male_flower_count,
+      femaleFlowerCount: inputData.female_flower_count,
+      temperatureCelsius: inputData.temperature_celsius,
+      soilMoisturePercent: inputData.soil_moisture_percent,
+      predictedYieldKg: predictionResult.prediction.yield_kg,
+      confidenceScore: predictionResult.prediction.confidence_score,
+      recommendations: predictionResult.prediction.recommendations,
+      modelMetrics: (predictionResult.model_info?.test_r2 && predictionResult.model_info?.test_mae) ? {
+        testR2: predictionResult.model_info.test_r2,
+        testMae: predictionResult.model_info.test_mae
+      } : undefined,
+      notes: notes || '',
+      isManualEntry: !pollinationId
+    });
+
+    await yieldPrediction.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Yield prediction generated successfully',
+      data: {
+        prediction: {
+          id: yieldPrediction._id,
+          yield_kg: yieldPrediction.predictedYieldKg,
+          confidence_score: yieldPrediction.confidenceScore,
+          recommendations: yieldPrediction.recommendations
+        },
+        input_summary: predictionResult.input_summary,
+        model_info: predictionResult.model_info,
+        expected_range: MLYieldPredictionService.getExpectedYieldRange(inputData.plant_type)
+      }
+    });
+  } catch (error) {
+    console.error('Yield prediction error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error generating yield prediction',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get all yield predictions for authenticated user
+// @route   GET /api/pollination/yield-predictions
+// @access  Private
+const getYieldPredictions = async (req, res) => {
+  try {
+    const { plantType, page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const options = {
+      limit: parseInt(limit),
+      skip,
+      plantType: plantType || null
+    };
+
+    const predictions = await YieldPrediction.getUserPredictions(req.user.id, options);
+    const total = await YieldPrediction.countDocuments({
+      user: req.user.id,
+      ...(plantType && { plantType })
+    });
+
+    res.status(200).json({
+      success: true,
+      count: predictions.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      data: predictions
+    });
+  } catch (error) {
+    console.error('Get yield predictions error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching yield predictions',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get single yield prediction
+// @route   GET /api/pollination/yield-predictions/:id
+// @access  Private
+const getYieldPrediction = async (req, res) => {
+  try {
+    const prediction = await YieldPrediction.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    }).populate('pollination', 'plantName pollinationDate plantType');
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Yield prediction not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: prediction
+    });
+  } catch (error) {
+    console.error('Get yield prediction error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching yield prediction',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Record actual yield for prediction
+// @route   PUT /api/pollination/yield-predictions/:id/actual-yield
+// @access  Private
+const recordActualYield = async (req, res) => {
+  try {
+    const { actualYield } = req.body;
+
+    if (!actualYield || actualYield < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid actual yield is required'
+      });
+    }
+
+    const prediction = await YieldPrediction.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Yield prediction not found'
+      });
+    }
+
+    await prediction.recordActualYield(parseFloat(actualYield));
+
+    res.status(200).json({
+      success: true,
+      message: 'Actual yield recorded successfully',
+      data: {
+        predicted: prediction.predictedYieldKg,
+        actual: prediction.actualYieldKg,
+        accuracy: prediction.predictionAccuracy,
+        variance: prediction.yieldVariance
+      }
+    });
+  } catch (error) {
+    console.error('Record actual yield error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error recording actual yield',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get yield prediction statistics
+// @route   GET /api/pollination/yield-predictions/stats
+// @access  Private
+const getYieldPredictionStats = async (req, res) => {
+  try {
+    const stats = await YieldPrediction.getPredictionStats(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Get yield prediction stats error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching yield prediction statistics',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete yield prediction
+// @route   DELETE /api/pollination/yield-predictions/:id
+// @access  Private
+const deleteYieldPrediction = async (req, res) => {
+  try {
+    const prediction = await YieldPrediction.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Yield prediction not found'
+      });
+    }
+
+    await prediction.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Yield prediction deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete yield prediction error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error deleting yield prediction',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getPollinations,
   getPollination,
@@ -1064,5 +1375,11 @@ module.exports = {
   predictFlowerProduction,
   getFlowerPredictions,
   getFlowerPrediction,
-  deleteFlowerPrediction
+  deleteFlowerPrediction,
+  predictYield,
+  getYieldPredictions,
+  getYieldPrediction,
+  recordActualYield,
+  getYieldPredictionStats,
+  deleteYieldPrediction
 };

@@ -41,11 +41,10 @@ export const PlantForm = ({
   const [selectedDay, setSelectedDay] = useState(formData.datePlanted.getDate());
 
   const plantTypes = [
-    { value: 'ampalaya', english: 'Bitter Gourd', tagalog: 'Ampalaya' },
+    { value: 'ampalaya_bilog', english: 'Round Bitter Gourd', tagalog: 'Ampalaya Bilog' },
+    { value: 'upo_smooth', english: 'Smooth Bottle Gourd', tagalog: 'Upo Smooth' },
     { value: 'patola', english: 'Sponge Gourd', tagalog: 'Patola' },
-    { value: 'upo', english: 'Bottle Gourd', tagalog: 'Upo' },
-    { value: 'kalabasa', english: 'Squash', tagalog: 'Kalabasa' },
-    { value: 'kundol', english: 'Winter Melon', tagalog: 'Kundol' },
+    { value: 'cucumber', english: 'Cucumber', tagalog: 'Cucumber' },
   ];
 
   const genderTypes = [

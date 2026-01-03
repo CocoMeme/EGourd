@@ -376,8 +376,8 @@ const validatePollination = [
   body('name')
     .notEmpty()
     .withMessage('Plant name is required')
-    .isIn(['ampalaya', 'patola', 'upo', 'kalabasa', 'kundol'])
-    .withMessage('Plant name must be one of: ampalaya, patola, upo, kalabasa, kundol'),
+    .isIn(['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'])
+    .withMessage('Plant name must be one of: ampalaya_bilog, upo_smooth, patola, cucumber'),
 
   body('datePlanted')
     .notEmpty()

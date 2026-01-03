@@ -20,12 +20,12 @@ export const CustomHeader = ({
   showAvatar = true,
   title,
   rightComponent,
-  // New props for enhanced headers
+  // Props for enhanced header variants
   onBackPress,
   showBackButton = false,
   subtitle,
   centerComponent,
-  variant = 'default', // 'default', 'scanner', 'simple'
+  variant = 'default', // 'default', 'scanner'
   backgroundColor,
 }) => {
   // Get first letter of first name or fallback to 'U'
@@ -76,36 +76,6 @@ export const CustomHeader = ({
     );
   }
 
-  // Simple variant - light background with green accent, for results screens
-  if (variant === 'simple') {
-    return (
-      <View style={[styles.simpleContainer, backgroundColor && { backgroundColor }]}>
-        <View style={styles.simpleContent}>
-          {/* Left - Back Button */}
-          {showBackButton && (
-            <TouchableOpacity 
-              style={styles.simpleButton} 
-              onPress={onBackPress}
-            >
-              <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-          )}
-
-          {/* Center - Title */}
-          <View style={styles.simpleCenter}>
-            {title && <Text style={styles.simpleTitle}>{title}</Text>}
-            {subtitle && <Text style={styles.simpleSubtitle}>{subtitle}</Text>}
-          </View>
-
-          {/* Right - Custom Component or Empty */}
-          <View style={styles.simpleRight}>
-            {rightComponent ? rightComponent() : (showBackButton && <View style={styles.simpleButton} />)}
-          </View>
-        </View>
-      </View>
-    );
-  }
-
   // If title prop is provided, render simple header with title and right component
   if (title) {
     return (
@@ -116,19 +86,8 @@ export const CustomHeader = ({
           end={{ x: 1, y: 1 }}
           style={styles.container}
         >
-          {/* Back button if enabled */}
-          {showBackButton && (
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={onBackPress}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
-          
-          <View style={[styles.titleContainer, showBackButton && { marginLeft: theme.spacing.sm }]}>
+          <View style={styles.titleContainer}>
             <Text style={styles.title}>{title}</Text>
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           </View>
           {rightComponent && (
             <View style={styles.rightSection}>
@@ -261,10 +220,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
     marginLeft: theme.spacing.sm,
   },
-  backButton: {
-    padding: theme.spacing.xs,
-    marginRight: theme.spacing.xs,
-  },
   titleContainer: {
     flex: 1,
   },
@@ -315,47 +270,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   scannerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Simple variant styles (light background)
-  simpleContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + theme.spacing.xs : theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  simpleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    height: 56,
-  },
-  simpleButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  simpleCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  simpleTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.semiBold,
-    color: '#333333',
-  },
-  simpleSubtitle: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#666666',
-    marginTop: 2,
-  },
-  simpleRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },

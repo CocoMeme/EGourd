@@ -527,6 +527,111 @@ class PollinationService {
       throw error;
     }
   }
+
+  /**
+   * Predict crop yield using ML model
+   * @param {Object} yieldData - Input data for yield prediction
+   * @returns {Promise} API response with yield prediction
+   */
+  async predictYield(yieldData) {
+    try {
+      console.log('🌾 Generating yield prediction...');
+      console.log('Input data:', yieldData);
+      const response = await api.post(`${this.baseURL}/predict-yield`, yieldData);
+      console.log('✅ Yield prediction generated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error predicting yield:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get yield predictions for user
+   * @param {Object} params - Query parameters (page, limit, plantType)
+   * @returns {Promise} API response with yield predictions
+   */
+  async getYieldPredictions(params = {}) {
+    try {
+      console.log('📊 Fetching yield predictions...');
+      const response = await api.get(`${this.baseURL}/yield-predictions`, { params });
+      console.log('✅ Yield predictions fetched successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching yield predictions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get single yield prediction
+   * @param {String} predictionId - Prediction ID
+   * @returns {Promise} API response with yield prediction details
+   */
+  async getYieldPrediction(predictionId) {
+    try {
+      console.log(`📊 Fetching yield prediction ${predictionId}...`);
+      const response = await api.get(`${this.baseURL}/yield-predictions/${predictionId}`);
+      console.log('✅ Yield prediction fetched successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching yield prediction:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Record actual yield for prediction
+   * @param {String} predictionId - Prediction ID
+   * @param {Number} actualYield - Actual yield in kg
+   * @returns {Promise} API response
+   */
+  async recordActualYield(predictionId, actualYield) {
+    try {
+      console.log(`📝 Recording actual yield for prediction ${predictionId}...`);
+      const response = await api.put(`${this.baseURL}/yield-predictions/${predictionId}/actual-yield`, {
+        actualYield
+      });
+      console.log('✅ Actual yield recorded successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error recording actual yield:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get yield prediction statistics
+   * @returns {Promise} API response with statistics
+   */
+  async getYieldPredictionStats() {
+    try {
+      console.log('📊 Fetching yield prediction statistics...');
+      const response = await api.get(`${this.baseURL}/yield-predictions/stats`);
+      console.log('✅ Statistics fetched successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching statistics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete yield prediction
+   * @param {String} predictionId - Prediction ID to delete
+   * @returns {Promise} API response
+   */
+  async deleteYieldPrediction(predictionId) {
+    try {
+      console.log(`🗑️ Deleting yield prediction ${predictionId}...`);
+      const response = await api.delete(`${this.baseURL}/yield-predictions/${predictionId}`);
+      console.log('✅ Yield prediction deleted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error deleting yield prediction:', error);
+      throw error;
+    }
+  }
 }
 
 export const pollinationService = new PollinationService();

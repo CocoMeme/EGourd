@@ -1,0 +1,129 @@
+{
+  "generated_at": "2026-01-01T23:17:52.274074",
+  "version": "1.0",
+  "plant_types": [
+    "ampalaya_bilog",
+    "upo_smooth",
+    "patola",
+    "cucumber"
+  ],
+  "features": {
+    "categorical": [
+      "plant_type",
+      "soil_type",
+      "fertilizer_type",
+      "pest_control"
+    ],
+    "numerical": [
+      "plant_age",
+      "temperature",
+      "humidity",
+      "sunlight_hours",
+      "soil_ph",
+      "watering_frequency",
+      "fertilizer_frequency",
+      "height",
+      "leaf_count",
+      "stem_thickness",
+      "health_rating"
+    ]
+  },
+  "targets": [
+    "male_flowers",
+    "female_flowers"
+  ],
+  "plant_specifications": {
+    "ampalaya_bilog": {
+      "optimal_age": [
+        40,
+        60
+      ],
+      "male_flowers": {
+        "base": 22,
+        "std": 5
+      },
+      "female_flowers": {
+        "base": 11,
+        "std": 3
+      },
+      "male_female_ratio": 2.0,
+      "temp_preference": [
+        25,
+        30
+      ],
+      "height_range": [
+        150,
+        300
+      ]
+    },
+    "upo_smooth": {
+      "optimal_age": [
+        50,
+        70
+      ],
+      "male_flowers": {
+        "base": 30,
+        "std": 6
+      },
+      "female_flowers": {
+        "base": 15,
+        "std": 4
+      },
+      "male_female_ratio": 2.0,
+      "temp_preference": [
+        24,
+        29
+      ],
+      "height_range": [
+        200,
+        400
+      ]
+    },
+    "patola": {
+      "optimal_age": [
+        45,
+        65
+      ],
+      "male_flowers": {
+        "base": 18,
+        "std": 5
+      },
+      "female_flowers": {
+        "base": 9,
+        "std": 3
+      },
+      "male_female_ratio": 2.0,
+      "temp_preference": [
+        25,
+        31
+      ],
+      "height_range": [
+        180,
+        350
+      ]
+    },
+    "cucumber": {
+      "optimal_age": [
+        35,
+        55
+      ],
+      "male_flowers": {
+        "base": 25,
+        "std": 5
+      },
+      "female_flowers": {
+        "base": 14,
+        "std": 3
+      },
+      "male_female_ratio": 1.8,
+      "temp_preference": [
+        20,
+        28
+      ],
+      "height_range": [
+        100,
+        250
+      ]
+    }
+  }
+}

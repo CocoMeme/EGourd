@@ -27,7 +27,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
   const [formData, setFormData] = useState({
     // Plant selection
     selectedPlantId: plant?._id || '',
-    plantType: plant?.name || 'ampalaya',
+    plantType: plant?.name || 'ampalaya_bilog',
     plantAge: plant?.ageInDays?.toString() || '',
     
     // Environmental factors
@@ -139,13 +139,13 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
         care: {
           wateringFrequency: parseFloat(formData.wateringFrequency),
           fertilizerType: formData.fertilizerType,
-          fertilizerFrequency: formData.fertilizerFrequency ? parseFloat(formData.fertilizerFrequency) : undefined,
+          fertilizerFrequency: formData.fertilizerFrequency ? parseFloat(formData.fertilizerFrequency) : 2,
           pestControl: formData.pestControl
         },
         growth: {
-          height: formData.height ? parseFloat(formData.height) : undefined,
-          leafCount: formData.leafCount ? parseInt(formData.leafCount) : undefined,
-          stemThickness: formData.stemThickness ? parseFloat(formData.stemThickness) : undefined,
+          height: formData.height ? parseFloat(formData.height) : 150,
+          leafCount: formData.leafCount ? parseInt(formData.leafCount) : 30,
+          stemThickness: formData.stemThickness ? parseFloat(formData.stemThickness) : 10,
           healthRating: parseInt(formData.healthRating)
         },
         notes: formData.notes || undefined
@@ -240,11 +240,10 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!formData.selectedPlantId}
               >
-                <Picker.Item label="Ampalaya (Bitter Gourd)" value="ampalaya" />
+                <Picker.Item label="Ampalaya Bilog (Round Bitter Gourd)" value="ampalaya_bilog" />
+                <Picker.Item label="Upo Smooth (Smooth Bottle Gourd)" value="upo_smooth" />
                 <Picker.Item label="Patola (Sponge Gourd)" value="patola" />
-                <Picker.Item label="Upo (Bottle Gourd)" value="upo" />
-                <Picker.Item label="Kalabasa (Squash)" value="kalabasa" />
-                <Picker.Item label="Kundol (Winter Melon)" value="kundol" />
+                <Picker.Item label="Cucumber" value="cucumber" />
               </Picker>
             </View>
           </View>

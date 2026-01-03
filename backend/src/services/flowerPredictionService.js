@@ -18,12 +18,19 @@ class FlowerPredictionService {
    * Based on typical production under optimal conditions
    */
   static baseFlowerData = {
-    ampalaya: {
-      // Bitter gourd - monoecious, produces both male and female
+    ampalaya_bilog: {
+      // Bitter gourd (round variety) - monoecious, produces both male and female
       maleFlowers: { min: 15, max: 30, optimal: 22 },
       femaleFlowers: { min: 8, max: 15, optimal: 11 },
       optimalAge: { min: 40, max: 60 }, // Days from planting
       maleToFemaleRatio: 2.0 // Typically 2:1 male to female
+    },
+    upo_smooth: {
+      // Bottle gourd (smooth variety) - monoecious
+      maleFlowers: { min: 20, max: 40, optimal: 30 },
+      femaleFlowers: { min: 10, max: 20, optimal: 15 },
+      optimalAge: { min: 50, max: 70 },
+      maleToFemaleRatio: 2.0
     },
     patola: {
       // Sponge gourd - monoecious
@@ -32,26 +39,12 @@ class FlowerPredictionService {
       optimalAge: { min: 45, max: 65 },
       maleToFemaleRatio: 2.0
     },
-    upo: {
-      // Bottle gourd - monoecious
-      maleFlowers: { min: 20, max: 40, optimal: 30 },
-      femaleFlowers: { min: 10, max: 20, optimal: 15 },
-      optimalAge: { min: 50, max: 70 },
-      maleToFemaleRatio: 2.0
-    },
-    kalabasa: {
-      // Squash - monoecious
-      maleFlowers: { min: 10, max: 20, optimal: 15 },
-      femaleFlowers: { min: 5, max: 10, optimal: 7 },
-      optimalAge: { min: 30, max: 45 },
-      maleToFemaleRatio: 2.14 // Slightly more males
-    },
-    kundol: {
-      // Winter melon - monoecious
-      maleFlowers: { min: 15, max: 30, optimal: 22 },
-      femaleFlowers: { min: 8, max: 15, optimal: 11 },
-      optimalAge: { min: 55, max: 75 },
-      maleToFemaleRatio: 2.0
+    cucumber: {
+      // Cucumber - monoecious
+      maleFlowers: { min: 18, max: 35, optimal: 25 },
+      femaleFlowers: { min: 10, max: 18, optimal: 14 },
+      optimalAge: { min: 35, max: 55 },
+      maleToFemaleRatio: 1.8 // Slightly lower male to female ratio
     }
   };
 
