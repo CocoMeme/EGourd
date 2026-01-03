@@ -148,6 +148,7 @@ class App {
     this.app.use('/api/verification', require('./routes/verification'));
     this.app.use('/api/news', require('./routes/news'));
     this.app.use('/api/pollination', require('./routes/pollination'));
+    this.app.use('/api/plants', require('./routes/plant')); // New plant management routes
     this.app.use('/api/forum', require('./routes/forum'));
     this.app.use('/api/chatbot', require('./routes/chatbot'));
     this.app.use('/api/admin', require('./routes/admin'));

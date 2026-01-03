@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,12 +8,78 @@ import {
   TextInput, 
   Alert,
   Modal,
-  Image 
+  Image,
+  Switch
 } from 'react-native';
+// Removed @react-native-community/slider due to native module issues with Expo
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { Button } from '../CustomComponents/Button';
 import { ImageCapture } from './ImageCapture';
+import { plantService } from '../../services';
+
+// Custom Value Stepper Component (replaces Slider to avoid native module issues)
+const ValueStepper = ({ value, min, max, step, onChange, unit = '' }) => {
+  const handleDecrease = () => {
+    const newValue = Math.max(min, value - step);
+    onChange(newValue);
+  };
+  
+  const handleIncrease = () => {
+    const newValue = Math.min(max, value + step);
+    onChange(newValue);
+  };
+  
+  return (
+    <View style={stepperStyles.container}>
+      <TouchableOpacity 
+        style={stepperStyles.button} 
+        onPress={handleDecrease}
+        disabled={value <= min}
+      >
+        <Ionicons name="remove" size={20} color={value <= min ? '#ccc' : theme.colors.primary} />
+      </TouchableOpacity>
+      <View style={stepperStyles.valueContainer}>
+        <Text style={stepperStyles.value}>{value}{unit}</Text>
+      </View>
+      <TouchableOpacity 
+        style={stepperStyles.button} 
+        onPress={handleIncrease}
+        disabled={value >= max}
+      >
+        <Ionicons name="add" size={20} color={value >= max ? '#ccc' : theme.colors.primary} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const stepperStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: 8,
+    padding: 4,
+  },
+  button: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 6,
+  },
+  valueContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  value: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+  }
+});
 
 export const PlantForm = ({ 
   initialData = {}, 
@@ -22,36 +88,117 @@ export const PlantForm = ({
   title = 'Add New Plant',
   isLoading = false 
 }) => {
-  const [formData, setFormData] = useState({
-    name: initialData.name || 'ampalaya',
-    datePlanted: initialData.datePlanted ? new Date(initialData.datePlanted) : new Date(),
-    gender: initialData.gender || 'undetermined',
-    notes: initialData.notes?.[0]?.content || ''
+  // Gourd type configurations from backend
+  const [gourdTypeConfigs, setGourdTypeConfigs] = useState({
+    bitter_gourd: {
+      varieties: ['ampalaya_bilog', 'ampalaya_haba', 'jade_green'],
+      optimalConditions: { minTemp: 26, maxTemp: 32, humidity: '65-80%' }
+    },
+    bottle_gourd: {
+      varieties: ['upo_smooth', 'upo_long', 'calabash'],
+      optimalConditions: { minTemp: 25, maxTemp: 30, humidity: '60-75%' }
+    },
+    sponge_gourd: {
+      varieties: ['patola_smooth', 'patola_ridged', 'luffa'],
+      optimalConditions: { minTemp: 25, maxTemp: 32, humidity: '70-85%' }
+    },
+    cucumber: {
+      varieties: ['cucumber_slicing', 'cucumber_pickling', 'cucumber_english'],
+      optimalConditions: { minTemp: 24, maxTemp: 30, humidity: '60-75%' }
+    }
   });
 
-  const [showPlantTypeModal, setShowPlantTypeModal] = useState(false);
-  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [formData, setFormData] = useState({
+    gourdType: initialData.gourdType || 'bitter_gourd',
+    variety: initialData.variety || 'ampalaya_bilog',
+    plantName: initialData.plantName || '',
+    datePlanted: initialData.datePlanted ? new Date(initialData.datePlanted) : new Date(),
+    notes: initialData.notes || '',
+    // Environment settings
+    environment: {
+      avgTemperature: initialData.environment?.avgTemperature || 28,
+      avgHumidity: initialData.environment?.avgHumidity || 70,
+      soilType: initialData.environment?.soilType || 'loamy',
+      soilPh: initialData.environment?.soilPh || 6.5,
+      sunlightHours: initialData.environment?.sunlightHours || 7,
+      regionClimate: initialData.environment?.regionClimate || 'tropical_lowland',
+      season: initialData.environment?.season || 'wet'
+    },
+    // Care settings
+    care: {
+      fertilizerType: initialData.care?.fertilizerType || 'organic',
+      fertilizerFrequency: initialData.care?.fertilizerFrequency || 'weekly',
+      wateringFrequency: initialData.care?.wateringFrequency || 'daily'
+    }
+  });
+
+  const [showGourdTypeModal, setShowGourdTypeModal] = useState(false);
+  const [showVarietyModal, setShowVarietyModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showImageCapture, setShowImageCapture] = useState(false);
+  const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
+  const [showCareModal, setShowCareModal] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   
   // Date picker state
   const [selectedYear, setSelectedYear] = useState(formData.datePlanted.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(formData.datePlanted.getMonth());
   const [selectedDay, setSelectedDay] = useState(formData.datePlanted.getDate());
 
-  const plantTypes = [
-    { value: 'ampalaya_bilog', english: 'Round Bitter Gourd', tagalog: 'Ampalaya Bilog' },
-    { value: 'upo_smooth', english: 'Smooth Bottle Gourd', tagalog: 'Upo Smooth' },
-    { value: 'patola', english: 'Sponge Gourd', tagalog: 'Patola' },
-    { value: 'cucumber', english: 'Cucumber', tagalog: 'Cucumber' },
+  // Fetch gourd type configurations on mount
+  useEffect(() => {
+    const fetchGourdTypes = async () => {
+      try {
+        const response = await plantService.getGourdTypes();
+        if (response.data) {
+          setGourdTypeConfigs(response.data);
+        }
+      } catch (error) {
+        console.log('Using default gourd type configurations');
+      }
+    };
+    fetchGourdTypes();
+  }, []);
+
+  const gourdTypes = [
+    { value: 'bitter_gourd', label: 'Bitter Gourd', tagalog: 'Ampalaya', icon: '🥒' },
+    { value: 'bottle_gourd', label: 'Bottle Gourd', tagalog: 'Upo', icon: '🫛' },
+    { value: 'sponge_gourd', label: 'Sponge Gourd', tagalog: 'Patola', icon: '🌿' },
+    { value: 'cucumber', label: 'Cucumber', tagalog: 'Pipino', icon: '🥒' },
   ];
 
-  const genderTypes = [
-    { value: 'undetermined', label: 'Not Determined Yet' },
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
+  const varietyLabels = {
+    // Bitter Gourd
+    ampalaya_bilog: 'Round Bitter Gourd (Ampalaya Bilog)',
+    ampalaya_haba: 'Long Bitter Gourd (Ampalaya Haba)',
+    jade_green: 'Jade Green',
+    // Bottle Gourd
+    upo_smooth: 'Smooth Bottle Gourd (Upo)',
+    upo_long: 'Long Bottle Gourd',
+    calabash: 'Calabash',
+    // Sponge Gourd
+    patola_smooth: 'Smooth Sponge Gourd (Patola)',
+    patola_ridged: 'Ridged Sponge Gourd',
+    luffa: 'Luffa',
+    // Cucumber
+    cucumber_slicing: 'Slicing Cucumber',
+    cucumber_pickling: 'Pickling Cucumber',
+    cucumber_english: 'English Cucumber'
+  };
+
+  const soilTypes = ['loamy', 'sandy', 'clay', 'silty'];
+  const climateTypes = [
+    { value: 'tropical_lowland', label: 'Tropical Lowland' },
+    { value: 'tropical_highland', label: 'Tropical Highland' },
+    { value: 'subtropical', label: 'Subtropical' }
   ];
+  const seasons = [
+    { value: 'wet', label: 'Wet Season' },
+    { value: 'dry', label: 'Dry Season' }
+  ];
+  const fertilizerTypes = ['organic', 'chemical', 'mixed', 'none'];
+  const frequencyOptions = ['daily', 'twice_daily', 'every_other_day', 'weekly', 'biweekly', 'monthly', 'none'];
 
   const handleInputChange = (field, value, nested = null) => {
     setFormData(prev => {
@@ -71,9 +218,21 @@ export const PlantForm = ({
     });
   };
 
+  // Update variety when gourd type changes
+  const handleGourdTypeChange = (gourdType) => {
+    const config = gourdTypeConfigs[gourdType];
+    const defaultVariety = config?.varieties?.[0] || gourdType;
+    setFormData(prev => ({
+      ...prev,
+      gourdType,
+      variety: defaultVariety
+    }));
+    setShowGourdTypeModal(false);
+  };
+
   const handleSubmit = () => {
     // Validate required fields
-    if (!formData.name || !formData.datePlanted) {
+    if (!formData.gourdType || !formData.datePlanted) {
       Alert.alert('Missing Information', 'Please fill in plant type and planting date.');
       return;
     }
@@ -86,11 +245,13 @@ export const PlantForm = ({
 
     // Prepare data for submission
     const submissionData = {
-      name: formData.name,
+      gourdType: formData.gourdType,
+      variety: formData.variety,
+      plantName: formData.plantName.trim() || `${formData.gourdType}_${Date.now()}`,
       datePlanted: formData.datePlanted.toISOString(),
-      gender: formData.gender,
-      // Only include notes if provided
       notes: formData.notes.trim() || undefined,
+      environment: formData.environment,
+      care: formData.care,
       // Include captured image
       image: capturedImage
     };
@@ -106,7 +267,11 @@ export const PlantForm = ({
     setCapturedImage(null);
   };
 
-  const selectedPlant = plantTypes.find(plant => plant.value === formData.name);
+  const selectedGourd = gourdTypes.find(g => g.value === formData.gourdType);
+  const availableVarieties = gourdTypeConfigs[formData.gourdType]?.varieties || [];
+  const optimalConditions = gourdTypeConfigs[formData.gourdType]?.optimalConditions;
+
+  const formatLabel = (str) => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -117,23 +282,57 @@ export const PlantForm = ({
         </TouchableOpacity>
       </View>
 
-      {/* Plant Type Selection */}
+      {/* Gourd Type Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plant Type</Text>
+        <Text style={styles.sectionTitle}>Gourd Type *</Text>
         <TouchableOpacity 
           style={styles.selector}
-          onPress={() => setShowPlantTypeModal(true)}
+          onPress={() => setShowGourdTypeModal(true)}
         >
           <Text style={styles.selectorText}>
-            {selectedPlant?.english} ({selectedPlant?.tagalog})
+            {selectedGourd?.icon} {selectedGourd?.label} ({selectedGourd?.tagalog})
+          </Text>
+          <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
+        </TouchableOpacity>
+        {optimalConditions && (
+          <View style={styles.conditionsHint}>
+            <Text style={styles.conditionsText}>
+              Optimal: {optimalConditions.minTemp}-{optimalConditions.maxTemp}°C, {optimalConditions.humidity} humidity
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Variety Selection */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Variety</Text>
+        <TouchableOpacity 
+          style={styles.selector}
+          onPress={() => setShowVarietyModal(true)}
+        >
+          <Text style={styles.selectorText}>
+            {varietyLabels[formData.variety] || formatLabel(formData.variety)}
           </Text>
           <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
         </TouchableOpacity>
       </View>
 
+      {/* Plant Name (Optional) */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Plant Name (Optional)</Text>
+        <Text style={styles.sectionSubtitle}>Give your plant a nickname for easy tracking</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., 'Balcony Ampalaya #1'"
+          value={formData.plantName}
+          onChangeText={(value) => handleInputChange('plantName', value)}
+          maxLength={50}
+        />
+      </View>
+
       {/* Date Planted */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Date Planted</Text>
+        <Text style={styles.sectionTitle}>Date Planted *</Text>
         <TouchableOpacity 
           style={styles.selector}
           onPress={() => setShowDatePicker(true)}
@@ -150,26 +349,164 @@ export const PlantForm = ({
         </TouchableOpacity>
       </View>
 
-      {/* Gender */}
+      {/* Environment Settings Toggle */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plant Gender</Text>
-        <Text style={styles.sectionSubtitle}>
-          You can update this later when flowers appear
-        </Text>
-        <TouchableOpacity 
-          style={styles.selector}
-          onPress={() => setShowGenderModal(true)}
-        >
-          <Text style={styles.selectorText}>
-            {genderTypes.find(g => g.value === formData.gender)?.label}
-          </Text>
-          <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
-        </TouchableOpacity>
+        <View style={styles.toggleHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Environment Settings</Text>
+            <Text style={styles.sectionSubtitle}>Configure for better ML predictions</Text>
+          </View>
+          <Switch
+            value={showAdvancedSettings}
+            onValueChange={setShowAdvancedSettings}
+            trackColor={{ false: theme.colors.background.secondary, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
       </View>
+
+      {showAdvancedSettings && (
+        <>
+          {/* Quick Environment Settings */}
+          <View style={styles.envSection}>
+            <Text style={styles.envLabel}>Average Temperature</Text>
+            <ValueStepper
+              value={formData.environment.avgTemperature}
+              min={15}
+              max={40}
+              step={1}
+              onChange={(val) => handleInputChange('avgTemperature', val, 'environment')}
+              unit="°C"
+            />
+          </View>
+
+          <View style={styles.envSection}>
+            <Text style={styles.envLabel}>Average Humidity</Text>
+            <ValueStepper
+              value={formData.environment.avgHumidity}
+              min={30}
+              max={100}
+              step={5}
+              onChange={(val) => handleInputChange('avgHumidity', val, 'environment')}
+              unit="%"
+            />
+          </View>
+
+          <View style={styles.envSection}>
+            <Text style={styles.envLabel}>Daily Sunlight</Text>
+            <ValueStepper
+              value={formData.environment.sunlightHours}
+              min={2}
+              max={14}
+              step={0.5}
+              onChange={(val) => handleInputChange('sunlightHours', val, 'environment')}
+              unit=" hrs"
+            />
+          </View>
+
+          {/* Season and Soil Type */}
+          <View style={styles.envRow}>
+            <View style={styles.envRowItem}>
+              <Text style={styles.envLabel}>Season</Text>
+              <View style={styles.optionRow}>
+                {seasons.map(s => (
+                  <TouchableOpacity
+                    key={s.value}
+                    style={[
+                      styles.optionButton,
+                      formData.environment.season === s.value && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleInputChange('season', s.value, 'environment')}
+                  >
+                    <Text style={[
+                      styles.optionButtonText,
+                      formData.environment.season === s.value && styles.optionButtonTextActive
+                    ]}>{s.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.envRow}>
+            <View style={styles.envRowItem}>
+              <Text style={styles.envLabel}>Soil Type</Text>
+              <View style={styles.optionRow}>
+                {soilTypes.map(soil => (
+                  <TouchableOpacity
+                    key={soil}
+                    style={[
+                      styles.optionButton,
+                      formData.environment.soilType === soil && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleInputChange('soilType', soil, 'environment')}
+                  >
+                    <Text style={[
+                      styles.optionButtonText,
+                      formData.environment.soilType === soil && styles.optionButtonTextActive
+                    ]}>{formatLabel(soil)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Care Settings */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Care Settings</Text>
+          </View>
+
+          <View style={styles.envRow}>
+            <View style={styles.envRowItem}>
+              <Text style={styles.envLabel}>Fertilizer Type</Text>
+              <View style={styles.optionRow}>
+                {fertilizerTypes.map(fert => (
+                  <TouchableOpacity
+                    key={fert}
+                    style={[
+                      styles.optionButton,
+                      formData.care.fertilizerType === fert && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleInputChange('fertilizerType', fert, 'care')}
+                  >
+                    <Text style={[
+                      styles.optionButtonText,
+                      formData.care.fertilizerType === fert && styles.optionButtonTextActive
+                    ]}>{formatLabel(fert)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.envRow}>
+            <View style={styles.envRowItem}>
+              <Text style={styles.envLabel}>Watering Frequency</Text>
+              <View style={styles.optionRow}>
+                {['daily', 'twice_daily', 'every_other_day'].map(freq => (
+                  <TouchableOpacity
+                    key={freq}
+                    style={[
+                      styles.optionButton,
+                      formData.care.wateringFrequency === freq && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleInputChange('wateringFrequency', freq, 'care')}
+                  >
+                    <Text style={[
+                      styles.optionButtonText,
+                      formData.care.wateringFrequency === freq && styles.optionButtonTextActive
+                    ]}>{formatLabel(freq)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Initial Notes */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Initial Notes (Optional)</Text>
+        <Text style={styles.sectionTitle}>Notes (Optional)</Text>
         <TextInput
           style={styles.textArea}
           placeholder="Add any observations about the planting..."
@@ -224,42 +561,39 @@ export const PlantForm = ({
           style={styles.cancelButton}
         />
         <Button
-          title={initialData.name ? 'Update Plant' : 'Add Plant'}
+          title={initialData.gourdType ? 'Update Plant' : 'Add Plant'}
           onPress={handleSubmit}
           disabled={isLoading}
           style={styles.submitButton}
         />
       </View>
 
-      {/* Plant Type Modal */}
+      {/* Gourd Type Modal */}
       <Modal
-        visible={showPlantTypeModal}
+        visible={showGourdTypeModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowPlantTypeModal(false)}
+        onRequestClose={() => setShowGourdTypeModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Plant Type</Text>
-              <TouchableOpacity onPress={() => setShowPlantTypeModal(false)}>
+              <Text style={styles.modalTitle}>Select Gourd Type</Text>
+              <TouchableOpacity onPress={() => setShowGourdTypeModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
             </View>
             
-            {plantTypes.map((plant) => (
+            {gourdTypes.map((gourd) => (
               <TouchableOpacity
-                key={plant.value}
+                key={gourd.value}
                 style={styles.modalOption}
-                onPress={() => {
-                  handleInputChange('name', plant.value);
-                  setShowPlantTypeModal(false);
-                }}
+                onPress={() => handleGourdTypeChange(gourd.value)}
               >
                 <Text style={styles.modalOptionText}>
-                  {plant.english} ({plant.tagalog})
+                  {gourd.icon} {gourd.label} ({gourd.tagalog})
                 </Text>
-                {formData.name === plant.value && (
+                {formData.gourdType === gourd.value && (
                   <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
@@ -268,33 +602,35 @@ export const PlantForm = ({
         </View>
       </Modal>
 
-      {/* Gender Modal */}
+      {/* Variety Modal */}
       <Modal
-        visible={showGenderModal}
+        visible={showVarietyModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowGenderModal(false)}
+        onRequestClose={() => setShowVarietyModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Plant Gender</Text>
-              <TouchableOpacity onPress={() => setShowGenderModal(false)}>
+              <Text style={styles.modalTitle}>Select Variety</Text>
+              <TouchableOpacity onPress={() => setShowVarietyModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
             </View>
             
-            {genderTypes.map((gender) => (
+            {availableVarieties.map((variety) => (
               <TouchableOpacity
-                key={gender.value}
+                key={variety}
                 style={styles.modalOption}
                 onPress={() => {
-                  handleInputChange('gender', gender.value);
-                  setShowGenderModal(false);
+                  handleInputChange('variety', variety);
+                  setShowVarietyModal(false);
                 }}
               >
-                <Text style={styles.modalOptionText}>{gender.label}</Text>
-                {formData.gender === gender.value && (
+                <Text style={styles.modalOptionText}>
+                  {varietyLabels[variety] || formatLabel(variety)}
+                </Text>
+                {formData.variety === variety && (
                   <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
@@ -672,5 +1008,68 @@ const styles = StyleSheet.create({
   confirmDateText: {
     ...theme.typography.button,
     color: '#FFFFFF',
+  },
+  // New styles for environment settings
+  conditionsHint: {
+    backgroundColor: theme.colors.background.secondary,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.small,
+    marginTop: theme.spacing.xs,
+  },
+  conditionsText: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontStyle: 'italic',
+  },
+  toggleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  envSection: {
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  envLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.xs,
+    fontWeight: '600',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  envRow: {
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  envRowItem: {
+    flex: 1,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+  },
+  optionButton: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.small,
+    backgroundColor: theme.colors.background.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.background.secondary,
+  },
+  optionButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  optionButtonText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+  },
+  optionButtonTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../styles';
-import { pollinationService } from '../../services';
+import { plantService } from '../../services';
 import { PlantCard, PlantFilter } from '../../components';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
@@ -35,7 +35,7 @@ export const PollinationScreen = ({ navigation }) => {
   const fetchPlants = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const response = await pollinationService.getPollinations(filters);
+      const response = await plantService.getPlants(filters);
       setPlants(response.data);
       setFilteredPlants(response.data);
     } catch (error) {
@@ -77,6 +77,11 @@ export const PollinationScreen = ({ navigation }) => {
     setFilters(newFilters);
   };
 
+  // Format plant display name
+  const formatPlantName = (plant) => {
+    return plant.plantName || plant.variety?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || plant.gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Plant';
+  };
+
   // Handle plant actions
   const handlePlantPress = (plant) => {
     navigation.navigate('PlantDetail', { plantId: plant._id, plant });
@@ -93,7 +98,7 @@ export const PollinationScreen = ({ navigation }) => {
   const handleDeletePlant = async (plant) => {
     Alert.alert(
       'Delete Plant',
-      `Are you sure you want to delete this ${pollinationService.formatPlantName(plant.name)}? This action cannot be undone.`,
+      `Are you sure you want to delete "${formatPlantName(plant)}"? This action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -101,7 +106,7 @@ export const PollinationScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await pollinationService.deletePollination(plant._id);
+              await plantService.deletePlant(plant._id);
               setPlants(prev => prev.filter(p => p._id !== plant._id));
               setFilteredPlants(prev => prev.filter(p => p._id !== plant._id));
               Alert.alert('Success', 'Plant deleted successfully.');

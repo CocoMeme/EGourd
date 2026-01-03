@@ -1,0 +1,86 @@
+{
+  "trained_at": "2026-01-04T01:04:16.162236",
+  "models": {
+    "flowering_prediction": {
+      "description": "Predicts days until first flower appears",
+      "algorithm": "Random Forest Regressor",
+      "metrics": {
+        "mae": 1.6351599321052426,
+        "rmse": 2.038056449662426,
+        "r2": 0.8588733084360083
+      },
+      "files": [
+        "flowering_model.joblib",
+        "flowering_encoders.joblib",
+        "flowering_scaler.joblib"
+      ]
+    },
+    "pollination_success": {
+      "description": "Predicts pollination success rate (0-1)",
+      "algorithm": "Gradient Boosting Regressor",
+      "metrics": {
+        "mae": 0.04147770837401173,
+        "rmse": 0.05221616671457798,
+        "r2": 0.7591062019946483
+      },
+      "files": [
+        "pollination_success_model.joblib",
+        "pollination_success_encoders.joblib",
+        "pollination_success_scaler.joblib"
+      ]
+    },
+    "fruit_maturity": {
+      "description": "Predicts days to fruit maturity and expected yield",
+      "algorithm": "Random Forest Regressor",
+      "metrics": {
+        "maturity": {
+          "mae": 2.55641744779658,
+          "rmse": 3.185637568830474,
+          "r2": 0.7777782516659917
+        },
+        "yield": {
+          "mae": 2.096589129778296,
+          "rmse": 4.096201327577553,
+          "r2": 0.8247570579277119
+        }
+      },
+      "files": [
+        "fruit_maturity_model.joblib",
+        "fruit_maturity_yield_model.joblib",
+        "fruit_maturity_encoders.joblib",
+        "fruit_maturity_scaler.joblib"
+      ]
+    }
+  },
+  "input_features": {
+    "gourd_types": [
+      "bitter_gourd",
+      "bottle_gourd",
+      "sponge_gourd",
+      "cucumber"
+    ],
+    "seasons": [
+      "wet",
+      "dry"
+    ],
+    "environmental": [
+      "avg_temperature",
+      "avg_humidity",
+      "avg_rainfall_mm",
+      "sunlight_hours",
+      "soil_ph",
+      "soil_moisture"
+    ],
+    "care": [
+      "fertilizer_type",
+      "fertilizer_frequency",
+      "watering_frequency"
+    ],
+    "plant_metrics": [
+      "plant_health_score",
+      "vine_length_cm",
+      "leaf_count",
+      "flower_counts"
+    ]
+  }
+}

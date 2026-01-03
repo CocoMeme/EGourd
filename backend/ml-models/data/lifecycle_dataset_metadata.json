@@ -1,0 +1,58 @@
+{
+  "generated_date": "2026-01-04T01:01:58.836140",
+  "datasets": {
+    "main": {
+      "file": "gourd_lifecycle_comprehensive.csv",
+      "records": 8000,
+      "description": "Complete lifecycle data for all gourd types"
+    },
+    "flowering": {
+      "file": "flowering_prediction_dataset.csv",
+      "records": 5000,
+      "description": "Data for predicting days to first flower"
+    },
+    "pollination": {
+      "file": "pollination_success_dataset.csv",
+      "records": 4220,
+      "description": "Data for predicting pollination success rates"
+    },
+    "maturity": {
+      "file": "fruit_maturity_dataset.csv",
+      "records": 1813,
+      "description": "Data for predicting fruit development and yield"
+    }
+  },
+  "gourd_types": [
+    "bitter_gourd",
+    "bottle_gourd",
+    "sponge_gourd",
+    "cucumber"
+  ],
+  "features": {
+    "environmental": [
+      "temperature",
+      "humidity",
+      "rainfall",
+      "sunlight",
+      "soil_ph",
+      "soil_moisture"
+    ],
+    "care": [
+      "fertilizer_type",
+      "fertilizer_frequency",
+      "watering_frequency"
+    ],
+    "plant_metrics": [
+      "health_score",
+      "vine_length",
+      "leaf_count",
+      "flower_counts"
+    ],
+    "targets": [
+      "days_to_flower",
+      "pollination_success_rate",
+      "days_to_maturity",
+      "yield"
+    ]
+  }
+}

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../styles';
-import { pollinationService } from '../../services';
+import { plantService } from '../../services';
 import { PlantForm } from '../../components';
 
 export const PlantFormScreen = ({ navigation, route }) => {
@@ -20,10 +20,35 @@ export const PlantFormScreen = ({ navigation, route }) => {
     setIsLoading(true);
     try {
       if (mode === 'create') {
-        await pollinationService.createPollination(formData);
+        // Extract image from formData before sending
+        const { image, ...plantData } = formData;
+        
+        // Create the plant first
+        const response = await plantService.createPlant(plantData);
+        const newPlant = response.data;
+        const prediction = newPlant?.flowering;
+        
+        // If an image was captured, upload it to the newly created plant
+        if (image && newPlant?._id) {
+          try {
+            await plantService.uploadImage(newPlant._id, image.uri, 'Plant photo');
+          } catch (imageError) {
+            console.warn('Image upload failed:', imageError);
+            // Don't fail the whole operation if image upload fails
+          }
+        }
+        
+        let successMessage = 'Plant added successfully!';
+        if (prediction?.predictedDaysToFlower) {
+          successMessage += `\n\n🌸 Flowering Prediction: ~${prediction.predictedDaysToFlower} days`;
+          if (prediction.predictedFloweringDate) {
+            successMessage += `\n📅 Expected Date: ${new Date(prediction.predictedFloweringDate).toLocaleDateString()}`;
+          }
+        }
+        
         Alert.alert(
           'Success',
-          'Plant added successfully! You can now track its growth and pollination.',
+          successMessage,
           [
             {
               text: 'OK',
@@ -32,7 +57,20 @@ export const PlantFormScreen = ({ navigation, route }) => {
           ]
         );
       } else {
-        await pollinationService.updatePollination(plant._id, formData);
+        // Extract image from formData for updates too
+        const { image, ...plantData } = formData;
+        
+        await plantService.updatePlant(plant._id, plantData);
+        
+        // If a new image was captured during edit, upload it
+        if (image && plant?._id) {
+          try {
+            await plantService.uploadImage(plant._id, image.uri, 'Plant photo');
+          } catch (imageError) {
+            console.warn('Image upload failed:', imageError);
+          }
+        }
+        
         Alert.alert(
           'Success',
           'Plant updated successfully!',

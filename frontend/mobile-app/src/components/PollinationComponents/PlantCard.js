@@ -2,12 +2,38 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
-import { pollinationService } from '../../services';
+import { plantService } from '../../services';
 
 export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
-  const getStatusColor = (status) => pollinationService.getStatusColor(status);
-  const getPollinationStatus = () => pollinationService.getPollinationStatus(plant.estimatedDates, plant.datePollinated);
+  const getStatusColor = (status) => {
+    const colors = {
+      planted: '#4CAF50',
+      germinating: '#8BC34A',
+      vegetative: '#CDDC39',
+      flowering: '#FF9800',
+      pollinated: '#FF5722',
+      fruiting: '#E91E63',
+      harvested: '#9C27B0',
+      completed: '#607D8B'
+    };
+    return colors[status] || '#9E9E9E';
+  };
+
+  const getGourdEmoji = (gourdType) => {
+    const emojis = {
+      bitter_gourd: '🥒',
+      bottle_gourd: '🫛',
+      sponge_gourd: '🌿',
+      cucumber: '🥒'
+    };
+    return emojis[gourdType] || '🌱';
+  };
   
+  const formatLabel = (str) => {
+    if (!str) return '';
+    return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const formatDate = (date) => {
     if (!date) return 'Not set';
     return new Date(date).toLocaleDateString('en-US', {
@@ -25,18 +51,79 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const pollinationStatus = getPollinationStatus();
   const plantAge = calculateAge();
+  const displayName = plant.plantName || formatLabel(plant.variety) || formatLabel(plant.gourdType);
+
+  // Calculate flowering prediction info
+  const getFloweringInfo = () => {
+    if (!plant.flowering) return null;
+    
+    const { predictedDaysToFlower, predictedFloweringDate, hasStarted, startDate } = plant.flowering;
+    
+    if (hasStarted && startDate) {
+      return {
+        text: `Flowering since ${formatDate(startDate)}`,
+        color: '#4CAF50',
+        icon: 'flower'
+      };
+    }
+    
+    if (predictedDaysToFlower) {
+      const daysLeft = Math.max(0, predictedDaysToFlower - plantAge);
+      if (daysLeft <= 0) {
+        return {
+          text: 'Should be flowering now!',
+          color: '#FF9800',
+          icon: 'flower-outline'
+        };
+      }
+      return {
+        text: `~${daysLeft} days until flowering`,
+        color: '#2196F3',
+        icon: 'time-outline'
+      };
+    }
+    
+    return null;
+  };
+
+  const floweringInfo = getFloweringInfo();
+
+  // Get pollination count
+  const getPollinationInfo = () => {
+    if (!plant.pollinations || plant.pollinations.length === 0) return null;
+    
+    const total = plant.pollinations.length;
+    const successful = plant.pollinations.filter(p => p.outcome === 'success').length;
+    const pending = plant.pollinations.filter(p => p.outcome === 'pending').length;
+    
+    return { total, successful, pending };
+  };
+
+  const pollinationInfo = getPollinationInfo();
+
+  // Get fruit info
+  const getFruitInfo = () => {
+    if (!plant.fruits || plant.fruits.length === 0) return null;
+    
+    const total = plant.fruits.length;
+    const harvested = plant.fruits.filter(f => f.isHarvested).length;
+    const totalYield = plant.fruits.reduce((sum, f) => sum + (f.harvestWeight || 0), 0);
+    
+    return { total, harvested, totalYield };
+  };
+
+  const fruitInfo = getFruitInfo();
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.header}>
         <View style={styles.plantInfo}>
           <Text style={styles.plantName}>
-            {pollinationService.formatPlantName(plant.name, 'english')}
+            {getGourdEmoji(plant.gourdType)} {displayName}
           </Text>
-          <Text style={styles.plantNameTagalog}>
-            {pollinationService.formatPlantName(plant.name, 'tagalog')}
+          <Text style={styles.plantType}>
+            {formatLabel(plant.gourdType)}
           </Text>
           <View style={styles.ageContainer}>
             <Text style={styles.ageText}>{plantAge} days old</Text>
@@ -45,10 +132,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
         
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(plant.status) }]}>
-            <Text style={styles.statusText}>{plant.status.toUpperCase()}</Text>
-          </View>
-          <View style={[styles.pollinationBadge, { backgroundColor: pollinationStatus.color }]}>
-            <Text style={styles.pollinationText}>{pollinationStatus.status.toUpperCase()}</Text>
+            <Text style={styles.statusText}>{formatLabel(plant.status)}</Text>
           </View>
         </View>
       </View>
@@ -62,67 +146,70 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
         />
       )}
 
-      {/* Plant Info Header */}
-      <View style={styles.headerRow}>
+      {/* Plant Details */}
+      <View style={styles.detailsContainer}>
         <View style={styles.detailRow}>
           <Ionicons name="calendar-outline" size={16} color={theme.colors.text.secondary} />
           <Text style={styles.detailText}>Planted: {formatDate(plant.datePlanted)}</Text>
         </View>
 
-        {/* Gender Display */}
-        <View style={styles.genderSection}>
-          <View style={styles.detailRow}>
-            <Ionicons 
-              name={plant.gender === 'male' ? 'male' : plant.gender === 'female' ? 'female' : 'help-circle-outline'} 
-              size={16} 
-              color={plant.gender === 'male' ? '#4A90E2' : plant.gender === 'female' ? '#E94B8A' : theme.colors.text.secondary} 
-            />
-            <Text style={[styles.detailText, { fontWeight: '600' }]}>
-              Gender: {plant.gender === 'undetermined' ? 'Not Determined Yet' : plant.gender.charAt(0).toUpperCase() + plant.gender.slice(1)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Gender Detection Analysis */}
-        {plant.genderDetectionInfo && plant.gender === 'undetermined' && (
-          <View style={styles.analysisSection}>
-            <Text style={styles.analysisTitle}>You will know the gender on:</Text>
+        {/* Flowering Prediction */}
+        {floweringInfo && (
+          <View style={styles.predictionSection}>
             <View style={styles.detailRow}>
-              <Ionicons name="male" size={16} color="#4A90E2" />
-              <Text style={styles.detailText}>
-                Male: {plant.genderDetectionInfo.maleDetection} 
-                {plant.genderDetectionInfo.canDetectMale ? ' ✓ Ready Now' : ''}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="female" size={16} color="#E94B8A" />
-              <Text style={styles.detailText}>
-                Female: {plant.genderDetectionInfo.femaleDetection}
-                {plant.genderDetectionInfo.canDetectFemale ? ' ✓ Ready Now' : ''}
+              <Ionicons name={floweringInfo.icon} size={16} color={floweringInfo.color} />
+              <Text style={[styles.detailText, { color: floweringInfo.color, fontWeight: '600' }]}>
+                {floweringInfo.text}
               </Text>
             </View>
           </View>
         )}
 
-        {/* Pollination Estimation */}
-        {plant.gender !== 'undetermined' && (
-          <View style={styles.analysisSection}>
-            <Text style={styles.analysisTitle}>Pollination Estimate:</Text>
-            <View style={styles.detailRow}>
-              <Ionicons name="heart" size={16} color={theme.colors.primary} />
-              <Text style={[styles.detailText, { fontWeight: '600' }]}>
-                {plant.pollinationEstimate}
+        {/* Flower Counts */}
+        {plant.flowering?.hasStarted && (
+          <View style={styles.flowerCounts}>
+            <View style={styles.flowerCount}>
+              <Ionicons name="male" size={14} color="#4A90E2" />
+              <Text style={styles.flowerCountText}>{plant.flowering.maleFlowerCount || 0} male</Text>
+            </View>
+            <View style={styles.flowerCount}>
+              <Ionicons name="female" size={14} color="#E94B8A" />
+              <Text style={styles.flowerCountText}>{plant.flowering.femaleFlowerCount || 0} female</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Pollination Info */}
+        {pollinationInfo && (
+          <View style={styles.statsSection}>
+            <View style={styles.statItem}>
+              <Ionicons name="heart" size={14} color="#FF5722" />
+              <Text style={styles.statText}>
+                {pollinationInfo.successful}/{pollinationInfo.total} pollinations
+                {pollinationInfo.pending > 0 ? ` (${pollinationInfo.pending} pending)` : ''}
               </Text>
             </View>
           </View>
         )}
 
-        {plant.location?.garden && (
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={16} color={theme.colors.text.secondary} />
-            <Text style={styles.detailText}>
-              {plant.location.garden}
-              {plant.location.plot && ` - Plot ${plant.location.plot}`}
+        {/* Fruit Info */}
+        {fruitInfo && (
+          <View style={styles.statsSection}>
+            <View style={styles.statItem}>
+              <Ionicons name="nutrition" size={14} color="#9C27B0" />
+              <Text style={styles.statText}>
+                {fruitInfo.total} fruits ({fruitInfo.harvested} harvested)
+                {fruitInfo.totalYield > 0 ? ` - ${fruitInfo.totalYield.toFixed(1)}kg` : ''}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Environment Hint */}
+        {plant.environment && (
+          <View style={styles.envHint}>
+            <Text style={styles.envHintText}>
+              🌡️ {plant.environment.avgTemperature}°C  💧 {plant.environment.avgHumidity}%  ☀️ {plant.environment.sunlightHours}h
             </Text>
           </View>
         )}
@@ -170,7 +257,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
     marginBottom: 2,
   },
-  plantNameTagalog: {
+  plantType: {
     ...theme.typography.caption,
     color: theme.colors.text.secondary,
     fontStyle: 'italic',
@@ -202,38 +289,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  pollinationBadge: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.small,
-  },
-  pollinationText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
   plantImage: {
     width: '100%',
     height: 150,
     borderRadius: theme.borderRadius.medium,
     marginBottom: theme.spacing.md,
   },
-  headerRow: {
+  detailsContainer: {
     marginBottom: theme.spacing.sm,
-  },
-  details: {
-    marginBottom: theme.spacing.md,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: theme.spacing.xs,
-  },
-  genderSection: {
-    backgroundColor: theme.colors.background.secondary,
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.small,
-    marginBottom: theme.spacing.sm,
   },
   detailText: {
     ...theme.typography.caption,
@@ -241,17 +309,50 @@ const styles = StyleSheet.create({
     marginLeft: theme.spacing.xs,
     flex: 1,
   },
-  analysisSection: {
+  predictionSection: {
     backgroundColor: theme.colors.background.secondary,
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.small,
-    marginBottom: theme.spacing.sm,
-  },
-  analysisTitle: {
-    ...theme.typography.caption,
-    color: theme.colors.text.primary,
-    fontWeight: '600',
+    marginTop: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
+  },
+  flowerCounts: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  flowerCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  flowerCountText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+  },
+  statsSection: {
+    marginTop: theme.spacing.xs,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+  },
+  envHint: {
+    marginTop: theme.spacing.sm,
+    paddingTop: theme.spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.background.secondary,
+  },
+  envHintText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 11,
   },
   actions: {
     flexDirection: 'row',
@@ -259,6 +360,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.background.secondary,
     paddingTop: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   actionButton: {
     flexDirection: 'row',
