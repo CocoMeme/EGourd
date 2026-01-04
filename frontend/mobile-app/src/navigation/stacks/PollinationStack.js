@@ -4,6 +4,7 @@ import {
     PollinationScreen,
     PlantFormScreen,
     PlantDetailScreen,
+    FlowerCounterCameraScreen,
     PredictFlowersScreen,
     PredictionResultsScreen,
     PredictYieldScreen,
@@ -76,6 +77,15 @@ export const PollinationStack = () => {
                 options={{
                     title: 'Yield Prediction Results',
                     headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="FlowerCounterCamera"
+                component={FlowerCounterCameraScreen}
+                options={{
+                    title: 'Flower Counter',
+                    headerShown: false,
+                    presentation: 'fullScreenModal'
                 }}
             />
         </Stack.Navigator>

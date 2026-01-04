@@ -137,6 +137,21 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return emojis[gourdType] || '🌱';
   };
 
+  // Gourd type display names with Tagalog
+  const getGourdDisplayName = (gourdType) => {
+    const names = {
+      bitter_gourd: { english: 'Bitter Gourd', tagalog: 'Ampalaya' },
+      bottle_gourd: { english: 'Bottle Gourd', tagalog: 'Upo' },
+      sponge_gourd: { english: 'Sponge Gourd', tagalog: 'Patola' },
+      cucumber: { english: 'Cucumber', tagalog: 'Pipino' }
+    };
+    const gourd = names[gourdType];
+    if (gourd) {
+      return `${gourd.english} / ${gourd.tagalog}`;
+    }
+    return gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+  };
+
   // Prediction handlers
   const handleGetFloweringPrediction = async () => {
     try {
@@ -236,6 +251,26 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       console.error('Error updating flower counts:', error);
       Alert.alert('Error', 'Failed to update flower counts.');
     }
+  };
+
+  // Handle flower detected from camera
+  const handleFlowerDetected = ({ gender, gourdType }) => {
+    console.log(`🌸 Flower detected: ${gender} (${gourdType})`);
+    
+    if (gender === 'male') {
+      const currentCount = parseInt(maleFlowerCount) || 0;
+      setMaleFlowerCount(String(currentCount + 1));
+    } else if (gender === 'female') {
+      const currentCount = parseInt(femaleFlowerCount) || 0;
+      setFemaleFlowerCount(String(currentCount + 1));
+    }
+  };
+
+  // Open flower counter camera
+  const openFlowerCounterCamera = () => {
+    navigation.navigate('FlowerCounterCamera', {
+      onFlowerDetected: handleFlowerDetected
+    });
   };
 
   // Add Pollination
@@ -645,7 +680,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <CustomHeader
         title={`${getGourdEmoji(plant.gourdType)} ${displayName}`}
-        subtitle={formatLabel(plant.gourdType)}
+        subtitle={getGourdDisplayName(plant.gourdType)}
         onBack={() => navigation.goBack()}
         rightComponent={() => (
           <TouchableOpacity onPress={handleEdit}>
@@ -666,6 +701,17 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       >
         {/* Plant Image */}
         {renderPlantImage()}
+
+        {/* Gourd Type Info */}
+        <View style={styles.gourdTypeCard}>
+          <Text style={styles.gourdTypeEmoji}>{getGourdEmoji(plant.gourdType)}</Text>
+          <View style={styles.gourdTypeInfo}>
+            <Text style={styles.gourdTypeName}>{getGourdDisplayName(plant.gourdType)}</Text>
+            {plant.variety && (
+              <Text style={styles.varietyText}>Variety: {formatLabel(plant.variety)}</Text>
+            )}
+          </View>
+        </View>
 
         {/* Status Overview */}
         <View style={styles.statusCard}>
@@ -707,13 +753,11 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               const { predictions } = response.data;
               
               Alert.alert(
-                '🌱 Full Lifecycle Prediction',
-                `📊 Summary:\n\n` +
-                `🌸 Days to Flowering: ${predictions.summary?.plantingToFlowering || 'N/A'}\n` +
-                `💚 Pollination Success: ${predictions.summary?.expectedPollinationSuccess?.toFixed(1) || 'N/A'}%\n` +
-                `🍈 Days Flowering to Harvest: ${predictions.summary?.floweringToHarvest || 'N/A'}\n` +
-                `📆 Total Days to Harvest: ${predictions.summary?.totalDaysToHarvest || 'N/A'}\n` +
-                `⚖️ Expected Yield: ${predictions.summary?.expectedYieldKg?.toFixed(2) || 'N/A'} kg`,
+                '🌱 Lifecycle Prediction',
+                `📊 Growth Timeline:\n\n` +
+                `🌸 Days to Flowering: ${predictions.summary?.plantingToFlowering || 'N/A'} days\n\n` +
+                `🍈 Days from Flowering to Harvest: ${predictions.summary?.floweringToHarvest || 'N/A'} days\n\n` +
+                `📆 Total Days to Harvest: ${predictions.summary?.totalDaysToHarvest || 'N/A'} days`,
                 [{ text: 'OK' }]
               );
             } catch (error) {
@@ -745,6 +789,25 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               <TouchableOpacity onPress={() => setShowFloweringModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
+            </View>
+
+            {/* Camera Counter Button */}
+            <TouchableOpacity
+              style={styles.cameraCounterButton}
+              onPress={openFlowerCounterCamera}
+            >
+              <Ionicons name="camera" size={24} color={theme.colors.primary} />
+              <View style={styles.cameraCounterTextContainer}>
+                <Text style={styles.cameraCounterTitle}>Use Camera to Count</Text>
+                <Text style={styles.cameraCounterSubtitle}>Detect and add flowers automatically</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+            </TouchableOpacity>
+
+            <View style={styles.modalDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or enter manually</Text>
+              <View style={styles.dividerLine} />
             </View>
             
             <View style={styles.inputGroup}>
@@ -945,6 +1008,34 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+  },
+  gourdTypeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.medium,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+  },
+  gourdTypeEmoji: {
+    fontSize: 40,
+    marginRight: theme.spacing.md,
+  },
+  gourdTypeInfo: {
+    flex: 1,
+  },
+  gourdTypeName: {
+    ...theme.typography.h3,
+    color: theme.colors.text.primary,
+    fontWeight: 'bold',
+  },
+  varietyText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginTop: 4,
   },
   statusCard: {
     backgroundColor: theme.colors.surface,
@@ -1330,5 +1421,46 @@ const styles = StyleSheet.create({
   modalButtonText: {
     ...theme.typography.button,
     color: '#fff',
+  },
+  // Camera Counter Button Styles
+  cameraCounterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderStyle: 'dashed',
+    marginBottom: theme.spacing.md,
+  },
+  cameraCounterTextContainer: {
+    flex: 1,
+    marginLeft: theme.spacing.sm,
+  },
+  cameraCounterTitle: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
+  cameraCounterSubtitle: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
+  modalDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: theme.spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.background.secondary,
+  },
+  dividerText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginHorizontal: theme.spacing.sm,
   },
 });

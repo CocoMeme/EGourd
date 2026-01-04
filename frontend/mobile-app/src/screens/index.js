@@ -19,6 +19,7 @@ export * from './AccountScreens/VerifyScreen';
 export { PollinationScreen } from './PolinationScreens/PollinationScreen';
 export { PlantFormScreen } from './PolinationScreens/PlantFormScreen';
 export { PlantDetailScreen } from './PolinationScreens/PlantDetailScreen';
+export { FlowerCounterCameraScreen } from './PolinationScreens/FlowerCounterCameraScreen';
 export { PredictFlowersScreen } from './PolinationScreens/PredictFlowersScreen';
 export { PredictionResultsScreen } from './PolinationScreens/PredictionResultsScreen';
 export { default as PredictYieldScreen } from './PolinationScreens/PredictYieldScreen';

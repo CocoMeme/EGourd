@@ -28,6 +28,17 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
     };
     return emojis[gourdType] || '🌱';
   };
+
+  // Gourd type display names with Tagalog
+  const getGourdDisplayName = (gourdType) => {
+    const names = {
+      bitter_gourd: 'Bitter Gourd / Ampalaya',
+      bottle_gourd: 'Bottle Gourd / Upo',
+      sponge_gourd: 'Sponge Gourd / Patola',
+      cucumber: 'Cucumber / Pipino'
+    };
+    return names[gourdType] || formatLabel(gourdType);
+  };
   
   const formatLabel = (str) => {
     if (!str) return '';
@@ -123,7 +134,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
             {getGourdEmoji(plant.gourdType)} {displayName}
           </Text>
           <Text style={styles.plantType}>
-            {formatLabel(plant.gourdType)}
+            {getGourdDisplayName(plant.gourdType)}
           </Text>
           <View style={styles.ageContainer}>
             <Text style={styles.ageText}>{plantAge} days old</Text>
