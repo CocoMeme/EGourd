@@ -144,8 +144,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
    * Start real-time scanning
    */
   const startScanning = useCallback(() => {
+    // Stop any existing scan before starting new one
     if (scanIntervalRef.current) {
-      scanIntervalRef.current = false;
+      stopScanning();
     }
 
     console.log('🎥 Starting flower detection scanning...');
@@ -613,5 +614,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default FlowerCounterCameraScreen;
