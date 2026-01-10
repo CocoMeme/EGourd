@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppNavigator, DeveloperNavigator } from './src/navigation';
 import { SplashScreen } from './src/components';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { DeveloperModeProvider, useDeveloperMode } from './src/contexts/DeveloperModeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { useAppResources } from './src/hooks/useAppResources';
@@ -46,13 +47,15 @@ const AppContent = () => {
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <DeveloperModeProvider>
-            <AppContent />
-          </DeveloperModeProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <DeveloperModeProvider>
+              <AppContent />
+            </DeveloperModeProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

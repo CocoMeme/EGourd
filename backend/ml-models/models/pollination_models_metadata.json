@@ -1,12 +1,12 @@
 {
-  "trained_at": "2026-01-04T01:04:16.162236",
+  "trained_at": "2026-01-10T15:02:27.813125",
   "models": {
     "flowering_prediction": {
       "description": "Predicts days until first flower appears",
       "algorithm": "Random Forest Regressor",
       "metrics": {
         "mae": 1.6351599321052426,
-        "rmse": 2.038056449662426,
+        "rmse": 2.0380564496624256,
         "r2": 0.8588733084360083
       },
       "files": [
@@ -34,8 +34,8 @@
       "algorithm": "Random Forest Regressor",
       "metrics": {
         "maturity": {
-          "mae": 2.55641744779658,
-          "rmse": 3.185637568830474,
+          "mae": 2.5564174477965804,
+          "rmse": 3.1856375688304746,
           "r2": 0.7777782516659917
         },
         "yield": {
