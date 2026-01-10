@@ -48,6 +48,9 @@ frontend/mobile-app/.expo-shared/
 gradle-app.setting
 !gradle-wrapper.jar
 local.properties
+*.salive
+**/.cxx/
+**/kotlin-compiler-*.salive
 
 # OS generated files
 .DS_Store

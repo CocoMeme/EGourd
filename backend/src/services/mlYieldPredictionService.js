@@ -18,8 +18,11 @@ class MLYieldPredictionService {
         '../../ml-models/scripts/predict_yield.py'
       );
 
+      // Determine Python command based on platform
+      const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+      
       // Spawn Python process
-      const pythonProcess = spawn('python', [scriptPath]);
+      const pythonProcess = spawn(pythonCmd, [scriptPath]);
 
       let outputData = '';
       let errorData = '';

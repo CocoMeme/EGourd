@@ -1,0 +1,17 @@
+# Render Blueprint for EGourd Backend
+# This configures the service to support both Node.js and Python
+
+services:
+  - type: web
+    name: egourd
+    runtime: python
+    buildCommand: |
+      pip install -r backend/requirements.txt
+      cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.19.0
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    rootDir: .
