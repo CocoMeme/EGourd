@@ -251,19 +251,21 @@ class PollinationMLService {
    * @returns {Promise<Object>} Complete lifecycle predictions
    */
   async getLifecyclePredictions(plantData) {
-    // Get flowering prediction
-    const floweringPrediction = await this.predictFlowering(plantData);
-    
-    // Estimate pollination success (with default flower counts)
+    // Prepare pollination data early
     const pollinationData = {
       ...plantData,
       maleFlowerCount: 15,  // Average expected
       femaleFlowerCount: 6,
       isHandPollinated: true
     };
-    const pollinationPrediction = await this.predictPollinationSuccess(pollinationData);
+
+    // Run independent predictions in parallel to save time
+    const [floweringPrediction, pollinationPrediction] = await Promise.all([
+      this.predictFlowering(plantData),
+      this.predictPollinationSuccess(pollinationData)
+    ]);
     
-    // Estimate fruit maturity
+    // Estimate fruit maturity (depends on pollination success)
     const maturityData = {
       ...plantData,
       successfulPollinations: pollinationPrediction.expectedSuccessfulPollinations

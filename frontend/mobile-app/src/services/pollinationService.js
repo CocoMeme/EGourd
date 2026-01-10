@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config/api';
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 // Add auth token to requests
