@@ -45,7 +45,7 @@
       "runtimeVersion": "1.0.0"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo/egourd-high-resolution-logo.png"
     },
     "plugins": [
       "expo-dev-client",
