@@ -305,6 +305,50 @@ class PlantService {
   }
 
   /**
+   * Get all pollinations for a plant
+   */
+  async getPollinations(plantId) {
+    try {
+      const response = await api.get(`${this.baseURL}/${plantId}/pollinations`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Get pollinations error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update pollination entry
+   */
+  async updatePollination(plantId, pollinationId, updateData) {
+    try {
+      const response = await api.put(
+        `${this.baseURL}/${plantId}/pollinations/${pollinationId}`,
+        updateData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ Update pollination error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete pollination entry
+   */
+  async deletePollination(plantId, pollinationId) {
+    try {
+      const response = await api.delete(
+        `${this.baseURL}/${plantId}/pollinations/${pollinationId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ Delete pollination error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Record pollination result
    */
   async recordPollinationResult(plantId, pollinationId, successfulCount) {

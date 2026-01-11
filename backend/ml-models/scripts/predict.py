@@ -67,7 +67,7 @@ class FlowerPredictor:
             'humidity': env['humidity'],
             'sunlight_hours': env['sunlightHours'],
             'soil_ph': env.get('soilPH', 6.5),
-            'soil_type': env.get('soilType', 'loamy'),
+            'soil_type': env.get('soilType', 'silty'),  # Philippine standard
             'watering_frequency': care['wateringFrequency'],
             'fertilizer_type': care['fertilizerType'],
             'fertilizer_frequency': care.get('fertilizerFrequency', 2),

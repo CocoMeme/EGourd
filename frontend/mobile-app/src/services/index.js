@@ -8,3 +8,4 @@ export { default as connectionService } from './connectionService';
 export { adminService, AdminService } from './adminService';
 export { default as chatbotService } from './chatbotService';
 export { scanService, ScanService } from './scanService';
+export { default as weatherService, getWeatherForDate, getSeasonFromDate, DEFAULT_SOIL_TYPE } from './weatherService';

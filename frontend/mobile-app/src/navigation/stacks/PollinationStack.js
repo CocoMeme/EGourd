@@ -8,7 +8,8 @@ import {
     PredictFlowersScreen,
     PredictionResultsScreen,
     PredictYieldScreen,
-    YieldResultsScreen
+    YieldResultsScreen,
+    PollinationTrackerScreen
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -86,6 +87,14 @@ export const PollinationStack = () => {
                     title: 'Flower Counter',
                     headerShown: false,
                     presentation: 'fullScreenModal'
+                }}
+            />
+            <Stack.Screen
+                name="PollinationTracker"
+                component={PollinationTrackerScreen}
+                options={{
+                    title: 'Pollination Tracker',
+                    headerShown: false
                 }}
             />
         </Stack.Navigator>

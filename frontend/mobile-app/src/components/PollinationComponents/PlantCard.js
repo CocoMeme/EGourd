@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
 
-export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
+export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollinations }) => {
   const getStatusColor = (status) => {
     const colors = {
       planted: '#4CAF50',
@@ -228,6 +228,14 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete }) => {
 
       {/* Action Buttons */}
       <View style={styles.actions}>
+        {/* Track Pollinations button - show when flowering or pollinating */}
+        {(plant.status === 'flowering' || plant.status === 'pollinating' || plant.flowering?.hasStartedFlowering || plant.flowering?.hasStarted) && onTrackPollinations && (
+          <TouchableOpacity style={[styles.actionButton, styles.pollinateButton]} onPress={onTrackPollinations}>
+            <Ionicons name="heart" size={20} color="#FF5722" />
+            <Text style={[styles.actionText, { color: '#FF5722' }]}>Pollinate</Text>
+          </TouchableOpacity>
+        )}
+        
         <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
           <Ionicons name="create-outline" size={20} color={theme.colors.primary} />
           <Text style={styles.actionText}>Edit</Text>
@@ -372,14 +380,22 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.background.secondary,
     paddingTop: theme.spacing.sm,
     marginTop: theme.spacing.sm,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.small,
-    flex: 0.45,
     justifyContent: 'center',
+    flex: 1,
+    minWidth: 80,
+  },
+  pollinateButton: {
+    backgroundColor: 'rgba(255, 87, 34, 0.1)',
+    borderWidth: 1,
+    borderColor: '#FF5722',
   },
   actionText: {
     ...theme.typography.caption,

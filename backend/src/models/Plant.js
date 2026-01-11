@@ -24,30 +24,41 @@ const GOURD_CONFIGS = {
     displayName: { english: 'Bitter Gourd', tagalog: 'Ampalaya' },
     daysToFlower: { min: 35, max: 48 },
     daysToMaturity: { min: 40, max: 50 },
-    pollinationHours: { start: 6, end: 10 }
+    pollinationHours: { start: 6, end: 10 },
+    // Days to know if pollination was successful (fruit visible)
+    daysToResultVisible: { min: 5, max: 7, average: 6 }
   },
   bottle_gourd: {
     varieties: ['upo_smooth', 'upo_long', 'upo_round'],
     displayName: { english: 'Bottle Gourd', tagalog: 'Upo' },
     daysToFlower: { min: 40, max: 55 },
     daysToMaturity: { min: 45, max: 60 },
-    pollinationHours: { start: 17, end: 20 }
+    pollinationHours: { start: 17, end: 20 },
+    // Days to know if pollination was successful (fruit visible)
+    daysToResultVisible: { min: 7, max: 10, average: 8 }
   },
   sponge_gourd: {
     varieties: ['patola', 'patola_smooth', 'patola_ridged'],
     displayName: { english: 'Sponge Gourd', tagalog: 'Patola' },
     daysToFlower: { min: 35, max: 45 },
     daysToMaturity: { min: 38, max: 48 },
-    pollinationHours: { start: 6, end: 10 }
+    pollinationHours: { start: 6, end: 10 },
+    // Days to know if pollination was successful (fruit visible)
+    daysToResultVisible: { min: 4, max: 6, average: 5 }
   },
   cucumber: {
     varieties: ['pipino', 'pipino_japanese', 'pipino_native'],
     displayName: { english: 'Cucumber', tagalog: 'Pipino' },
     daysToFlower: { min: 28, max: 38 },
     daysToMaturity: { min: 30, max: 40 },
-    pollinationHours: { start: 6, end: 11 }
+    pollinationHours: { start: 6, end: 11 },
+    // Days to know if pollination was successful (fruit visible)
+    daysToResultVisible: { min: 3, max: 5, average: 4 }
   }
 };
+
+// Export GOURD_CONFIGS for use in other modules
+module.exports.GOURD_CONFIGS = GOURD_CONFIGS;
 
 const plantSchema = new mongoose.Schema({
   // ===== BASIC PLANT INFO =====
@@ -103,7 +114,7 @@ const plantSchema = new mongoose.Schema({
     soilType: { 
       type: String, 
       enum: ['loamy', 'sandy', 'clay', 'silty'],
-      default: 'loamy'
+      default: 'silty' // Changed to silty - standard for Philippine farming
     },
     season: {
       type: String,
@@ -176,10 +187,23 @@ const plantSchema = new mongoose.Schema({
 
   // ===== POLLINATION TRACKING =====
   pollinations: [{
+    // Pollination entry name/label (pollinated1, pollinated2, etc.)
+    entryNumber: { type: Number, required: true },
+    label: { type: String }, // e.g., "Pollinated 1", "Pollinated 2"
+    
     // Pollination event
     date: { type: Date, default: Date.now },
-    femaleFlowersPollinated: { type: Number, required: true },
+    femaleFlowersPollinated: { type: Number, required: true, default: 1 },
     isHandPollinated: { type: Boolean, default: true },
+    
+    // Expected result date (calculated based on gourd type)
+    expectedResultDate: { type: Date },
+    daysUntilResult: { type: Number },
+    
+    // Notification settings
+    notificationScheduled: { type: Boolean, default: false },
+    notificationId: { type: String }, // Expo notification ID
+    notificationTime: { type: Date }, // When to send (6am on expected date)
     
     // ML Prediction for this pollination
     predictedSuccessRate: { type: Number },
@@ -445,13 +469,34 @@ plantSchema.methods.recordFlowering = function(maleCount = 0, femaleCount = 0) {
 
 // Add pollination event
 plantSchema.methods.addPollination = function(pollinationData) {
+  // Calculate entry number (pollinated1, pollinated2, etc.)
+  const entryNumber = this.pollinations.length + 1;
+  const label = `Pollinated ${entryNumber}`;
+  
+  // Calculate expected result date based on gourd type
+  const config = GOURD_CONFIGS[this.gourdType];
+  const daysToResult = config?.daysToResultVisible?.average || 7;
+  const pollinationDate = pollinationData.date || new Date();
+  const expectedResultDate = new Date(pollinationDate);
+  expectedResultDate.setDate(expectedResultDate.getDate() + daysToResult);
+  
+  // Set notification time to 6am on the expected result date
+  const notificationTime = new Date(expectedResultDate);
+  notificationTime.setHours(6, 0, 0, 0);
+  
   const pollination = {
-    date: pollinationData.date || new Date(),
-    femaleFlowersPollinated: pollinationData.femaleFlowersPollinated,
+    entryNumber,
+    label,
+    date: pollinationDate,
+    femaleFlowersPollinated: pollinationData.femaleFlowersPollinated || 1,
     isHandPollinated: pollinationData.isHandPollinated !== false,
+    expectedResultDate,
+    daysUntilResult: daysToResult,
+    notificationScheduled: false,
+    notificationTime,
     predictedSuccessRate: pollinationData.predictedSuccessRate,
     expectedSuccessfulCount: pollinationData.expectedSuccessfulCount,
-    daysUntilResultVisible: pollinationData.daysUntilResultVisible || 7,
+    daysUntilResultVisible: pollinationData.daysUntilResultVisible || daysToResult,
     predictionConfidence: pollinationData.predictionConfidence,
     status: 'pending',
     notes: pollinationData.notes
@@ -461,7 +506,7 @@ plantSchema.methods.addPollination = function(pollinationData) {
   this.status = 'pollinating';
   
   this.addTimelineEvent('pollinated', 
-    `Pollinated ${pollinationData.femaleFlowersPollinated} female flower(s). Expected success: ${pollination.expectedSuccessfulCount}`
+    `${label}: Pollinated ${pollinationData.femaleFlowersPollinated || 1} female flower(s). Check result on ${expectedResultDate.toLocaleDateString()}`
   );
   
   return this.save();
@@ -486,13 +531,76 @@ plantSchema.methods.recordPollinationResult = function(pollinationId, successful
   }
   
   this.addTimelineEvent('pollination_result', 
-    `Pollination result: ${successfulCount} successful out of ${pollination.femaleFlowersPollinated}`
+    `${pollination.label} result: ${successfulCount} successful out of ${pollination.femaleFlowersPollinated}`
   );
   
   // If we have successful pollinations, add fruit tracking
   if (successfulCount > 0) {
     this.status = 'fruiting';
   }
+  
+  return this.save();
+};
+
+// Update pollination entry
+plantSchema.methods.updatePollination = function(pollinationId, updateData) {
+  const pollination = this.pollinations.id(pollinationId);
+  if (!pollination) {
+    throw new Error('Pollination not found');
+  }
+  
+  // Update allowed fields
+  if (updateData.femaleFlowersPollinated !== undefined) {
+    pollination.femaleFlowersPollinated = updateData.femaleFlowersPollinated;
+  }
+  if (updateData.isHandPollinated !== undefined) {
+    pollination.isHandPollinated = updateData.isHandPollinated;
+  }
+  if (updateData.notes !== undefined) {
+    pollination.notes = updateData.notes;
+  }
+  if (updateData.status !== undefined) {
+    pollination.status = updateData.status;
+    if (updateData.status === 'success' || updateData.status === 'failed') {
+      pollination.resultRecordedDate = new Date();
+    }
+  }
+  if (updateData.actualSuccessfulCount !== undefined) {
+    pollination.actualSuccessfulCount = updateData.actualSuccessfulCount;
+  }
+  if (updateData.notificationScheduled !== undefined) {
+    pollination.notificationScheduled = updateData.notificationScheduled;
+  }
+  if (updateData.notificationId !== undefined) {
+    pollination.notificationId = updateData.notificationId;
+  }
+  
+  this.addTimelineEvent('conditions_updated', 
+    `${pollination.label} updated`
+  );
+  
+  return this.save();
+};
+
+// Delete pollination entry
+plantSchema.methods.deletePollination = function(pollinationId) {
+  const pollination = this.pollinations.id(pollinationId);
+  if (!pollination) {
+    throw new Error('Pollination not found');
+  }
+  
+  const label = pollination.label;
+  pollination.deleteOne();
+  
+  // Renumber remaining pollinations
+  this.pollinations.forEach((p, index) => {
+    p.entryNumber = index + 1;
+    p.label = `Pollinated ${index + 1}`;
+  });
+  
+  this.addTimelineEvent('conditions_updated', 
+    `${label} deleted`
+  );
   
   return this.save();
 };

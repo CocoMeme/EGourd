@@ -28,6 +28,9 @@ const {
   // Pollination
   predictPollinationSuccess,
   addPollination,
+  updatePollination,
+  deletePollination,
+  getPollinations,
   recordPollinationResult,
   
   // Fruit & Harvest
@@ -78,7 +81,10 @@ router.put('/:id/flowers', updateFlowerCounts);
 
 // Pollination routes
 router.post('/:id/predict-pollination', predictPollinationSuccess);
+router.get('/:id/pollinations', getPollinations);
 router.post('/:id/pollinations', addPollination);
+router.put('/:id/pollinations/:pollinationId', updatePollination);
+router.delete('/:id/pollinations/:pollinationId', deletePollination);
 router.put('/:id/pollinations/:pollinationId/result', recordPollinationResult);
 
 // Fruit & Harvest routes

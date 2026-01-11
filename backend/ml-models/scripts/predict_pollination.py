@@ -82,7 +82,7 @@ def predict_flowering(input_data):
         'sunlight_hours': 7.0,
         'soil_ph': 6.5,
         'soil_moisture': 65.0,
-        'soil_type': 'loamy',
+        'soil_type': 'silty',  # Philippine standard soil type
         'fertilizer_frequency': 'weekly',
         'plant_health_score': 4
     }

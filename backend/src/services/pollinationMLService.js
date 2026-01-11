@@ -144,7 +144,7 @@ class PollinationMLService {
       sunlight_hours: plantData.sunlightHours || plantData.sunlight_hours || 7,
       soil_ph: plantData.soilPh || plantData.soil_ph || 6.5,
       soil_moisture: plantData.soilMoisture || plantData.soil_moisture || 65,
-      soil_type: plantData.soilType || plantData.soil_type || 'loamy',
+      soil_type: plantData.soilType || plantData.soil_type || 'silty',  // Philippine standard
       fertilizer_type: plantData.fertilizerType || plantData.fertilizer_type || 'organic',
       fertilizer_frequency: plantData.fertilizerFrequency || plantData.fertilizer_frequency || 'weekly',
       watering_frequency: plantData.wateringFrequency || plantData.watering_frequency || 'daily',

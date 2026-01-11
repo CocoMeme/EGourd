@@ -24,6 +24,7 @@ export { PredictFlowersScreen } from './PolinationScreens/PredictFlowersScreen';
 export { PredictionResultsScreen } from './PolinationScreens/PredictionResultsScreen';
 export { default as PredictYieldScreen } from './PolinationScreens/PredictYieldScreen';
 export { default as YieldResultsScreen } from './PolinationScreens/YieldResultsScreen';
+export { PollinationTrackerScreen } from './PolinationScreens/PollinationTrackerScreen';
 
 // Forum Screens
 export { default as CommunityScreen } from './ForumScreens/CommunityScreen';

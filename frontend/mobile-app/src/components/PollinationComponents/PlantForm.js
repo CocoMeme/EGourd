@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { Button } from '../CustomComponents/Button';
 import { ImageCapture } from './ImageCapture';
-import { plantService } from '../../services';
+import { plantService, weatherService, getWeatherForDate, DEFAULT_SOIL_TYPE } from '../../services';
 
 // Custom Value Stepper Component (replaces Slider to avoid native module issues)
 const ValueStepper = ({ value, min, max, step, onChange, unit = '' }) => {
@@ -108,22 +108,31 @@ export const PlantForm = ({
     }
   });
 
+  // Get initial weather data based on date
+  const getInitialWeather = (date) => {
+    const weather = getWeatherForDate(date);
+    return {
+      avgTemperature: weather.temperature,
+      avgHumidity: weather.humidity,
+      sunlightHours: weather.sunlightHours,
+      soilType: DEFAULT_SOIL_TYPE, // Always silty based on Philippine farming practices
+      soilPh: initialData.environment?.soilPh || 6.5,
+      regionClimate: 'tropical_lowland',
+      season: weather.season
+    };
+  };
+
+  const initialDate = initialData.datePlanted ? new Date(initialData.datePlanted) : new Date();
+  const initialWeather = getInitialWeather(initialDate);
+
   const [formData, setFormData] = useState({
     gourdType: initialData.gourdType || 'bitter_gourd',
     variety: initialData.variety || 'ampalaya_bilog',
     plantName: initialData.plantName || '',
-    datePlanted: initialData.datePlanted ? new Date(initialData.datePlanted) : new Date(),
+    datePlanted: initialDate,
     notes: initialData.notes || '',
-    // Environment settings
-    environment: {
-      avgTemperature: initialData.environment?.avgTemperature || 28,
-      avgHumidity: initialData.environment?.avgHumidity || 70,
-      soilType: initialData.environment?.soilType || 'loamy',
-      soilPh: initialData.environment?.soilPh || 6.5,
-      sunlightHours: initialData.environment?.sunlightHours || 7,
-      regionClimate: initialData.environment?.regionClimate || 'tropical_lowland',
-      season: initialData.environment?.season || 'wet'
-    },
+    // Environment settings - auto-populated from weather data
+    environment: initialWeather,
     // Care settings
     care: {
       fertilizerType: initialData.care?.fertilizerType || 'organic',
@@ -187,16 +196,7 @@ export const PlantForm = ({
     cucumber_english: 'English Cucumber'
   };
 
-  const soilTypes = ['loamy', 'sandy', 'clay', 'silty'];
-  const climateTypes = [
-    { value: 'tropical_lowland', label: 'Tropical Lowland' },
-    { value: 'tropical_highland', label: 'Tropical Highland' },
-    { value: 'subtropical', label: 'Subtropical' }
-  ];
-  const seasons = [
-    { value: 'wet', label: 'Wet Season' },
-    { value: 'dry', label: 'Dry Season' }
-  ];
+  // Removed soilTypes, climateTypes, seasons as they are now auto-determined
   const fertilizerTypes = ['organic', 'chemical', 'mixed', 'none'];
   const frequencyOptions = ['daily', 'twice_daily', 'every_other_day', 'weekly', 'biweekly', 'monthly', 'none'];
 
@@ -216,6 +216,22 @@ export const PlantForm = ({
         [field]: value
       };
     });
+  };
+
+  // Update weather data when date changes
+  const handleDateChange = (newDate) => {
+    const weather = getWeatherForDate(newDate);
+    setFormData(prev => ({
+      ...prev,
+      datePlanted: newDate,
+      environment: {
+        ...prev.environment,
+        avgTemperature: weather.temperature,
+        avgHumidity: weather.humidity,
+        sunlightHours: weather.sunlightHours,
+        season: weather.season
+      }
+    }));
   };
 
   // Update variety when gourd type changes
@@ -367,87 +383,44 @@ export const PlantForm = ({
 
       {showAdvancedSettings && (
         <>
-          {/* Quick Environment Settings */}
-          <View style={styles.envSection}>
-            <Text style={styles.envLabel}>Average Temperature</Text>
-            <ValueStepper
-              value={formData.environment.avgTemperature}
-              min={15}
-              max={40}
-              step={1}
-              onChange={(val) => handleInputChange('avgTemperature', val, 'environment')}
-              unit="°C"
-            />
-          </View>
-
-          <View style={styles.envSection}>
-            <Text style={styles.envLabel}>Average Humidity</Text>
-            <ValueStepper
-              value={formData.environment.avgHumidity}
-              min={30}
-              max={100}
-              step={5}
-              onChange={(val) => handleInputChange('avgHumidity', val, 'environment')}
-              unit="%"
-            />
-          </View>
-
-          <View style={styles.envSection}>
-            <Text style={styles.envLabel}>Daily Sunlight</Text>
-            <ValueStepper
-              value={formData.environment.sunlightHours}
-              min={2}
-              max={14}
-              step={0.5}
-              onChange={(val) => handleInputChange('sunlightHours', val, 'environment')}
-              unit=" hrs"
-            />
-          </View>
-
-          {/* Season and Soil Type */}
-          <View style={styles.envRow}>
-            <View style={styles.envRowItem}>
-              <Text style={styles.envLabel}>Season</Text>
-              <View style={styles.optionRow}>
-                {seasons.map(s => (
-                  <TouchableOpacity
-                    key={s.value}
-                    style={[
-                      styles.optionButton,
-                      formData.environment.season === s.value && styles.optionButtonActive
-                    ]}
-                    onPress={() => handleInputChange('season', s.value, 'environment')}
-                  >
-                    <Text style={[
-                      styles.optionButtonText,
-                      formData.environment.season === s.value && styles.optionButtonTextActive
-                    ]}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
+          {/* Auto-populated Weather Data (Read-only info) */}
+          <View style={styles.weatherInfoCard}>
+            <View style={styles.weatherHeader}>
+              <Ionicons name="cloud-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.weatherTitle}>Weather Data (Auto-filled)</Text>
+            </View>
+            <Text style={styles.weatherSubtitle}>
+              Based on historical weather for the planting date
+            </Text>
+            
+            <View style={styles.weatherGrid}>
+              <View style={styles.weatherItem}>
+                <Ionicons name="thermometer-outline" size={24} color="#FF6B6B" />
+                <Text style={styles.weatherValue}>{formData.environment.avgTemperature}°C</Text>
+                <Text style={styles.weatherLabel}>Temperature</Text>
+              </View>
+              <View style={styles.weatherItem}>
+                <Ionicons name="water-outline" size={24} color="#4A90E2" />
+                <Text style={styles.weatherValue}>{formData.environment.avgHumidity}%</Text>
+                <Text style={styles.weatherLabel}>Humidity</Text>
+              </View>
+              <View style={styles.weatherItem}>
+                <Ionicons name="sunny-outline" size={24} color="#F5A623" />
+                <Text style={styles.weatherValue}>{formData.environment.sunlightHours}h</Text>
+                <Text style={styles.weatherLabel}>Sunlight</Text>
+              </View>
+              <View style={styles.weatherItem}>
+                <Ionicons name="leaf-outline" size={24} color="#7ED321" />
+                <Text style={styles.weatherValue}>{formatLabel(formData.environment.season)}</Text>
+                <Text style={styles.weatherLabel}>Season</Text>
               </View>
             </View>
-          </View>
-
-          <View style={styles.envRow}>
-            <View style={styles.envRowItem}>
-              <Text style={styles.envLabel}>Soil Type</Text>
-              <View style={styles.optionRow}>
-                {soilTypes.map(soil => (
-                  <TouchableOpacity
-                    key={soil}
-                    style={[
-                      styles.optionButton,
-                      formData.environment.soilType === soil && styles.optionButtonActive
-                    ]}
-                    onPress={() => handleInputChange('soilType', soil, 'environment')}
-                  >
-                    <Text style={[
-                      styles.optionButtonText,
-                      formData.environment.soilType === soil && styles.optionButtonTextActive
-                    ]}>{formatLabel(soil)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            
+            <View style={styles.soilInfo}>
+              <Ionicons name="earth-outline" size={16} color={theme.colors.text.secondary} />
+              <Text style={styles.soilText}>
+                Soil Type: Silty (Philippine standard)
+              </Text>
             </View>
           </View>
 
@@ -748,7 +721,7 @@ export const PlantForm = ({
                     Alert.alert('Invalid Date', 'Planting date cannot be in the future.');
                     return;
                   }
-                  handleInputChange('datePlanted', newDate);
+                  handleDateChange(newDate); // This will also update weather data
                   setShowDatePicker(false);
                 }}
               >
@@ -1071,5 +1044,62 @@ const styles = StyleSheet.create({
   optionButtonTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  // Weather info card styles
+  weatherInfoCard: {
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.medium,
+    padding: theme.spacing.md,
+    marginHorizontal: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  weatherHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  weatherTitle: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.primary,
+    marginLeft: theme.spacing.sm,
+    fontWeight: '600',
+  },
+  weatherSubtitle: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.md,
+  },
+  weatherGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
+  weatherItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  weatherValue: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.text.primary,
+    fontWeight: '600',
+    marginTop: theme.spacing.xs,
+  },
+  weatherLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 10,
+  },
+  soilInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.background.primary,
+  },
+  soilText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginLeft: theme.spacing.xs,
   },
 });

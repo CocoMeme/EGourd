@@ -163,6 +163,11 @@ export const PollinationScreen = ({ navigation }) => {
     </View>
   );
 
+  // Handle pollination tracking
+  const handleTrackPollinations = (plant) => {
+    navigation.navigate('PollinationTracker', { plantId: plant._id, plant });
+  };
+
   // Render plant item
   const renderPlantItem = ({ item }) => (
     <PlantCard
@@ -170,6 +175,7 @@ export const PollinationScreen = ({ navigation }) => {
       onPress={() => handlePlantPress(item)}
       onEdit={() => handleEditPlant(item)}
       onDelete={() => handleDeletePlant(item)}
+      onTrackPollinations={() => handleTrackPollinations(item)}
     />
   );
 

@@ -30,12 +30,13 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
     plantType: plant?.name || 'ampalaya_bilog',
     plantAge: plant?.ageInDays?.toString() || '',
     
-    // Environmental factors
+    // Environmental factors - manual input
     temperature: '28',
     humidity: '70',
-    sunlightHours: '7',
+    sunlightHours: '6',
     soilPH: '6.5',
     soilType: 'loamy',
+    season: 'wet',
     
     // Care data
     wateringFrequency: '4',
@@ -85,12 +86,9 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Required numeric fields
+    // Required numeric fields (temperature, humidity, sunlight are auto-filled now)
     const numericFields = {
       plantAge: { min: 0, max: 365, name: 'Plant Age' },
-      temperature: { min: 15, max: 45, name: 'Temperature' },
-      humidity: { min: 0, max: 100, name: 'Humidity' },
-      sunlightHours: { min: 0, max: 24, name: 'Sunlight Hours' },
       wateringFrequency: { min: 0, max: 21, name: 'Watering Frequency' }
     };
 
@@ -278,7 +276,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
               placeholder="e.g., 28"
             />
             {errors.temperature && <Text style={styles.errorText}>{errors.temperature}</Text>}
-            <Text style={styles.hint}>Optimal: 25-30°C</Text>
+            <Text style={styles.hint}>Optimal: 25-32°C</Text>
           </View>
 
           <View style={styles.inputGroup}>
@@ -287,7 +285,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
               style={[styles.input, errors.humidity && styles.inputError]}
               value={formData.humidity}
               onChangeText={(value) => updateField('humidity', value)}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="e.g., 70"
             />
             {errors.humidity && <Text style={styles.errorText}>{errors.humidity}</Text>}
@@ -295,13 +293,13 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sunlight Hours/Day *</Text>
+            <Text style={styles.label}>Daily Sunlight (hours) *</Text>
             <TextInput
               style={[styles.input, errors.sunlightHours && styles.inputError]}
               value={formData.sunlightHours}
               onChangeText={(value) => updateField('sunlightHours', value)}
               keyboardType="decimal-pad"
-              placeholder="e.g., 7"
+              placeholder="e.g., 6"
             />
             {errors.sunlightHours && <Text style={styles.errorText}>{errors.sunlightHours}</Text>}
             <Text style={styles.hint}>Optimal: 6-8 hours</Text>
@@ -331,10 +329,21 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 <Picker.Item label="Loamy" value="loamy" />
                 <Picker.Item label="Clay" value="clay" />
                 <Picker.Item label="Sandy" value="sandy" />
-                <Picker.Item label="Silt" value="silt" />
-                <Picker.Item label="Peat" value="peat" />
-                <Picker.Item label="Chalky" value="chalky" />
-                <Picker.Item label="Mixed" value="mixed" />
+                <Picker.Item label="Silty" value="silty" />
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Season</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.season}
+                onValueChange={(value) => updateField('season', value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Wet Season (June - November)" value="wet" />
+                <Picker.Item label="Dry Season (December - May)" value="dry" />
               </Picker>
             </View>
           </View>
@@ -657,3 +666,5 @@ const styles = StyleSheet.create({
     height: 32,
   },
 });
+
+export default PredictFlowersScreen;

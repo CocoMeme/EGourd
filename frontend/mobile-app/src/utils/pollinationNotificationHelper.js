@@ -246,6 +246,120 @@ class PollinationNotificationHelper {
   }
 
   /**
+   * Schedule a pollination result check notification
+   * Called when a new pollination entry is added
+   * @param {Object} pollination - The pollination entry
+   * @param {Object} plant - The plant object
+   * @returns {string|null} The notification ID if scheduled
+   */
+  async schedulePollinationResultNotification(pollination, plant) {
+    try {
+      if (!pollination.expectedResultDate) {
+        console.warn('No expected result date for pollination');
+        return null;
+      }
+
+      // Set notification time to 6am on the expected date
+      const notificationTime = new Date(pollination.expectedResultDate);
+      notificationTime.setHours(6, 0, 0, 0);
+
+      // Only schedule if time is in the future
+      if (notificationTime <= new Date()) {
+        console.log('Expected result date is in the past, not scheduling notification');
+        return null;
+      }
+
+      const plantName = plant.plantName || plant.displayName?.english || 'Your plant';
+      const gourdType = plant.displayName?.tagalog || plant.gourdType?.replace(/_/g, ' ') || '';
+
+      const notificationId = await this.scheduleLocalNotification(
+        `🌱 Check ${pollination.label}!`,
+        `Time to check if your ${plantName}${gourdType ? ` (${gourdType})` : ''} pollination was successful! Look for fruit development.`,
+        notificationTime,
+        {
+          plantId: plant._id,
+          pollinationId: pollination._id,
+          type: 'pollination_result_check',
+          label: pollination.label
+        }
+      );
+
+      console.log(`✅ Scheduled pollination result notification for ${pollination.label} at ${notificationTime}`);
+      return notificationId;
+    } catch (error) {
+      console.error('Error scheduling pollination result notification:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Cancel a pollination result notification
+   * @param {string} notificationId - The notification ID to cancel
+   */
+  async cancelPollinationResultNotification(notificationId) {
+    try {
+      if (notificationId) {
+        await Notifications.cancelScheduledNotificationAsync(notificationId);
+        console.log(`✅ Cancelled pollination result notification ${notificationId}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling pollination result notification:', error);
+    }
+  }
+
+  /**
+   * Show instant notification when user records a pollination result
+   * @param {Object} pollination - The pollination entry
+   * @param {Object} plant - The plant object
+   * @param {string} status - 'success' or 'failed'
+   * @param {number} successCount - Number of successful fruits (if success)
+   */
+  async showPollinationResultNotification(pollination, plant, status, successCount = 0) {
+    try {
+      const label = pollination.label || 'Pollination';
+      const plantName = plant.plantName || plant.displayName?.english || 'your plant';
+      
+      let title, body;
+      
+      if (status === 'success') {
+        title = `🎉 ${label} Successful!`;
+        body = `Great news! ${successCount} fruit${successCount > 1 ? 's' : ''} developing on ${plantName}!`;
+      } else if (status === 'partial') {
+        title = `🌿 ${label} Partially Successful`;
+        body = `${successCount} of ${pollination.femaleFlowersPollinated} fruit${successCount > 1 ? 's' : ''} developing on ${plantName}.`;
+      } else {
+        title = `😔 ${label} Failed`;
+        body = `No worries! Keep trying with ${plantName}. Next pollination could be the one!`;
+      }
+
+      // Show instant notification
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: 'default',
+          badge: 1,
+          data: {
+            plantId: plant._id,
+            pollinationId: pollination._id,
+            type: 'pollination_result',
+            status
+          },
+          android: {
+            channelId: 'pollination',
+            priority: 'max',
+          },
+        },
+        trigger: null // null means show immediately
+      });
+
+      console.log(`✅ Showed instant ${status} notification for ${label}`);
+    } catch (error) {
+      console.error('Error showing pollination result notification:', error);
+    }
+  }
+
+  /**
    * Initialize notification system
    */
   async initialize() {

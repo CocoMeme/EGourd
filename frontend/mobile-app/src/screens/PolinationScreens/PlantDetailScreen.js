@@ -26,6 +26,10 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showImageCapture, setShowImageCapture] = useState(false);
   
+  // Lifecycle predictions state
+  const [lifecyclePredictions, setLifecyclePredictions] = useState(null);
+  const [loadingPredictions, setLoadingPredictions] = useState(false);
+  
   // Modal states
   const [showFloweringModal, setShowFloweringModal] = useState(false);
   const [showPollinationModal, setShowPollinationModal] = useState(false);
@@ -40,9 +44,28 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const [harvestWeight, setHarvestWeight] = useState('');
   const [selectedFruitId, setSelectedFruitId] = useState(null);
 
+  // Fetch lifecycle predictions on load
+  const fetchLifecyclePredictions = async () => {
+    try {
+      setLoadingPredictions(true);
+      const response = await plantService.getLifecyclePrediction(plantId);
+      if (response.data?.predictions) {
+        setLifecyclePredictions(response.data.predictions);
+      }
+    } catch (error) {
+      console.error('Error fetching lifecycle predictions:', error);
+      // Don't show error to user, just silently fail
+    } finally {
+      setLoadingPredictions(false);
+    }
+  };
+
   useEffect(() => {
     if (!initialPlant) {
       fetchPlantDetails();
+    } else {
+      // Fetch predictions if we have initial plant
+      fetchLifecyclePredictions();
     }
     setupNotificationChannel();
   }, [plantId]);
@@ -66,6 +89,8 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       if (showLoader) setIsLoading(true);
       const response = await plantService.getPlant(plantId);
       setPlant(response.data);
+      // Also fetch lifecycle predictions
+      fetchLifecyclePredictions();
     } catch (error) {
       console.error('Error fetching plant details:', error);
       Alert.alert('Error', 'Failed to load plant details.');
@@ -458,8 +483,29 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   };
 
   const renderPollinationInfo = () => {
+    // Calculate pollination statistics
+    const pollinations = plant.pollinations || [];
+    const totalPollinated = pollinations.reduce((sum, p) => sum + (p.femaleFlowerCount || p.femaleFlowersPollinated || 1), 0);
+    const successfulPollinations = pollinations.filter(p => p.outcome === 'success' || p.status === 'success');
+    const totalSuccessful = successfulPollinations.reduce((sum, p) => sum + (p.successfulCount || p.actualSuccessfulCount || 0), 0);
+    const pendingPollinations = pollinations.filter(p => p.outcome === 'pending' || p.status === 'pending');
+    
+    // Calculate expected result dates for pending pollinations
+    const getExpectedResultDate = (pollinationDate) => {
+      const date = new Date(pollinationDate);
+      date.setDate(date.getDate() + 7); // Typically 5-7 days to see fruit set
+      return date;
+    };
+
+    // Show pollination section if: flowering started OR plant status is flowering/pollinating
+    const shouldShowPollinationSection = plant.flowering?.hasStarted || 
+      plant.flowering?.hasStartedFlowering ||
+      plant.status === 'flowering' || 
+      plant.status === 'pollinating' ||
+      plant.status === 'fruiting';
+
     if (!plant.pollinations || plant.pollinations.length === 0) {
-      if (!plant.flowering?.hasStarted) return null;
+      if (!shouldShowPollinationSection) return null;
       
       return (
         <View style={styles.sectionCard}>
@@ -473,7 +519,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButtonPrimary}
-              onPress={() => setShowPollinationModal(true)}
+              onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
             >
               <Ionicons name="heart" size={18} color="#fff" />
               <Text style={styles.actionButtonPrimaryText}>Add Pollination</Text>
@@ -486,55 +532,89 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🌿 Pollination History</Text>
+          <Text style={styles.sectionTitle}>🌿 Pollination Counter</Text>
           <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => setShowPollinationModal(true)}
+            style={styles.viewAllButton}
+            onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
           >
-            <Ionicons name="add" size={20} color={theme.colors.primary} />
+            <Text style={styles.viewAllButtonText}>View All</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
         
-        {plant.pollinations.map((p, index) => (
-          <View key={p._id || index} style={styles.pollinationItem}>
-            <View style={styles.pollinationHeader}>
-              <Text style={styles.pollinationDate}>{formatDate(p.date)}</Text>
-              <View style={[
-                styles.outcomeBadge, 
-                { backgroundColor: p.outcome === 'success' ? '#4CAF50' : p.outcome === 'failed' ? '#F44336' : '#FF9800' }
-              ]}>
-                <Text style={styles.outcomeBadgeText}>{p.outcome?.toUpperCase() || 'PENDING'}</Text>
-              </View>
+        {/* Pollination Counter Section */}
+        <View style={styles.pollinationCounterCard}>
+          <View style={styles.pollinationCounterRow}>
+            <View style={styles.pollinationCounterItem}>
+              <Ionicons name="heart" size={24} color="#FF9800" />
+              <Text style={styles.pollinationCounterNumber}>{pollinations.length}</Text>
+              <Text style={styles.pollinationCounterLabel}>Total Entries</Text>
             </View>
-            <Text style={styles.pollinationDetails}>
-              {p.femaleFlowerCount} female flower(s) • {p.isHandPollinated ? 'Hand' : 'Natural'} pollinated
-            </Text>
-            {p.prediction?.successRate && (
-              <Text style={styles.pollinationPrediction}>
-                Predicted: {(p.prediction.successRate * 100).toFixed(1)}% success
-              </Text>
-            )}
-            {p.outcome === 'pending' && (
-              <View style={styles.resultButtons}>
-                <Text style={styles.resultPrompt}>Record result:</Text>
-                {[0, 1, 2, 3].filter(n => n <= p.femaleFlowerCount).map(n => (
-                  <TouchableOpacity
-                    key={n}
-                    style={styles.resultButton}
-                    onPress={() => handlePollinationResult(p._id, n)}
-                  >
-                    <Text style={styles.resultButtonText}>{n}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-            {p.successfulCount !== undefined && p.outcome === 'success' && (
-              <Text style={styles.successText}>
-                ✅ {p.successfulCount} successful → {p.successfulCount} fruit(s) developing
-              </Text>
-            )}
+            <View style={styles.pollinationCounterDivider} />
+            <View style={styles.pollinationCounterItem}>
+              <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+              <Text style={styles.pollinationCounterNumber}>{totalSuccessful}</Text>
+              <Text style={styles.pollinationCounterLabel}>Successful</Text>
+            </View>
+            <View style={styles.pollinationCounterDivider} />
+            <View style={styles.pollinationCounterItem}>
+              <Ionicons name="time" size={24} color="#2196F3" />
+              <Text style={styles.pollinationCounterNumber}>{pendingPollinations.length}</Text>
+              <Text style={styles.pollinationCounterLabel}>Pending</Text>
+            </View>
           </View>
-        ))}
+        </View>
+
+        {/* Pollination Entries List (labeled) */}
+        <View style={styles.pollinationEntriesList}>
+          {plant.pollinations.slice(-5).reverse().map((p, index) => {
+            const isPending = p.status === 'pending';
+            const expectedDate = p.expectedResultDate ? new Date(p.expectedResultDate) : getExpectedResultDate(p.date);
+            const daysUntil = Math.max(0, Math.ceil((expectedDate - new Date()) / (1000 * 60 * 60 * 24)));
+            const isCheckTime = daysUntil <= 0 && isPending;
+            
+            return (
+              <TouchableOpacity 
+                key={p._id || index} 
+                style={styles.pollinationEntryItem}
+                onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
+              >
+                <View style={styles.entryLeft}>
+                  <Text style={styles.entryLabel}>{p.label || `Pollinated ${p.entryNumber || index + 1}`}</Text>
+                  <Text style={styles.entryDate}>{formatDate(p.date)}</Text>
+                </View>
+                <View style={styles.entryRight}>
+                  {isPending ? (
+                    <View style={[styles.entryStatus, { backgroundColor: isCheckTime ? '#FF9800' : '#2196F3' }]}>
+                      <Text style={styles.entryStatusText}>
+                        {isCheckTime ? 'Check Now!' : `${daysUntil}d left`}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.entryStatus, { 
+                      backgroundColor: p.status === 'success' ? '#4CAF50' : 
+                                       p.status === 'failed' ? '#F44336' : '#FF9800' 
+                    }]}>
+                      <Text style={styles.entryStatusText}>
+                        {p.status === 'success' ? '✓ Success' : 
+                         p.status === 'failed' ? '✗ Failed' : 'Partial'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Add Pollination Button */}
+        <TouchableOpacity 
+          style={styles.addPollinationButton}
+          onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
+        >
+          <Ionicons name="add-circle" size={20} color={theme.colors.primary} />
+          <Text style={styles.addPollinationButtonText}>Add New Pollination</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -744,31 +824,68 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         {/* Fruits Section */}
         {renderFruitInfo()}
 
-        {/* Full Lifecycle Prediction Button */}
-        <TouchableOpacity
-          style={styles.lifecycleButton}
-          onPress={async () => {
-            try {
-              const response = await plantService.getLifecyclePrediction(plantId);
-              const { predictions } = response.data;
-              
-              Alert.alert(
-                '🌱 Lifecycle Prediction',
-                `📊 Growth Timeline:\n\n` +
-                `🌸 Days to Flowering: ${predictions.summary?.plantingToFlowering || 'N/A'} days\n\n` +
-                `🍈 Days from Flowering to Harvest: ${predictions.summary?.floweringToHarvest || 'N/A'} days\n\n` +
-                `📆 Total Days to Harvest: ${predictions.summary?.totalDaysToHarvest || 'N/A'} days`,
-                [{ text: 'OK' }]
-              );
-            } catch (error) {
-              console.error('Error getting lifecycle prediction:', error);
-              Alert.alert('Error', 'Failed to get lifecycle prediction.');
-            }
-          }}
-        >
-          <Ionicons name="analytics" size={20} color="#fff" />
-          <Text style={styles.lifecycleButtonText}>Get Full Lifecycle Prediction</Text>
-        </TouchableOpacity>
+        {/* Lifecycle Predictions Section - Always visible */}
+        <View style={styles.lifecyclePredictionCard}>
+          <View style={styles.lifecyclePredictionHeader}>
+            <Ionicons name="analytics" size={24} color={theme.colors.primary} />
+            <Text style={styles.lifecyclePredictionTitle}>Growth Timeline</Text>
+            {loadingPredictions && (
+              <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginLeft: 'auto' }} />
+            )}
+          </View>
+          
+          {lifecyclePredictions ? (
+            <View style={styles.lifecycleTimelineContainer}>
+              <View style={styles.lifecycleTimelineRow}>
+                <View style={styles.lifecycleTimelineItem}>
+                  <View style={[styles.lifecycleTimelineIcon, { backgroundColor: '#E8F5E9' }]}>
+                    <Ionicons name="flower" size={20} color="#4CAF50" />
+                  </View>
+                  <Text style={styles.lifecycleTimelineDays}>
+                    {lifecyclePredictions.summary?.plantingToFlowering || lifecyclePredictions.flowering?.predictedDaysToFlower || '—'}
+                  </Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Days to Flowering</Text>
+                </View>
+                
+                <View style={styles.lifecycleTimelineArrow}>
+                  <Ionicons name="arrow-forward" size={16} color={theme.colors.text.secondary} />
+                </View>
+                
+                <View style={styles.lifecycleTimelineItem}>
+                  <View style={[styles.lifecycleTimelineIcon, { backgroundColor: '#FFF3E0' }]}>
+                    <Ionicons name="leaf" size={20} color="#FF9800" />
+                  </View>
+                  <Text style={styles.lifecycleTimelineDays}>
+                    {lifecyclePredictions.summary?.floweringToHarvest || '—'}
+                  </Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Flowering to Harvest</Text>
+                </View>
+                
+                <View style={styles.lifecycleTimelineArrow}>
+                  <Ionicons name="arrow-forward" size={16} color={theme.colors.text.secondary} />
+                </View>
+                
+                <View style={styles.lifecycleTimelineItem}>
+                  <View style={[styles.lifecycleTimelineIcon, { backgroundColor: '#E3F2FD' }]}>
+                    <Ionicons name="calendar" size={20} color="#2196F3" />
+                  </View>
+                  <Text style={styles.lifecycleTimelineDays}>
+                    {lifecyclePredictions.summary?.totalDaysToHarvest || '—'}
+                  </Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Total to Harvest</Text>
+                </View>
+              </View>
+            </View>
+          ) : !loadingPredictions ? (
+            <TouchableOpacity 
+              style={styles.lifecycleLoadButton}
+              onPress={fetchLifecyclePredictions}
+            >
+              <Ionicons name="refresh" size={18} color={theme.colors.primary} />
+              <Text style={styles.lifecycleLoadButtonText}>Load Predictions</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -1463,4 +1580,201 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     marginHorizontal: theme.spacing.sm,
   },
+  // Pollination Counter Styles
+  pollinationCounterCard: {
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.medium,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  pollinationCounterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  pollinationCounterItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  pollinationCounterNumber: {
+    ...theme.typography.h2,
+    color: theme.colors.text.primary,
+    fontWeight: 'bold',
+    marginTop: theme.spacing.xs,
+  },
+  pollinationCounterLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  pollinationCounterDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: theme.colors.background.primary,
+  },
+  pendingResultsInfo: {
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.background.primary,
+  },
+  pendingResultsTitle: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontWeight: '600',
+    marginBottom: theme.spacing.xs,
+  },
+  pendingResultText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
+  historyTitle: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.text.secondary,
+    fontWeight: '600',
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  // Pollination Entries List Styles
+  pollinationEntriesList: {
+    marginTop: theme.spacing.sm,
+  },
+  pollinationEntryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.background.primary,
+    borderRadius: theme.borderRadius.small,
+    marginBottom: theme.spacing.xs,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  entryLeft: {
+    flex: 1,
+  },
+  entryLabel: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.text.primary,
+    fontWeight: '600',
+  },
+  entryDate: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
+  entryRight: {
+    marginLeft: theme.spacing.sm,
+  },
+  entryStatus: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.small,
+  },
+  entryStatusText: {
+    ...theme.typography.caption,
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  addPollinationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.primary,
+  },
+  addPollinationButtonText: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.primary,
+    fontWeight: '500',
+    marginLeft: theme.spacing.xs,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllButtonText: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  // Lifecycle Prediction Card Styles
+  lifecyclePredictionCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: theme.colors.background.secondary,
+  },
+  lifecyclePredictionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  lifecyclePredictionTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text.primary,
+    marginLeft: theme.spacing.sm,
+  },
+  lifecycleTimelineContainer: {
+    paddingVertical: theme.spacing.sm,
+  },
+  lifecycleTimelineRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  lifecycleTimelineItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  lifecycleTimelineIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  lifecycleTimelineDays: {
+    ...theme.typography.h3,
+    color: theme.colors.text.primary,
+    fontWeight: 'bold',
+  },
+  lifecycleTimelineLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  lifecycleTimelineArrow: {
+    paddingHorizontal: theme.spacing.xs,
+  },
+  lifecycleLoadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.medium,
+  },
+  lifecycleLoadButtonText: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.primary,
+    marginLeft: theme.spacing.sm,
+  },
 });
+
+export default PlantDetailScreen;

@@ -681,11 +681,15 @@ const addPollination = async (req, res) => {
       notes
     });
 
+    // Get the newly added pollination (last one in array)
+    const newPollination = plant.pollinations[plant.pollinations.length - 1];
+
     res.status(201).json({
       success: true,
       message: 'Pollination recorded successfully',
       data: {
         plant,
+        pollination: newPollination,
         prediction
       }
     });
@@ -771,6 +775,139 @@ const recordPollinationResult = async (req, res) => {
     res.status(400).json({
       success: false,
       message: 'Error recording pollination result',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Update pollination entry
+ * @route   PUT /api/plants/:id/pollinations/:pollinationId
+ * @access  Private
+ */
+const updatePollination = async (req, res) => {
+  try {
+    const { femaleFlowersPollinated, isHandPollinated, notes, status, actualSuccessfulCount, notificationScheduled, notificationId } = req.body;
+
+    const plant = await Plant.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!plant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plant not found'
+      });
+    }
+
+    await plant.updatePollination(req.params.pollinationId, {
+      femaleFlowersPollinated,
+      isHandPollinated,
+      notes,
+      status,
+      actualSuccessfulCount,
+      notificationScheduled,
+      notificationId
+    });
+
+    // Find the updated pollination
+    const updatedPollination = plant.pollinations.id(req.params.pollinationId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Pollination updated successfully',
+      data: {
+        plant,
+        pollination: updatedPollination
+      }
+    });
+  } catch (error) {
+    console.error('Update pollination error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error updating pollination',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Delete pollination entry
+ * @route   DELETE /api/plants/:id/pollinations/:pollinationId
+ * @access  Private
+ */
+const deletePollination = async (req, res) => {
+  try {
+    const plant = await Plant.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!plant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plant not found'
+      });
+    }
+
+    await plant.deletePollination(req.params.pollinationId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Pollination deleted successfully',
+      data: { plant }
+    });
+  } catch (error) {
+    console.error('Delete pollination error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error deleting pollination',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get all pollinations for a plant
+ * @route   GET /api/plants/:id/pollinations
+ * @access  Private
+ */
+const getPollinations = async (req, res) => {
+  try {
+    const plant = await Plant.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!plant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plant not found'
+      });
+    }
+
+    // Sort by entry number
+    const pollinations = plant.pollinations.sort((a, b) => a.entryNumber - b.entryNumber);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        pollinations,
+        summary: {
+          total: pollinations.length,
+          pending: pollinations.filter(p => p.status === 'pending').length,
+          successful: pollinations.filter(p => p.status === 'success').length,
+          failed: pollinations.filter(p => p.status === 'failed').length,
+          partial: pollinations.filter(p => p.status === 'partial').length
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get pollinations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching pollinations',
       error: error.message
     });
   }
@@ -1002,8 +1139,8 @@ const getLifecyclePrediction = async (req, res) => {
       soil_ph: env.soilPh || 6.5,
       soilMoisture: env.soilMoisture || 65,
       soil_moisture: env.soilMoisture || 65,
-      soilType: env.soilType || 'loamy',
-      soil_type: env.soilType || 'loamy',
+      soilType: env.soilType || 'silty',  // Philippine standard
+      soil_type: env.soilType || 'silty',  // Philippine standard
       season: env.season || 'wet',
       region: env.region || 'tropical_lowland',
       region_climate: env.region || 'tropical_lowland',
@@ -1067,6 +1204,9 @@ module.exports = {
   // Pollination
   predictPollinationSuccess,
   addPollination,
+  updatePollination,
+  deletePollination,
+  getPollinations,
   recordPollinationResult,
   
   // Fruit & Harvest
