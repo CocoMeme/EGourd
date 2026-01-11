@@ -21,23 +21,25 @@ export const useAppResources = () => {
     const { isLoading: devModeLoading } = useDeveloperMode();
 
     useEffect(() => {
-        async function prepare() {
+        // Separate update check to run only once on mount
+        async function checkUpdates() {
+            if (__DEV__) return;
             try {
-                // Check for OTA updates in production
-                if (!__DEV__) {
-                    const update = await Updates.checkForUpdateAsync();
-                    if (update.isAvailable) {
-                        setIsUpdating(true);
-                        await Updates.fetchUpdateAsync();
-                        await Updates.reloadAsync();
-                        return; // App will reload, so stop here
-                    }
+                const update = await Updates.checkForUpdateAsync();
+                if (update.isAvailable) {
+                    setIsUpdating(true);
+                    await Updates.fetchUpdateAsync();
+                    await Updates.reloadAsync();
                 }
             } catch (e) {
-                // Ignore update errors (e.g. offline)
                 console.log('Update check failed:', e);
             }
+        }
+        checkUpdates();
+    }, []);
 
+    useEffect(() => {
+        async function prepare() {
             // Create a combined loading state
             const isReady = fontsLoaded && !authLoading && !devModeLoading;
 
