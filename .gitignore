@@ -17,7 +17,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+# package-lock.json - Keep this! Required for consistent builds.
 
 # Backend
 backend/.env
@@ -35,6 +35,8 @@ frontend/mobile-app/.expo/
 frontend/mobile-app/dist/
 frontend/mobile-app/web-build/
 frontend/mobile-app/.expo-shared/
+frontend/mobile-app/android/
+frontend/mobile-app/ios/
 
 # Android / Gradle
 .gradle/
