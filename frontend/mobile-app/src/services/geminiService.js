@@ -84,6 +84,10 @@ class GeminiService {
       // Get auth token
       const token = authService.getToken();
 
+      // Setup timeout controller (60 seconds to allow for backend retries/cold starts)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       // Call Backend API
       const response = await fetch(`${API_BASE_URL}/scans/analyze`, {
         method: 'POST',
@@ -91,12 +95,14 @@ class GeminiService {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : '',
         },
-
+        signal: controller.signal,
         body: JSON.stringify({
           image: base64Image,
           tmPrediction: tmPrediction
         })
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);

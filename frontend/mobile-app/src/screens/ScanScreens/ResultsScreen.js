@@ -508,6 +508,19 @@ export const ResultsScreen = ({ route, navigation }) => {
     }
   }, [isAnalyzing]);
 
+  // Update loading message if analysis takes a while (e.g. waking up server or switching API keys)
+  useEffect(() => {
+    let timer;
+    if (isAnalyzing) {
+      timer = setTimeout(() => {
+        setLoadingStage((prev) => 
+          prev === 'Complete!' ? prev : 'Optimizing results (taking a bit longer)...'
+        );
+      }, 12000); // 12 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [isAnalyzing]);
+
   /**
    * Run TM + Gemini analysis
    */
