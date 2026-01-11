@@ -10,7 +10,7 @@ const GEMINI_API_KEYS = [
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const GEMINI_CONFIG = {
-  model: GEMINI_MODEL,
+  // model property is NOT allowed here, it's passed to getGenerativeModel
   temperature: 0.3,
   topK: 1,
   topP: 0.95,
