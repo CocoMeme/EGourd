@@ -399,7 +399,7 @@ export const CameraScreen = ({ navigation }) => {
         });
 
         console.log('✅ Image captured:', photo.uri);
-        navigation.navigate('Results', {
+        navigation.navigate('Prediction', {
           imageUri: photo.uri,
           width: photo.width,
           height: photo.height,
@@ -420,7 +420,7 @@ export const CameraScreen = ({ navigation }) => {
 
     // Navigate IMMEDIATELY - no waiting!
     // Logic Preservation: Passing width and height to fix distortion
-    navigation.navigate('Results', {
+    navigation.navigate('Prediction', {
       imageUri: imageUri,
       width: imageWidth,
       height: imageHeight,

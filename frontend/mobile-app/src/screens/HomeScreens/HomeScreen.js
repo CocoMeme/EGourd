@@ -360,61 +360,13 @@ export const HomeScreen = ({ navigation, route }) => {
   };
 
   const handleScanPress = (scan) => {
-    // Build tmPrediction from saved data
-    const tmPrediction = scan.aiPrediction?.tflite ? {
-      variety: scan.aiPrediction.tflite.variety,
-      gender: scan.aiPrediction.tflite.gender,
-      confidence: scan.aiPrediction.tflite.confidence,
-      modelType: scan.aiPrediction.tflite.modelType || 'Teachable Machine',
-      processingTime: scan.aiPrediction.tflite.processingTime || 0,
-    } : null;
-
-    // Build geminiPrediction from saved data
-    const geminiPrediction = scan.aiPrediction?.gemini ? {
-      variety: scan.aiPrediction.gemini.variety,
-      gender: scan.aiPrediction.gemini.gender,
-      confidence: scan.aiPrediction.gemini.confidence,
-      geminiData: {
-        reasoning: scan.aiPrediction.gemini.reasoning,
-        keyFeatures: scan.aiPrediction.gemini.keyFeatures || [],
-        flowerQuality: scan.aiPrediction.gemini.flowerQuality,
-        harvestPrediction: scan.aiPrediction.gemini.harvestPrediction || scan.aiPrediction.harvestPrediction,
-        qualityMetrics: scan.aiPrediction.gemini.qualityMetrics,
-        observations: scan.aiPrediction.gemini.observations,
-      },
-      modelType: scan.aiPrediction.gemini.modelVersion || 'Gemini AI',
-    } : null;
-
-    // Build the main prediction object
-    const prediction = {
-      gender: scan.prediction,
-      variety: scan.variety,
-      confidence: scan.confidence,
-      isNotFlower: scan.prediction === 'unknown' || scan.prediction === 'not_flower',
-      timestamp: scan.date,
-      source: scan.aiPrediction?.finalSource || 'tflite',
-    };
-
     // Navigate to the Results screen which is nested inside the Camera tab
     navigation.navigate('Camera', {
       screen: 'Results',
       params: {
-        scanId: scan._id,
-        imageUri: scan.imageUrl,
-        isLoading: false, // Don't re-analyze, just display
-        // Pass all prediction data
-        prediction,
-        tmPrediction,
-        geminiPrediction,
-        // Pass comparison if available - map MongoDB field names to expected format
-        comparisonResult: scan.aiPrediction?.comparison ? {
-          agree: scan.aiPrediction.comparison.modelsAgree,
-          varietyMatch: scan.aiPrediction.comparison.varietyMatch,
-          genderMatch: scan.aiPrediction.comparison.genderMatch,
-          confidenceGap: scan.aiPrediction.comparison.confidenceGap,
-          recommendedSource: scan.aiPrediction.comparison.recommendation,
-        } : null,
-      }
+        scan: scan,
+        returnTo: 'HomeMain',
+      },
     });
   };
 

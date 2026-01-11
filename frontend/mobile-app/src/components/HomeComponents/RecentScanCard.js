@@ -65,7 +65,7 @@ export const RecentScanCard = ({
     const lower = genderStr?.toLowerCase() || '';
     if (lower === 'female') {
       return {
-        color: theme.colors.primary,
+        color: '#E94B9E',
         icon: 'female',
       };
     }

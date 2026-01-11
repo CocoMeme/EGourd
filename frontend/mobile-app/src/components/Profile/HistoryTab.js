@@ -73,53 +73,9 @@ export const HistoryTab = ({ navigation, route }) => {
     const handleScanPress = (scan) => {
         if (navigation) {
             try {
-                const tmPrediction = scan.aiPrediction?.tflite ? {
-                    variety: scan.aiPrediction.tflite.variety,
-                    gender: scan.aiPrediction.tflite.gender,
-                    confidence: scan.aiPrediction.tflite.confidence,
-                    modelType: scan.aiPrediction.tflite.modelType || 'Teachable Machine',
-                    processingTime: scan.aiPrediction.tflite.processingTime || 0,
-                } : null;
-
-                const geminiPrediction = scan.aiPrediction?.gemini ? {
-                    variety: scan.aiPrediction.gemini.variety,
-                    gender: scan.aiPrediction.gemini.gender,
-                    confidence: scan.aiPrediction.gemini.confidence,
-                    geminiData: {
-                        reasoning: scan.aiPrediction.gemini.reasoning,
-                        keyFeatures: scan.aiPrediction.gemini.keyFeatures || [],
-                        flowerQuality: scan.aiPrediction.gemini.flowerQuality,
-                        harvestPrediction: scan.aiPrediction.gemini.harvestPrediction || scan.aiPrediction.harvestPrediction,
-                        qualityMetrics: scan.aiPrediction.gemini.qualityMetrics,
-                        observations: scan.aiPrediction.gemini.observations,
-                    },
-                    modelType: scan.aiPrediction.gemini.modelVersion || 'Gemini AI',
-                } : null;
-
-                const prediction = {
-                    gender: scan.prediction,
-                    variety: scan.variety,
-                    confidence: scan.confidence,
-                    isNotFlower: scan.prediction === 'unknown' || scan.prediction === 'not_flower',
-                    timestamp: scan.date,
-                    source: scan.aiPrediction?.finalSource || 'tflite',
-                };
-
                 navigation.navigate('Results', {
-                    scanId: scan._id,
-                    imageUri: scan.imageUrl,
-                    isLoading: false,
+                    scan: scan,
                     returnTo: 'ProfileMain',
-                    prediction,
-                    tmPrediction,
-                    geminiPrediction,
-                    comparisonResult: scan.aiPrediction?.comparison ? {
-                        agree: scan.aiPrediction.comparison.modelsAgree,
-                        varietyMatch: scan.aiPrediction.comparison.varietyMatch,
-                        genderMatch: scan.aiPrediction.comparison.genderMatch,
-                        confidenceGap: scan.aiPrediction.comparison.confidenceGap,
-                        recommendedSource: scan.aiPrediction.comparison.recommendation,
-                    } : null,
                 });
             } catch (error) {
                 console.error('Navigation error:', error);
