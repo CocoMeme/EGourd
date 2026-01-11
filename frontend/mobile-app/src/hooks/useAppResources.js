@@ -9,7 +9,9 @@ import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 SplashScreenExpo.preventAutoHideAsync();
 
 export const useAppResources = () => {
-    const [isUpdating, setIsUpdating] = useState(false);
+    // Status: 'idle' | 'checking' | 'downloading' | 'complete'
+    const [updateStatus, setUpdateStatus] = useState(__DEV__ ? 'idle' : 'checking');
+    
     const [fontsLoaded] = useFonts({
         Poppins_400Regular,
         Poppins_500Medium,
@@ -23,16 +25,33 @@ export const useAppResources = () => {
     useEffect(() => {
         // Separate update check to run only once on mount
         async function checkUpdates() {
-            if (__DEV__) return;
+            if (__DEV__) {
+                setUpdateStatus('idle');
+                return;
+            }
+
             try {
                 const update = await Updates.checkForUpdateAsync();
                 if (update.isAvailable) {
-                    setIsUpdating(true);
+                    setUpdateStatus('downloading');
                     await Updates.fetchUpdateAsync();
-                    await Updates.reloadAsync();
+                    setUpdateStatus('complete');
+                    
+                    // Small delay to let user see "Complete" before reload
+                    setTimeout(async () => {
+                        await Updates.reloadAsync();
+                    }, 1000);
+                } else {
+                    // Start minimum delay for "Checking..." visibility
+                    // But since we want to handle the "No updates" UI logic in SplashScreen,
+                    // we can just set to 'idle' here, and let SplashScreen decide if it wants to show "No updates".
+                    // Actually, if we set 'idle' immediately, the text might flash.
+                    // Let's passed 'idle' and let SplashScreen handle the visual transition.
+                    setUpdateStatus('idle');
                 }
             } catch (e) {
                 console.log('Update check failed:', e);
+                setUpdateStatus('idle');
             }
         }
         checkUpdates();
@@ -54,6 +73,6 @@ export const useAppResources = () => {
     // Return object with loading status and updating status
     return {
         isLoading: !fontsLoaded || authLoading || devModeLoading,
-        isUpdating
+        updateStatus
     };
 };

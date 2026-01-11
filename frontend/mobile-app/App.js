@@ -15,7 +15,8 @@ import { useAppResources } from './src/hooks/useAppResources';
 const AppContent = () => {
   const [showSplash, setShowSplash] = useState(true);
   const { isDeveloperMode } = useDeveloperMode();
-  const { isLoading, isUpdating } = useAppResources();
+  const { isLoading, updateStatus } = useAppResources();
+  const isUpdating = updateStatus === 'downloading' || updateStatus === 'complete' || updateStatus === 'checking';
 
   const handleSplashFinish = () => {
     // Only hide custom splash if we are not updating
@@ -32,7 +33,7 @@ const AppContent = () => {
     return (
       <SplashScreen 
         onFinish={isUpdating ? undefined : () => {}} // No finish callback while updating
-        isUpdating={isUpdating}
+        updateStatus={updateStatus}
       />
     );
   }
@@ -44,7 +45,7 @@ const AppContent = () => {
       {showSplash && (
         <SplashScreen 
           onFinish={handleSplashFinish} 
-          isUpdating={isUpdating}
+          updateStatus={updateStatus}
         />
       )}
     </>
