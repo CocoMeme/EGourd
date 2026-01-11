@@ -4,6 +4,10 @@
     "slug": "egourd",
     "scheme": "egourd",
     "version": "1.0.1",
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "orientation": "portrait",
     "icon": "./assets/logo/egourd-high-resolution-logo.png",
     "userInterfaceStyle": "light",
