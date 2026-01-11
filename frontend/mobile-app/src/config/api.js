@@ -37,10 +37,10 @@ export const getApiUrl = () => {
     return fallback;
   }
 
-  throw new Error(
-    'EXPO_PUBLIC_API_URL is required in non-development builds. ' +
-      'Set it to your deployed backend (e.g., https://<service>.onrender.com/api).'
-  );
+  // Fallback for production if env var is missing (prevents crash, defaults to Prod)
+  const productionFallback = 'https://egourd.onrender.com/api';
+  console.warn('⚠️ EXPO_PUBLIC_API_URL missing in production; defaulting to:', productionFallback);
+  return productionFallback;
 };
 
 // Export for direct use

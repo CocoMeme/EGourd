@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../../services';
+import { API_BASE_URL } from '../../config/api';
 import { theme } from '../../styles';
 import { CustomAlert } from '../../components';
 
@@ -332,6 +333,10 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
               <TouchableOpacity onPress={navigateToSignUp}>
                 <Text style={styles.signupLink}>Create Account</Text>
               </TouchableOpacity>
+            </View>
+            
+            <View style={{ padding: 10, alignItems: 'center' }}>
+               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Server: {API_BASE_URL}</Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
