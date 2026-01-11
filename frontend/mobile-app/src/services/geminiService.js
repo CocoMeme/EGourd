@@ -7,6 +7,7 @@
 
 import { API_BASE_URL } from '../config/api';
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { authService } from './authService';
 
 
@@ -76,13 +77,19 @@ class GeminiService {
         console.log('💡 Using TM Context:', tmPrediction.label, `(${tmPrediction.confidence}%)`);
       }
 
-      // Convert image to base64
-      const base64Image = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: 'base64',
-      });
+      // Optimize image before sending (resize to max 1024px, reduce quality)
+      // This significantly reduces payload size (from ~5MB to ~500KB) and upload time
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 1024 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      
+      const base64Image = manipulatedImage.base64;
+      console.log('📦 Image optimized. Length:', base64Image.length);
 
       // Get auth token
-      const token = authService.getToken();
+      const token = await authService.getToken(); // Use await to be safe
 
       // Setup timeout controller (60 seconds to allow for backend retries/cold starts)
       const controller = new AbortController();

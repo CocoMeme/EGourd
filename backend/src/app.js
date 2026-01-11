@@ -53,11 +53,11 @@ class App {
 
     // Body parsing middleware
     this.app.use(express.json({ 
-      limit: process.env.MAX_FILE_SIZE || '5mb' 
+      limit: process.env.MAX_FILE_SIZE || '50mb' 
     }));
     this.app.use(express.urlencoded({ 
       extended: true, 
-      limit: process.env.MAX_FILE_SIZE || '5mb' 
+      limit: process.env.MAX_FILE_SIZE || '50mb' 
     }));
 
     // Serve static files
