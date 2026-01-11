@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Text,
+  ActivityIndicator,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -14,26 +16,14 @@ const SplashScreen = ({ onFinish, isUpdating = false }) => {
   const firstLogoFade = useRef(new Animated.Value(1)).current;
   const secondLogoFade = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  
-  // Animation for updating text
-  const updateTextOpacity = useRef(new Animated.Value(0)).current;
 
-  // Blinking effect for update text
   useEffect(() => {
     if (isUpdating) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(updateTextOpacity, { toValue: 1, duration: 800, useNativeDriver: true }),
-          Animated.timing(updateTextOpacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
-        ])
-      ).start();
-    } else {
-      updateTextOpacity.setValue(0);
+       // If updating, ensure first logo stays visible and second logo hidden
+       firstLogoFade.setValue(1);
+       secondLogoFade.setValue(0);
+       return; 
     }
-  }, [isUpdating]);
-
-  useEffect(() => {
-    if (isUpdating) return; // Don't run finish animation while updating
 
     // Animation sequence
     Animated.sequence([
@@ -43,59 +33,48 @@ const SplashScreen = ({ onFinish, isUpdating = false }) => {
         duration: 800,
         useNativeDriver: true,
       }),
-      // Wait for a moment
-      Animated.delay(1200),
+      // Maintain first logo for longer (Minimum 3 seconds total: 800 + 2200 = 3000ms)
+      Animated.delay(2200),
       // Fade out first logo
       Animated.timing(firstLogoFade, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      // Switch to second logo
-      setShowSecondLogo(true);
-      
-      // Animate second logo
-      Animated.sequence([
-        // Fade in second logo
-        Animated.timing(secondLogoFade, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        // Wait for a moment
-        Animated.delay(1200),
-        // Fade out second logo
-        Animated.timing(secondLogoFade, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Call onFinish when animation completes
-        if (onFinish) {
-          onFinish();
-        }
-      });
+    ]).start(({ finished }) => {
+      if (finished) {
+        // Switch to second logo
+        setShowSecondLogo(true);
+        
+        // Animate second logo
+        Animated.sequence([
+          // Fade in second logo
+          Animated.timing(secondLogoFade, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          // Wait for a moment
+          Animated.delay(1200),
+          // Fade out second logo
+          Animated.timing(secondLogoFade, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start(({ finished: finishedSecond }) => {
+             if (finishedSecond && onFinish) {
+                 onFinish();
+             }
+        });
+      }
     });
   }, [firstLogoFade, secondLogoFade, scaleAnim, onFinish, isUpdating]);
 
   return (
     <View style={styles.container}>
-      {isUpdating && (
-        <Animated.View style={[styles.updateContainer, { opacity: updateTextOpacity }]}>
-           <Image
-            source={require('../../../assets/logo/egourd-high-resolution-logo-transparent.png')}
-            style={styles.updateLogo}
-            resizeMode="contain"
-          />
-          <Animated.Text style={styles.updateText}>
-            Updating EGourd...
-          </Animated.Text>
-        </Animated.View>
-      )}
-
-      {(!showSecondLogo && !isUpdating) && (
+      {/* First Logo */}
+      {(!showSecondLogo || isUpdating) && (
         <Animated.View
           style={[
             styles.logoContainer,
@@ -112,6 +91,8 @@ const SplashScreen = ({ onFinish, isUpdating = false }) => {
           />
         </Animated.View>
       )}
+
+      {/* Second Logo */}
       {(showSecondLogo && !isUpdating) && (
         <Animated.View
           style={[
@@ -126,6 +107,14 @@ const SplashScreen = ({ onFinish, isUpdating = false }) => {
             style={styles.logoWithName}
             resizeMode="contain"
           />
+        </Animated.View>
+      )}
+
+      {/* Update/Loading Status - Always visible during first logo phase */}
+      {(!showSecondLogo || isUpdating) && (
+        <Animated.View style={[styles.bottomLeftContainer, { opacity: firstLogoFade }]}>
+             <Text style={styles.updateText}>EGourd Updating</Text>
+             <ActivityIndicator size="small" color="#2E7D32" />
         </Animated.View>
       )}
     </View>
@@ -144,22 +133,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
   },
-  updateContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20
-  },
-  updateText: {
-    fontSize: 16,
-    color: '#2E7D32',
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
-    marginTop: 20
-  },
-  updateLogo: {
-    width: 100,
-    height: 100,
-  },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -172,6 +145,21 @@ const styles = StyleSheet.create({
   logoWithName: {
     width: 250,
     height: 150,
+  },
+  // Bottom Left Indicator
+  bottomLeftContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  updateText: {
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
 
