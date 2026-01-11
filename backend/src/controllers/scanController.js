@@ -153,3 +153,25 @@ exports.getHarvestPrediction = async (req, res) => {
     res.status(500).json({ message: 'Server error while generating prediction', error: error.message });
   }
 };
+
+// Analyze image with Gemini (Variety & Gender validation)
+exports.analyzeImage = async (req, res) => {
+  try {
+    const { image, tmPrediction } = req.body;
+    
+    if (!image) {
+      return res.status(400).json({ message: 'Missing image data' });
+    }
+
+    // Call service
+    const result = await geminiService.analyzeImage(image, tmPrediction);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error analyzing image:', error);
+    res.status(500).json({ 
+      message: 'Analysis failed', 
+      error: error.message 
+    });
+  }
+};

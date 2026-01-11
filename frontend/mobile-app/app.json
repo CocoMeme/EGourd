@@ -3,7 +3,7 @@
     "name": "EGourd",
     "slug": "egourd",
     "scheme": "egourd",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/logo/egourd-high-resolution-logo.png",
     "userInterfaceStyle": "light",
@@ -38,13 +38,9 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
+
       "googleServicesFile": "./google-services.json",
       "runtimeVersion": "1.0.0"
     },

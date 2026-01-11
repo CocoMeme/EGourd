@@ -2,8 +2,12 @@ const express = require('express');
 const router = express.Router();
 const scanController = require('../controllers/scanController');
 
+// Route to analyze image (Gemini)
+router.post('/analyze', scanController.analyzeImage);
+
 // Route to get harvest prediction
 router.post('/predict-harvest', scanController.getHarvestPrediction);
+
 
 // Route to save a new scan
 router.post('/save', scanController.saveScan);
