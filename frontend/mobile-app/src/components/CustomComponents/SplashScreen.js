@@ -9,13 +9,32 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-const SplashScreen = ({ onFinish }) => {
+const SplashScreen = ({ onFinish, isUpdating = false }) => {
   const [showSecondLogo, setShowSecondLogo] = useState(false);
   const firstLogoFade = useRef(new Animated.Value(1)).current;
   const secondLogoFade = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  
+  // Animation for updating text
+  const updateTextOpacity = useRef(new Animated.Value(0)).current;
+
+  // Blinking effect for update text
+  useEffect(() => {
+    if (isUpdating) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(updateTextOpacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(updateTextOpacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      updateTextOpacity.setValue(0);
+    }
+  }, [isUpdating]);
 
   useEffect(() => {
+    if (isUpdating) return; // Don't run finish animation while updating
+
     // Animation sequence
     Animated.sequence([
       // Scale up the first logo
@@ -59,11 +78,24 @@ const SplashScreen = ({ onFinish }) => {
         }
       });
     });
-  }, [firstLogoFade, secondLogoFade, scaleAnim, onFinish]);
+  }, [firstLogoFade, secondLogoFade, scaleAnim, onFinish, isUpdating]);
 
   return (
     <View style={styles.container}>
-      {!showSecondLogo && (
+      {isUpdating && (
+        <Animated.View style={[styles.updateContainer, { opacity: updateTextOpacity }]}>
+           <Image
+            source={require('../../../assets/logo/egourd-high-resolution-logo-transparent.png')}
+            style={styles.updateLogo}
+            resizeMode="contain"
+          />
+          <Animated.Text style={styles.updateText}>
+            Updating EGourd...
+          </Animated.Text>
+        </Animated.View>
+      )}
+
+      {(!showSecondLogo && !isUpdating) && (
         <Animated.View
           style={[
             styles.logoContainer,
@@ -80,7 +112,7 @@ const SplashScreen = ({ onFinish }) => {
           />
         </Animated.View>
       )}
-      {showSecondLogo && (
+      {(showSecondLogo && !isUpdating) && (
         <Animated.View
           style={[
             styles.logoContainer,
@@ -111,6 +143,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
+  },
+  updateContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20
+  },
+  updateText: {
+    fontSize: 16,
+    color: '#2E7D32',
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
+    marginTop: 20
+  },
+  updateLogo: {
+    width: 100,
+    height: 100,
   },
   logoContainer: {
     justifyContent: 'center',

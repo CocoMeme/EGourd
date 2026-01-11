@@ -15,21 +15,25 @@ import { useAppResources } from './src/hooks/useAppResources';
 const AppContent = () => {
   const [showSplash, setShowSplash] = useState(true);
   const { isDeveloperMode } = useDeveloperMode();
-  const isLoading = useAppResources();
+  const { isLoading, isUpdating } = useAppResources();
 
   const handleSplashFinish = () => {
-    console.log('Splash screen finished, showing main app');
-    setShowSplash(false);
+    // Only hide custom splash if we are not updating
+    if (!isUpdating) {
+      console.log('Splash screen finished, showing main app');
+      setShowSplash(false);
+    }
   };
 
   // Wait for resources to load before rendering the app content
   // The native Splash Screen is handled by the hook
-  if (isLoading && showSplash) {
+  if ((isLoading || isUpdating) && showSplash) {
     // Show our custom JS splash screen while loading
-    // OR we can just return null and let the native splash screen persist
-    // But since we have a custom animated splash screen component, we want to render it
     return (
-      <SplashScreen onFinish={() => { }} />
+      <SplashScreen 
+        onFinish={isUpdating ? undefined : () => {}} // No finish callback while updating
+        isUpdating={isUpdating}
+      />
     );
   }
 
@@ -38,7 +42,10 @@ const AppContent = () => {
       {isDeveloperMode ? <DeveloperNavigator /> : <AppNavigator />}
       <StatusBar style="auto" backgroundColor="transparent" translucent />
       {showSplash && (
-        <SplashScreen onFinish={handleSplashFinish} />
+        <SplashScreen 
+          onFinish={handleSplashFinish} 
+          isUpdating={isUpdating}
+        />
       )}
     </>
   );
