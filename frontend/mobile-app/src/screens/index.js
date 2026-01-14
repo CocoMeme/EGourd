@@ -8,6 +8,7 @@ export { default as EducationalScreen } from './HomeScreens/EducationalScreen';
 // Scan Screens
 export { CameraScreen } from './ScanScreens/CameraScreen';
 export { ResultsScreen } from './ScanScreens/ResultsScreen';
+export { ResultsScreen as PredictionScreen } from './ScanScreens/PredictionScreen';
 
 // Account Screens
 export { LoginScreen } from './AccountScreens/LoginScreen';
