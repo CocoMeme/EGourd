@@ -459,7 +459,15 @@ export const ResultsScreen = ({ route, navigation }) => {
                 observations: gData.observations,
             },
         });
-        setBackendPrediction(gData.harvestPrediction);
+      }
+
+      // 2b. Backend Harvest Prediction (stored separately from Gemini data)
+      // Priority: Backend prediction > Gemini's harvest prediction (fallback)
+      if (currentScan.aiPrediction?.harvestPrediction) {
+        setBackendPrediction(currentScan.aiPrediction.harvestPrediction);
+      } else if (currentScan.aiPrediction?.gemini?.harvestPrediction) {
+        // Fallback to Gemini's harvest prediction if no backend prediction exists
+        setBackendPrediction(currentScan.aiPrediction.gemini.harvestPrediction);
       }
 
       // 3. Comparison
