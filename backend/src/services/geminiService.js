@@ -12,12 +12,14 @@ const GEMINI_API_KEYS = [
 const MODEL_FALLBACK_CHAIN = [
   'gemini-2.0-flash-lite',   // Primary - fast and lightweight
   'gemini-2.0-flash',        // Fallback 1 - more capable
-  'gemini-1.5-flash-latest', // Fallback 2 - stable and reliable
+  'gemini-1.5-flash',        // Fallback 2 - stable and reliable (no -latest suffix)
 ];
 
 // Delay between retries (in milliseconds)
-const RATE_LIMIT_DELAY = 1500;  // 1.5s delay before trying next key on 429
-const SERVER_RETRY_DELAY = 2000; // 2s delay between 503 retries
+// Note: Free tier = 2 RPM (requests per minute) = need 30s between requests
+// Paid tier = 15 RPM = need 4s between requests
+const RATE_LIMIT_DELAY = 5000;  // 5s delay before trying next key on 429 (conservative for free tier)
+const SERVER_RETRY_DELAY = 3000; // 3s delay between 503 retries
 
 const GEMINI_CONFIG = {
   temperature: 0.3,
