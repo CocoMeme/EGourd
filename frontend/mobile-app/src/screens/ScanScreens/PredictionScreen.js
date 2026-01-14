@@ -414,7 +414,7 @@ const ObservationsCard = ({ observations }) => {
 /**
  * Confidence Comparison Component
  */
-const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult }) => {
+const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
   return (
     <View style={{flex:1, paddingLeft:16, justifyContent:'space-between'}}>
       <Text style={{fontSize:12, color:'#888', fontWeight:'600', marginBottom:8, textTransform:'uppercase'}}>Confidence</Text>
@@ -429,7 +429,7 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
         </View>
       </View>
 
-      {geminiPrediction && (
+      {geminiPrediction ? (
         <View>
           <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
               <Text style={{fontSize:10, color:'#666'}}>AI</Text>
@@ -439,10 +439,114 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
                <View style={{height:'100%', width:`${geminiPrediction.confidence}%`, backgroundColor:'#9C27B0'}}/>
           </View>
         </View>
-      )}
+      ) : isGeminiLoading ? (
+        <View>
+          <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
+              <Text style={{fontSize:10, color:'#666'}}>AI</Text>
+              <ActivityIndicator size={10} color="#9C27B0" />
+          </View>
+          <SkeletonLoader width="100%" height={10} style={{borderRadius:5}} />
+        </View>
+      ) : null}
     </View>
   );
 };
+
+/**
+ * Skeleton Loader Component for loading states
+ */
+const SkeletonLoader = ({ width = '100%', height = 20, style = {} }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View
+      style={[{
+        width,
+        height,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 4,
+        opacity,
+      }, style]}
+    />
+  );
+};
+
+/**
+ * Skeleton Card Component for section loading
+ */
+const SkeletonCard = ({ title, lines = 3 }) => (
+  <View style={skeletonStyles.card}>
+    <View style={skeletonStyles.header}>
+      <Text style={skeletonStyles.title}>{title}</Text>
+      <ActivityIndicator size="small" color={theme.colors.primary} />
+    </View>
+    <View style={skeletonStyles.content}>
+      {Array.from({ length: lines }).map((_, i) => (
+        <SkeletonLoader 
+          key={i} 
+          width={i === lines - 1 ? '60%' : '100%'} 
+          height={12} 
+          style={{ marginBottom: i < lines - 1 ? 12 : 0 }}
+        />
+      ))}
+    </View>
+  </View>
+);
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 6,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F5F5F5',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    color: '#333333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  content: {
+    gap: 8,
+  },
+});
 
 /**
  * Main Results Screen Component
@@ -453,6 +557,8 @@ export const ResultsScreen = ({ route, navigation }) => {
 
   // Loading and analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
+  const [isTmComplete, setIsTmComplete] = useState(false);
+  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('Initializing...');
   const [analysisError, setAnalysisError] = useState(null);
 
@@ -577,6 +683,8 @@ export const ResultsScreen = ({ route, navigation }) => {
     setComparisonResult(route.params.comparisonResult || null);
     setPrediction(route.params.prediction || null);
     setIsAnalyzing(route.params.isLoading || false);
+    setIsTmComplete(!!route.params.tmPrediction);
+    setIsGeminiLoading(false);
     setAnalysisError(null);
     setBackendPrediction(null);
 
@@ -595,9 +703,9 @@ export const ResultsScreen = ({ route, navigation }) => {
     }
   }, [route.params.imageUri, route.params.scanId]); // Re-run when image or scan ID changes
 
-  // Spin animation for loading
+  // Spin animation for loading (works for both TM and Gemini loading)
   useEffect(() => {
-    if (isAnalyzing) {
+    if (isAnalyzing || isGeminiLoading) {
       Animated.loop(
         Animated.timing(spinAnim, {
           toValue: 1,
@@ -608,7 +716,7 @@ export const ResultsScreen = ({ route, navigation }) => {
     } else {
       spinAnim.setValue(0);
     }
-  }, [isAnalyzing]);
+  }, [isAnalyzing, isGeminiLoading]);
 
   // Update loading message if analysis takes a while (e.g. waking up server or switching API keys)
   useEffect(() => {
@@ -625,13 +733,18 @@ export const ResultsScreen = ({ route, navigation }) => {
 
   /**
    * Run TM + Gemini analysis
+   * TM results are shown immediately, Gemini runs in background
    */
   const runAnalysis = async () => {
+    let tmPred = null;
+    
     try {
       setIsAnalyzing(true);
+      setIsTmComplete(false);
+      setIsGeminiLoading(false);
       setAnalysisError(null);
 
-      // Step 1: TM Model Prediction
+      // Step 1: TM Model Prediction (Show immediately when done)
       setLoadingStage('Analyzing with TM model...');
       console.log('🤖 Running TM prediction...');
 
@@ -649,7 +762,7 @@ export const ResultsScreen = ({ route, navigation }) => {
       });
       console.log('🟡 ======================================');
 
-      const tmPred = {
+      tmPred = {
         variety: getVarietyFromLabel(topTmPrediction.label),
         gender: getGenderFromLabel(topTmPrediction.label),
         confidence: topTmPrediction.percentage,
@@ -661,22 +774,38 @@ export const ResultsScreen = ({ route, navigation }) => {
         modelType: 'Teachable Machine',
         processingTime: tmResult.processingTime,
       };
+      
+      // Show TM results immediately
       setTmPrediction(tmPred);
+      setPrediction({ ...tmPred, geminiData: null });
+      setIsTmComplete(true);
+      setIsAnalyzing(false); // Stop main loading, show TM results
+      
+      // Fade in TM results
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
 
-      // Step 2: Gemini AI Analysis
+      // Skip Gemini if not a flower
+      if (tmPred.isNotFlower) {
+        console.log('⏭️ Skipping Gemini - Not a flower detected');
+        return;
+      }
+
+      // Step 2: Gemini AI Analysis (runs in background)
+      setIsGeminiLoading(true);
+      setLoadingStage('Running Gemini AI analysis...');
+
       let geminiPred = null;
       let comparison = null;
-
-      setLoadingStage('Running Gemini AI analysis...');
 
       try {
         console.log('🌐 Initializing Gemini...');
         await geminiService.initialize();
 
         if (geminiService.isAvailable()) {
-          // Logic Preservation: Check confidence before analyzing to save quota (optional but recommended)
-          // Since user said "keep all progress on logic", I will keep context passing logic
-
           console.log('🔍 Running Gemini analysis...');
           // Logic Preservation: Pass tmPred to give context to Gemini (Conflict Resolution Fix)
           geminiPred = await geminiService.analyzeFlower(imageUri, tmPred);
@@ -699,23 +828,24 @@ export const ResultsScreen = ({ route, navigation }) => {
             console.log('📊 Comparison result:', comparison);
             setComparisonResult(comparison);
           }
+
+          // Update final prediction with Gemini data
+          if (geminiPred) {
+            setPrediction(geminiPred);
+          }
         } else {
           console.log('⚠️ Gemini not available, using TM only');
         }
       } catch (geminiError) {
         console.warn('⚠️ Gemini analysis failed:', geminiError.message);
-        // Continue with TM prediction only
+        // Continue with TM prediction only - already shown
+      } finally {
+        setIsGeminiLoading(false);
       }
 
-      // Set final prediction
-      const finalPred = geminiPred || {
-        ...tmPred,
-        geminiData: null,
-      };
-      setPrediction(finalPred);
-
       // Step 3: Backend Harvest Prediction (Enhanced)
-      if (!finalPred.isNotFlower) {
+      const finalPred = geminiPred || tmPred;
+      if (finalPred && !finalPred.isNotFlower) {
         try {
           setLoadingStage('Refining harvest prediction...');
           const bPrediction = await scanService.getHarvestPrediction(
@@ -726,7 +856,6 @@ export const ResultsScreen = ({ route, navigation }) => {
             },
             {
               date: new Date().toISOString(),
-              // location could be added here if available
             }
           );
           setBackendPrediction(bPrediction);
@@ -737,18 +866,11 @@ export const ResultsScreen = ({ route, navigation }) => {
 
       setLoadingStage('Complete!');
 
-      // Fade in results
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-
     } catch (error) {
       console.error('❌ Analysis failed:', error);
       setAnalysisError(error.message);
-    } finally {
       setIsAnalyzing(false);
+      setIsGeminiLoading(false);
     }
   };
 
@@ -777,12 +899,25 @@ export const ResultsScreen = ({ route, navigation }) => {
         variant="results"
         title="Scan Results"
         onBackPress={handleBack}
-        rightComponent={hasGeminiData && !isAnalyzing ? () => (
-          <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={14} color="#FFB300" />
-            <Text style={styles.aiBadgeText}>AI</Text>
-          </View>
-        ) : null}
+        rightComponent={() => {
+          if (isGeminiLoading) {
+            return (
+              <View style={[styles.aiBadge, { backgroundColor: '#E3F2FD', borderColor: '#90CAF9' }]}>
+                <ActivityIndicator size={12} color="#1976D2" />
+                <Text style={[styles.aiBadgeText, { color: '#1976D2' }]}>AI</Text>
+              </View>
+            );
+          }
+          if (hasGeminiData) {
+            return (
+              <View style={styles.aiBadge}>
+                <Ionicons name="sparkles" size={14} color="#FFB300" />
+                <Text style={styles.aiBadgeText}>AI</Text>
+              </View>
+            );
+          }
+          return null;
+        }}
       />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -834,8 +969,8 @@ export const ResultsScreen = ({ route, navigation }) => {
           </Animated.View>
         )}
 
-        {/* Results Content - Only show when not loading and no error */}
-        {!isAnalyzing && !analysisError && prediction && (
+        {/* Results Content - Show when TM is complete (even if Gemini is still loading) */}
+        {isTmComplete && !analysisError && prediction && (
           <Animated.View style={{ opacity: fadeAnim }}>
             {/* Main Result Card */}
             <View style={styles.mainResultCard}>
@@ -866,13 +1001,14 @@ export const ResultsScreen = ({ route, navigation }) => {
                             tmPrediction={tmPrediction}
                             geminiPrediction={geminiPrediction}
                             comparisonResult={comparisonResult}
+                            isGeminiLoading={isGeminiLoading}
                           />
                     </View>
                 </View>
               )}
             </View>
 
-            {/* Gemini Enhanced Data (only show if flower detected) */}
+            {/* Gemini Enhanced Data - Show when available */}
             {hasGeminiData && !isNotFlower && (
               <>
                 {/* Harvest Timeline */}
@@ -920,8 +1056,18 @@ export const ResultsScreen = ({ route, navigation }) => {
               </>
             )}
 
-            {/* TM Only Notice */}
-            {!hasGeminiData && !isNotFlower && (
+            {/* Skeleton Loaders while Gemini is loading */}
+            {isGeminiLoading && !isNotFlower && (
+              <>
+                <SkeletonCard title="Growth Timeline" lines={4} />
+                <SkeletonCard title="Quality Metrics" lines={5} />
+                <SkeletonCard title="Flower Quality" lines={3} />
+                <SkeletonCard title="AI Observations" lines={4} />
+              </>
+            )}
+
+            {/* TM Only Notice - Show only when Gemini finished but no data */}
+            {!hasGeminiData && !isGeminiLoading && !isNotFlower && (
               <View style={styles.tmOnlyNotice}>
                 <Ionicons name="information-circle" size={24} color="#FF9800" />
                 <Text style={styles.tmOnlyText}>
@@ -935,18 +1081,18 @@ export const ResultsScreen = ({ route, navigation }) => {
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.scanAgainButton, isAnalyzing && styles.buttonDisabled]}
+            style={[styles.actionButton, styles.scanAgainButton]}
             onPress={handleScanAgain}
-            disabled={isAnalyzing || isSaving}
+            disabled={isSaving}
           >
             <Ionicons name="camera" size={20} color="#FFF" />
             <Text style={styles.actionButtonText}>Scan Again</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.saveButton, (isAnalyzing || isSaving) && styles.buttonDisabled]}
+            style={[styles.actionButton, styles.saveButton, (!isTmComplete || isSaving) && styles.buttonDisabled]}
             onPress={handleSave}
-            disabled={isAnalyzing || isSaving}
+            disabled={!isTmComplete || isSaving}
           >
             {isSaving ? (
               <ActivityIndicator color="#FFF" size="small" />
