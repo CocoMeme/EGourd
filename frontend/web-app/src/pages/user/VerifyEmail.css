@@ -1,0 +1,166 @@
+/* Verify Email Specific Styles */
+.verify-card {
+  max-width: 420px;
+}
+
+.email-display {
+  font-weight: 600;
+  color: #4a7c59;
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.verify-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+/* PIN Input Container */
+.pin-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pin-input {
+  width: 50px;
+  height: 60px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.pin-input:focus {
+  border-color: #4a7c59;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(74, 124, 89, 0.1);
+}
+
+.pin-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Verify Button */
+.verify-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #2d5a27, #4a7c59);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.verify-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(45, 90, 39, 0.4);
+}
+
+.verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Resend Section */
+.resend-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.resend-section p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.resend-timer {
+  font-size: 14px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #4a7c59;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.resend-btn:hover {
+  background: rgba(74, 124, 89, 0.1);
+}
+
+.resend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Back Link */
+.back-link {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  color: #4a7c59;
+  background: #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .pin-container {
+    gap: 6px;
+  }
+
+  .pin-input {
+    width: 42px;
+    height: 52px;
+    font-size: 20px;
+  }
+}

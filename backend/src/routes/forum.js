@@ -18,6 +18,7 @@ router.put('/posts/:id', authenticate, forumController.updatePost);
 router.delete('/posts/:id', authenticate, forumController.deletePost);
 router.post('/posts/:id/like', authenticate, forumController.toggleLike);
 router.post('/posts/:id/comments', authenticate, forumController.addComment);
+router.post('/posts/:id/comments/:commentId/replies', authenticate, forumController.addReply);
 router.post('/posts/:id/report', authenticate, forumController.reportPost);
 
 module.exports = router;

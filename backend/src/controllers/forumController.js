@@ -124,6 +124,7 @@ exports.getPostById = async (req, res) => {
     const post = await ForumPost.findById(id)
       .populate('author', 'username firstName lastName email emailVerified profilePicture')
       .populate('comments.user', 'username firstName lastName email emailVerified profilePicture')
+      .populate('comments.replies.user', 'username firstName lastName email emailVerified profilePicture')
       .populate('likes.user', 'username firstName lastName profilePicture');
 
     if (!post) {
@@ -155,6 +156,15 @@ exports.getPostById = async (req, res) => {
         },
         likes: comment.likes?.length || 0,
         timestamp: getRelativeTime(comment.createdAt),
+        replies: comment.replies?.map(reply => ({
+          ...reply.toObject(),
+          user: {
+            username: reply.user?.username || (reply.user?.firstName && reply.user?.lastName ? `${reply.user.firstName} ${reply.user.lastName}` : reply.user?.email?.split('@')[0]) || 'Anonymous',
+            verified: reply.user?.emailVerified || false,
+            profilePicture: reply.user?.profilePicture || null,
+          },
+          timestamp: getRelativeTime(reply.createdAt),
+        })) || [],
       })) || [],
       timestamp: getRelativeTime(post.createdAt),
     };
@@ -645,6 +655,85 @@ exports.reportPost = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to report post',
+      error: error.message,
+    });
+  }
+};
+
+// Add reply to a comment
+exports.addReply = async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user._id;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reply content is required',
+      });
+    }
+
+    const post = await ForumPost.findById(id);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found',
+      });
+    }
+
+    if (post.isLocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'This post is locked and cannot receive new replies',
+      });
+    }
+
+    // Find the comment
+    const comment = post.comments.id(commentId);
+    
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found',
+      });
+    }
+
+    // Filter profanity from reply content
+    const cleanContent = filter.clean(content.trim());
+
+    // Add reply to the comment
+    comment.replies.push({
+      user: userId,
+      content: cleanContent,
+    });
+
+    await post.save();
+    
+    // Populate the reply user info
+    await post.populate('comments.replies.user', 'username firstName lastName email emailVerified profilePicture');
+
+    const newReply = comment.replies[comment.replies.length - 1];
+
+    res.status(201).json({
+      success: true,
+      message: 'Reply added successfully',
+      data: {
+        ...newReply.toObject(),
+        user: {
+          username: newReply.user?.username || (newReply.user?.firstName && newReply.user?.lastName ? `${newReply.user.firstName} ${newReply.user.lastName}` : newReply.user?.email?.split('@')[0]) || 'Anonymous',
+          profilePicture: newReply.user?.profilePicture || null,
+          verified: newReply.user?.emailVerified || false,
+        },
+        timestamp: 'Just now',
+      },
+    });
+  } catch (error) {
+    console.error('Error adding reply:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add reply',
       error: error.message,
     });
   }
