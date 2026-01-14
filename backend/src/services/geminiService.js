@@ -153,6 +153,25 @@ async function executeWithRetry(operation) {
           break; // Exit inner loop to try next model
         }
         
+        // Check for forbidden/leaked key (403) - skip to next key immediately
+        const isForbiddenError = statusCode === 403 || 
+                                 statusCode === '403' ||
+                                 errorMessage.includes('403') ||
+                                 errorMessage.includes('Forbidden') ||
+                                 errorMessage.includes('leaked') ||
+                                 errorMessage.includes('API key not valid');
+        
+        if (isForbiddenError) {
+          console.log(`⚠️ API key ${currentKeyIndex + 1} is invalid/leaked (403), skipping to next key...`);
+          if (switchToNextKey()) {
+            keyRotationCount++;
+            serverRetryCount = 0;
+            continue; // Retry with new key
+          }
+          // All keys exhausted for this model - try next model
+          break;
+        }
+        
         // Check for rate limit (429) - rotate to next key (more specific patterns)
         const isRateLimitError = statusCode === 429 || 
                                  statusCode === '429' ||
