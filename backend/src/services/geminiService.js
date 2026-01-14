@@ -12,8 +12,12 @@ const GEMINI_API_KEYS = [
 const MODEL_FALLBACK_CHAIN = [
   'gemini-2.0-flash-lite',   // Primary - fast and lightweight
   'gemini-2.0-flash',        // Fallback 1 - more capable
-  'gemini-1.5-flash',        // Fallback 2 - stable and reliable
+  'gemini-1.5-flash-latest', // Fallback 2 - stable and reliable
 ];
+
+// Delay between retries (in milliseconds)
+const RATE_LIMIT_DELAY = 1500;  // 1.5s delay before trying next key on 429
+const SERVER_RETRY_DELAY = 2000; // 2s delay between 503 retries
 
 const GEMINI_CONFIG = {
   temperature: 0.3,
@@ -119,7 +123,6 @@ async function executeWithRetry(operation) {
   const maxModelFallbacks = MODEL_FALLBACK_CHAIN.length;
   const maxKeyRotations = GEMINI_API_KEYS.length;
   const maxServerRetries = 3; // Retry up to 3 times for server overload
-  const serverRetryDelay = 2000; // 2 second delay between retries
   let lastError;
 
   while (modelFallbackCount < maxModelFallbacks) {
@@ -143,8 +146,8 @@ async function executeWithRetry(operation) {
         if (isServerOverload) {
           if (serverRetryCount < maxServerRetries) {
             serverRetryCount++;
-            console.log(`⚠️ Server overloaded (503), waiting ${serverRetryDelay/1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
-            await new Promise(resolve => setTimeout(resolve, serverRetryDelay));
+            console.log(`⚠️ Server overloaded (503), waiting ${SERVER_RETRY_DELAY/1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
+            await new Promise(resolve => setTimeout(resolve, SERVER_RETRY_DELAY));
             continue; // Retry with same key after delay
           }
           
@@ -182,7 +185,8 @@ async function executeWithRetry(operation) {
                                  errorMessage.includes('RATE_LIMIT_EXCEEDED');
         
         if (isRateLimitError) {
-          console.log(`⚠️ API rate limit hit (429), attempting switch to fallback key...`);
+          console.log(`⚠️ API rate limit hit (429), waiting ${RATE_LIMIT_DELAY/1000}s before trying next key...`);
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
           if (switchToNextKey()) {
             keyRotationCount++;
             serverRetryCount = 0; // Reset server retry count for new key
