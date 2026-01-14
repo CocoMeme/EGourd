@@ -594,6 +594,68 @@ export const ResultsScreen = ({ route, navigation }) => {
     }
   };
 
+  /**
+   * Retry Gemini AI analysis
+   * Called when user taps retry button after Gemini failed
+   */
+  const handleRetryGemini = async () => {
+    if (!tmPrediction || tmPrediction.isNotFlower || isGeminiLoading) return;
+    
+    console.log('🔄 Retrying Gemini analysis...');
+    setIsGeminiLoading(true);
+    setLoadingStage('Retrying Gemini AI analysis...');
+
+    let geminiPred = null;
+    let comparison = null;
+
+    try {
+      await geminiService.initialize();
+
+      if (geminiService.isAvailable()) {
+        geminiPred = await geminiService.analyzeFlower(imageUri, tmPrediction);
+
+        if (geminiPred) {
+          console.log('✅ Gemini retry successful!');
+          setGeminiPrediction(geminiPred);
+
+          // Compare predictions
+          comparison = geminiService.comparePredictions(tmPrediction, geminiPred);
+          setComparisonResult(comparison);
+
+          // Update final prediction
+          setPrediction(geminiPred);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Gemini retry failed:', error.message);
+      Alert.alert(
+        'AI Analysis Unavailable',
+        'The Gemini AI service is temporarily unavailable. Please try again later.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsGeminiLoading(false);
+    }
+
+    // Also retry backend harvest prediction if Gemini succeeded
+    const finalPred = geminiPred || tmPrediction;
+    if (finalPred && !finalPred.isNotFlower) {
+      try {
+        const bPrediction = await scanService.getHarvestPrediction(
+          {
+            prediction: finalPred.gender,
+            variety: finalPred.variety,
+            confidence: finalPred.confidence
+          },
+          { date: new Date().toISOString() }
+        );
+        setBackendPrediction(bPrediction);
+      } catch (backendError) {
+        console.warn('⚠️ Backend harvest prediction failed:', backendError.message);
+      }
+    }
+  };
+
   // Handler: Save scan to backend
   const handleSave = async () => {
     if (!prediction) return;
@@ -1069,10 +1131,19 @@ export const ResultsScreen = ({ route, navigation }) => {
             {/* TM Only Notice - Show only when Gemini finished but no data */}
             {!hasGeminiData && !isGeminiLoading && !isNotFlower && (
               <View style={styles.tmOnlyNotice}>
-                <Ionicons name="information-circle" size={24} color="#FF9800" />
-                <Text style={styles.tmOnlyText}>
-                  Quick scan completed using TM model only. Gemini AI analysis was unavailable.
-                </Text>
+                <View style={styles.tmOnlyContent}>
+                  <Ionicons name="information-circle" size={24} color="#FF9800" />
+                  <Text style={styles.tmOnlyText}>
+                    Quick scan completed using TM model only. Gemini AI analysis was unavailable.
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.retryGeminiButton}
+                  onPress={handleRetryGemini}
+                >
+                  <Ionicons name="refresh" size={16} color="#FFF" />
+                  <Text style={styles.retryGeminiText}>Retry AI</Text>
+                </TouchableOpacity>
               </View>
             )}
           </Animated.View>
@@ -1625,8 +1696,7 @@ const styles = StyleSheet.create({
 
   // TM Only Notice
   tmOnlyNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     backgroundColor: 'rgba(255, 152, 0, 0.1)',
     margin: 16,
     marginTop: 0,
@@ -1634,11 +1704,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     gap: 12,
   },
+  tmOnlyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   tmOnlyText: {
     flex: 1,
     color: '#E65100',
     fontSize: 13,
     lineHeight: 20,
+  },
+  retryGeminiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF9800',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    gap: 6,
+  },
+  retryGeminiText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   // Action Buttons

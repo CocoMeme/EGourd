@@ -48,14 +48,15 @@ initializeGemini();
 
 /**
  * Switch to next available API key
+ * @returns {boolean} true if switched successfully, false if no more keys available
  */
 function switchToNextKey() {
   if (currentKeyIndex + 1 < GEMINI_API_KEYS.length) {
-    console.log(`⚠️ API rate limit hit, switching to fallback key ${currentKeyIndex + 2}...`);
+    console.log(`🔄 Switching to API key ${currentKeyIndex + 2}/${GEMINI_API_KEYS.length}...`);
     initializeGemini(currentKeyIndex + 1);
     return true;
   }
-  console.warn('⚠️ All API keys exhausted or rate limited');
+  console.warn('⚠️ All API keys exhausted - no more fallback keys available');
   return false;
 }
 
@@ -85,30 +86,53 @@ async function executeWithRetry(operation) {
   // Ensure model is initialized
   if (!model) initializeGemini();
 
-  let retryCount = 0;
-  const maxRetries = GEMINI_API_KEYS.length;
+  let keyRotationCount = 0;
+  let serverRetryCount = 0;
+  const maxKeyRotations = GEMINI_API_KEYS.length;
+  const maxServerRetries = 3; // Retry up to 3 times for server overload
+  const serverRetryDelay = 2000; // 2 second delay between retries
   let lastError;
 
-  while (retryCount < maxRetries) {
+  while (keyRotationCount < maxKeyRotations) {
     try {
       return await operation(model);
     } catch (error) {
       lastError = error;
       const errorMessage = error.message || '';
-      const isRateLimitError = errorMessage.includes('429') || 
+      const statusCode = error.status || (errorMessage.match(/\[(\d{3})/)?.[1]);
+      
+      // Check for server overload (503) - retry with delay, don't rotate keys
+      const isServerOverload = statusCode === 503 || 
+                               statusCode === '503' ||
+                               errorMessage.includes('503') || 
+                               errorMessage.includes('overloaded') ||
+                               errorMessage.includes('Service Unavailable');
+      
+      if (isServerOverload && serverRetryCount < maxServerRetries) {
+        serverRetryCount++;
+        console.log(`⚠️ Server overloaded (503), waiting ${serverRetryDelay/1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
+        await new Promise(resolve => setTimeout(resolve, serverRetryDelay));
+        continue; // Retry with same key after delay
+      }
+      
+      // Check for rate limit (429) - rotate to next key
+      const isRateLimitError = statusCode === 429 || 
+                               statusCode === '429' ||
+                               errorMessage.includes('429') || 
                                errorMessage.includes('quota') || 
                                errorMessage.includes('rate') ||
                                errorMessage.includes('Resource has been exhausted');
       
       if (isRateLimitError) {
-        console.log(`⚠️ API rate limit hit, attempting switch to fallback key...`);
+        console.log(`⚠️ API rate limit hit (429), attempting switch to fallback key...`);
         if (switchToNextKey()) {
-          retryCount++;
+          keyRotationCount++;
+          serverRetryCount = 0; // Reset server retry count for new key
           continue; // Retry with new key
         }
       }
       
-      throw error; // If not rate limit or no keys left, throw original error
+      throw error; // If not recoverable error or no keys left, throw original error
     }
   }
 
