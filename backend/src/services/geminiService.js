@@ -8,9 +8,14 @@ const GEMINI_API_KEYS = [
   process.env.GEMINI_API_KEY_4,         // Fallback 3
 ].filter(key => key && key.length > 0);
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+// Model fallback chain - when primary model is overloaded (503), try next model
+const MODEL_FALLBACK_CHAIN = [
+  'gemini-2.0-flash-lite',   // Primary - fast and lightweight
+  'gemini-2.0-flash',        // Fallback 1 - more capable
+  'gemini-1.5-flash',        // Fallback 2 - stable and reliable
+];
+
 const GEMINI_CONFIG = {
-  // model property is NOT allowed here, it's passed to getGenerativeModel
   temperature: 0.3,
   topK: 1,
   topP: 0.95,
@@ -21,24 +26,30 @@ const GEMINI_CONFIG = {
 let genAI;
 let model;
 let currentKeyIndex = 0;
+let currentModelIndex = 0;
 
 /**
- * Initialize Gemini with current key
+ * Initialize Gemini with current key and model
  */
-function initializeGemini(keyIndex = currentKeyIndex) {
+function initializeGemini(keyIndex = currentKeyIndex, modelIndex = currentModelIndex) {
   if (GEMINI_API_KEYS.length === 0) return;
   
   if (keyIndex >= GEMINI_API_KEYS.length) {
     keyIndex = 0; // Rotate back to start if exhausted
   }
+  if (modelIndex >= MODEL_FALLBACK_CHAIN.length) {
+    modelIndex = 0; // Rotate back to primary model
+  }
   
   currentKeyIndex = keyIndex;
+  currentModelIndex = modelIndex;
   const apiKey = GEMINI_API_KEYS[currentKeyIndex];
+  const modelName = MODEL_FALLBACK_CHAIN[currentModelIndex];
   
-  console.log(`🤖 Initializing Gemini AI with key ${currentKeyIndex + 1}/${GEMINI_API_KEYS.length}...`);
+  console.log(`🤖 Initializing Gemini AI with key ${currentKeyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`);
   genAI = new GoogleGenerativeAI(apiKey);
   model = genAI.getGenerativeModel({ 
-    model: GEMINI_MODEL,
+    model: modelName,
     generationConfig: GEMINI_CONFIG 
   });
 }
@@ -53,10 +64,26 @@ initializeGemini();
 function switchToNextKey() {
   if (currentKeyIndex + 1 < GEMINI_API_KEYS.length) {
     console.log(`🔄 Switching to API key ${currentKeyIndex + 2}/${GEMINI_API_KEYS.length}...`);
-    initializeGemini(currentKeyIndex + 1);
+    initializeGemini(currentKeyIndex + 1, currentModelIndex);
     return true;
   }
-  console.warn('⚠️ All API keys exhausted - no more fallback keys available');
+  console.warn('⚠️ All API keys exhausted for current model');
+  return false;
+}
+
+/**
+ * Switch to next available model in fallback chain
+ * Resets key index to 0 so all keys can be tried with new model
+ * @returns {boolean} true if switched successfully, false if no more models available
+ */
+function switchToNextModel() {
+  if (currentModelIndex + 1 < MODEL_FALLBACK_CHAIN.length) {
+    const nextModel = MODEL_FALLBACK_CHAIN[currentModelIndex + 1];
+    console.log(`🔄 Model overloaded, switching to fallback model: ${nextModel}`);
+    initializeGemini(0, currentModelIndex + 1); // Reset to first key with new model
+    return true;
+  }
+  console.warn('⚠️ All models in fallback chain exhausted');
   return false;
 }
 
@@ -75,7 +102,7 @@ You provide helpful, accurate advice on:
 Always provide practical, actionable advice. Keep responses concise but informative (2-4 paragraphs max unless asked for more detail). Use simple language suitable for farmers of all experience levels.`;
 
 /**
- * Helper: Execute a Gemini API call with automatic retry and key rotation
+ * Helper: Execute a Gemini API call with automatic retry, key rotation, and model fallback
  * @param {Function} operation - Async function that takes the current model and returns a result
  */
 async function executeWithRetry(operation) {
@@ -86,57 +113,83 @@ async function executeWithRetry(operation) {
   // Ensure model is initialized
   if (!model) initializeGemini();
 
+  let modelFallbackCount = 0;
   let keyRotationCount = 0;
   let serverRetryCount = 0;
+  const maxModelFallbacks = MODEL_FALLBACK_CHAIN.length;
   const maxKeyRotations = GEMINI_API_KEYS.length;
   const maxServerRetries = 3; // Retry up to 3 times for server overload
   const serverRetryDelay = 2000; // 2 second delay between retries
   let lastError;
 
-  while (keyRotationCount < maxKeyRotations) {
-    try {
-      return await operation(model);
-    } catch (error) {
-      lastError = error;
-      const errorMessage = error.message || '';
-      const statusCode = error.status || (errorMessage.match(/\[(\d{3})/)?.[1]);
-      
-      // Check for server overload (503) - retry with delay, don't rotate keys
-      const isServerOverload = statusCode === 503 || 
-                               statusCode === '503' ||
-                               errorMessage.includes('503') || 
-                               errorMessage.includes('overloaded') ||
-                               errorMessage.includes('Service Unavailable');
-      
-      if (isServerOverload && serverRetryCount < maxServerRetries) {
-        serverRetryCount++;
-        console.log(`⚠️ Server overloaded (503), waiting ${serverRetryDelay/1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
-        await new Promise(resolve => setTimeout(resolve, serverRetryDelay));
-        continue; // Retry with same key after delay
-      }
-      
-      // Check for rate limit (429) - rotate to next key
-      const isRateLimitError = statusCode === 429 || 
-                               statusCode === '429' ||
-                               errorMessage.includes('429') || 
-                               errorMessage.includes('quota') || 
-                               errorMessage.includes('rate') ||
-                               errorMessage.includes('Resource has been exhausted');
-      
-      if (isRateLimitError) {
-        console.log(`⚠️ API rate limit hit (429), attempting switch to fallback key...`);
-        if (switchToNextKey()) {
-          keyRotationCount++;
-          serverRetryCount = 0; // Reset server retry count for new key
-          continue; // Retry with new key
+  while (modelFallbackCount < maxModelFallbacks) {
+    keyRotationCount = 0; // Reset key rotation for each model
+    
+    while (keyRotationCount < maxKeyRotations) {
+      try {
+        return await operation(model);
+      } catch (error) {
+        lastError = error;
+        const errorMessage = error.message || '';
+        const statusCode = error.status || (errorMessage.match(/\[(\d{3})/)?.[1]);
+        
+        // Check for server overload (503) - retry with delay, don't rotate keys
+        const isServerOverload = statusCode === 503 || 
+                                 statusCode === '503' ||
+                                 errorMessage.includes('503') || 
+                                 errorMessage.includes('overloaded') ||
+                                 errorMessage.includes('Service Unavailable');
+        
+        if (isServerOverload) {
+          if (serverRetryCount < maxServerRetries) {
+            serverRetryCount++;
+            console.log(`⚠️ Server overloaded (503), waiting ${serverRetryDelay/1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
+            await new Promise(resolve => setTimeout(resolve, serverRetryDelay));
+            continue; // Retry with same key after delay
+          }
+          
+          // 503 retries exhausted - try next model (not next key)
+          console.log(`⚠️ Model ${MODEL_FALLBACK_CHAIN[currentModelIndex]} still overloaded after ${maxServerRetries} retries`);
+          break; // Exit inner loop to try next model
         }
+        
+        // Check for rate limit (429) - rotate to next key (more specific patterns)
+        const isRateLimitError = statusCode === 429 || 
+                                 statusCode === '429' ||
+                                 errorMessage.includes('429') || 
+                                 errorMessage.includes('quota exceeded') || 
+                                 errorMessage.includes('rate limit') ||
+                                 errorMessage.includes('RESOURCE_EXHAUSTED') ||
+                                 errorMessage.includes('RATE_LIMIT_EXCEEDED');
+        
+        if (isRateLimitError) {
+          console.log(`⚠️ API rate limit hit (429), attempting switch to fallback key...`);
+          if (switchToNextKey()) {
+            keyRotationCount++;
+            serverRetryCount = 0; // Reset server retry count for new key
+            continue; // Retry with new key
+          }
+          // All keys exhausted for this model - try next model
+          break; // Exit inner loop to try next model
+        }
+        
+        // Unknown error - throw immediately
+        throw error;
       }
-      
-      throw error; // If not recoverable error or no keys left, throw original error
     }
+    
+    // Try switching to next model
+    if (switchToNextModel()) {
+      modelFallbackCount++;
+      serverRetryCount = 0; // Reset server retry count for new model
+      continue; // Retry with new model
+    }
+    
+    // No more models available
+    break;
   }
 
-  throw new Error(`All Gemini API keys exhausted. Last error: ${lastError?.message}`);
+  throw new Error(`All Gemini models and API keys exhausted. Last error: ${lastError?.message}`);
 }
 
 /**
