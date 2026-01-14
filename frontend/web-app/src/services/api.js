@@ -2,6 +2,11 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Log API configuration on startup
+console.log('🔗 API Configuration:');
+console.log('   Base URL:', API_BASE_URL);
+console.log('   Environment:', import.meta.env.MODE);
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,22 +15,42 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and log requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('adminToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log outgoing requests
+    console.log(`📤 [${config.method?.toUpperCase()}] ${config.baseURL}${config.url}`, {
+      params: config.params,
+      data: config.data,
+    });
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('❌ Request Error:', error);
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor for error handling
+// Response interceptor for error handling and logging
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // Log successful responses
+    console.log(`📥 [${response.status}] ${response.config.url}`, response.data);
+    return response.data;
+  },
   (error) => {
+    // Log error responses
+    console.error(`❌ [${error.response?.status || 'NETWORK'}] ${error.config?.url}`, {
+      message: error.message,
+      data: error.response?.data,
+    });
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');

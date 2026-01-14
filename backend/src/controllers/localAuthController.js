@@ -99,8 +99,11 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    console.log(`🔐 Login attempt for: ${email}`);
 
     if (!email || !password) {
+      console.log('❌ Login failed: Missing email or password');
       return res.status(400).json({
         success: false,
         message: 'Email and password are required',
@@ -113,14 +116,18 @@ const login = async (req, res) => {
     }).select('+password'); // Include password field for comparison
 
     if (!user) {
+      console.log(`❌ Login failed: User not found - ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
       });
     }
+    
+    console.log(`👤 User found: ${user.email} | Role: ${user.role} | Active: ${user.isActive}`);
 
     // Check if account is deactivated
     if (!user.isActive) {
+      console.log(`❌ Login failed: Account deactivated - ${email}`);
       return res.status(403).json({
         success: false,
         message: 'Your account has been deactivated. Please contact support for assistance.',
@@ -133,11 +140,14 @@ const login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
+      console.log(`❌ Login failed: Invalid password - ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
       });
     }
+    
+    console.log(`✅ Login successful: ${email} | Role: ${user.role}`);
 
     // Update last login
     user.lastLogin = new Date();

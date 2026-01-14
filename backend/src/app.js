@@ -44,11 +44,44 @@ class App {
     
     this.app.use(cors(corsOptions));
 
-    // Logging middleware
+    // Logging middleware - Custom format with more details
+    const customFormat = ':method :url :status :response-time ms - :res[content-length]';
+    this.app.use(morgan(customFormat, {
+      stream: {
+        write: (message) => {
+          console.log(`📡 ${message.trim()}`);
+        }
+      }
+    }));
+    
+    // Detailed request/response logging in development
     if (process.env.NODE_ENV === 'development') {
-      this.app.use(morgan('dev'));
-    } else {
-      this.app.use(morgan('combined'));
+      this.app.use((req, res, next) => {
+        const start = Date.now();
+        console.log(`\n🔹 [${new Date().toLocaleTimeString()}] ${req.method} ${req.originalUrl}`);
+        if (Object.keys(req.body || {}).length > 0) {
+          // Don't log passwords
+          const safeBody = { ...req.body };
+          if (safeBody.password) safeBody.password = '***';
+          console.log('   📦 Body:', JSON.stringify(safeBody));
+        }
+        
+        // Capture response
+        const originalSend = res.send;
+        res.send = function(body) {
+          const duration = Date.now() - start;
+          try {
+            const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+            console.log(`   ✅ Response [${res.statusCode}] (${duration}ms):`, 
+              parsed.success !== undefined ? `success: ${parsed.success}` : 'sent');
+          } catch (e) {
+            console.log(`   ✅ Response [${res.statusCode}] (${duration}ms)`);
+          }
+          return originalSend.call(this, body);
+        };
+        
+        next();
+      });
     }
 
     // Body parsing middleware

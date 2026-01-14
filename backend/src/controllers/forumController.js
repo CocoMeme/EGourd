@@ -241,7 +241,7 @@ exports.createPost = async (req, res) => {
       }
     }
 
-    // Create post with pending status (requires admin approval)
+    // Create post with active status (immediately published)
     const post = new ForumPost({
       author: userId,
       category,
@@ -249,7 +249,7 @@ exports.createPost = async (req, res) => {
       content: cleanContent,
       tags: tags || [],
       images: uploadedImages,
-      status: 'pending', // Requires admin approval
+      status: 'active', // Immediately published without approval
     });
 
     await post.save();
@@ -274,7 +274,7 @@ exports.createPost = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Post submitted successfully and is pending admin approval',
+      message: 'Post created and published successfully',
       data: formattedPost,
     });
   } catch (error) {

@@ -82,7 +82,7 @@ const forumPostSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'active', 'archived', 'deleted', 'flagged', 'rejected'],
-    default: 'pending',
+    default: 'active',
   },
   moderationNote: {
     type: String,
