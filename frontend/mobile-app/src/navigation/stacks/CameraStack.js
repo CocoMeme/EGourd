@@ -2,7 +2,8 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import {
     CameraScreen,
-    ResultsScreen
+    ResultsScreen,
+    PredictionScreen
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -21,6 +22,11 @@ export const CameraStack = () => {
             <Stack.Screen
                 name="CameraMain"
                 component={CameraScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="Prediction"
+                component={PredictionScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
