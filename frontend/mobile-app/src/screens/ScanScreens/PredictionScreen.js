@@ -36,6 +36,14 @@ const VARIETY_COLORS = {
   'Cucumber': '#8BC34A',
 };
 
+// Scientific names
+const SCIENTIFIC_NAMES = {
+  'Ampalaya Bilog': 'Momordica charantia',
+  'Patola': 'Luffa acutangula',
+  'Upo (Smooth)': 'Lagenaria siceraria',
+  'Cucumber': 'Cucumis sativus',
+};
+
 // Gender colors
 const GENDER_COLORS = {
   male: '#4A90E2',
@@ -167,6 +175,49 @@ const getScoreColor = (score) => {
 };
 
 /**
+ * Animated Metric Bar Component
+ */
+const AnimatedMetricBar = ({ label, value }) => {
+  const animatedWidth = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: value,
+      duration: 1000,
+      delay: 300,
+      useNativeDriver: false, // width doesn't support native driver
+    }).start();
+  }, [value]);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+      {/* Label on left, fixed width */}
+      <Text style={{ width: 90, fontSize: 13, color: '#555', fontWeight: '500', textAlign: 'right', marginRight: 12 }}>
+        {label}
+      </Text>
+
+      {/* Bar Container - Longer width */}
+      <View style={{ flex: 1, height: 10, backgroundColor: '#F0F0F0', borderRadius: 5, overflow: 'hidden' }}>
+        <Animated.View style={{
+          width: animatedWidth.interpolate({
+            inputRange: [0, 100],
+            outputRange: ['0%', '100%'],
+          }),
+          height: '100%',
+          backgroundColor: getScoreColor(value),
+          borderRadius: 5,
+        }} />
+      </View>
+
+      {/* Value on right */}
+      <Text style={{ width: 35, fontSize: 13, fontWeight: '600', color: '#333', textAlign: 'right', marginLeft: 8 }}>
+        {value}
+      </Text>
+    </View>
+  );
+};
+
+/**
  * Quality Metrics Chart Component
  */
 const QualityMetricsChart = ({ metrics }) => {
@@ -183,30 +234,14 @@ const QualityMetricsChart = ({ metrics }) => {
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Quality Metrics</Text>
-      <View style={{paddingVertical: 10}}>
-      {metricsList.map((metric, i) => (
-        <View key={i} style={{flexDirection: 'row', alignItems: 'center', marginBottom: i === metricsList.length - 1 ? 0 : 16}}>
-            {/* Label on left, fixed width */}
-            <Text style={{width: 90, fontSize: 13, color: '#555', fontWeight: '500', textAlign:'right', marginRight: 12}}>
-                {metric.label}
-            </Text>
-            
-            {/* Bar Container - Longer width */}
-            <View style={{flex: 1, height: 10, backgroundColor: '#F0F0F0', borderRadius: 5, overflow: 'hidden'}}>
-                <View style={{
-                    width: `${metric.value}%`, 
-                    height: '100%', 
-                    backgroundColor: getScoreColor(metric.value), 
-                    borderRadius: 5,
-                }} />
-            </View>
-            
-            {/* Value on right */}
-            <Text style={{width: 35, fontSize: 13, fontWeight:'600', color: '#333', textAlign:'right', marginLeft: 8}}>
-                {metric.value}
-            </Text>
-        </View>
-      ))}
+      <View style={{ paddingVertical: 10 }}>
+        {metricsList.map((metric, i) => (
+          <AnimatedMetricBar
+            key={i}
+            label={metric.label}
+            value={metric.value}
+          />
+        ))}
       </View>
     </View>
   );
@@ -229,7 +264,7 @@ const FlowerQualityCard = ({ quality }) => {
   };
 
   const scoreColor = getScoreColor(quality.overallScore);
-  
+
   // Donut logic: 100 score is full circle (360 degrees)
   // For < 50%, we hide the left half and rotate the right half.
   // For > 50%, we show the right half fully, and rotate the left half.
@@ -254,98 +289,98 @@ const FlowerQualityCard = ({ quality }) => {
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Flower Quality</Text>
 
-      <View style={{flexDirection:'row', alignItems:'center'}}>
-          {/* Donut Chart Simulation (Left) */}
-          <View style={{alignItems:'center', width:'40%'}}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {/* Donut Chart Simulation (Left) */}
+        <View style={{ alignItems: 'center', width: '40%' }}>
+          <View style={{
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 8,
+            backgroundColor: '#F5F5F5', // Track color
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Dynamic Progress Layer - Simplified as a clipped circle for reliability or just border */}
+            {/* Since true conic gradient is hard, we use a border style hack or just a solid circle with opacity if strict accuracy isn't critical, OR use the library-free method below */}
+
+            {/* Background/Track */}
+            <View style={{ position: 'absolute', width: '100%', height: '100%', borderWidth: 10, borderColor: '#E0E0E0', borderRadius: 50 }} />
+
+            {/* Progress Arc (Approximation since we lack SVG) */}
+            {/* Showing a full colored ring whose opacity/color changes is safer than broken geometry */}
+            {/* BUT I will try the "Half Circle" method for 2 halves. */}
+
+            {/* Right Half */}
+            <View style={{
+              position: 'absolute', width: 50, height: 100, right: 0, top: 0,
+              overflow: 'hidden'
+            }}>
               <View style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 50,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                  backgroundColor: '#F5F5F5', // Track color
-                  position: 'relative',
-                  overflow: 'hidden'
+                width: 100, height: 100, borderRadius: 50,
+                borderWidth: 10, borderColor: scoreColor,
+                position: 'absolute', right: 0, top: 0,
+                transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore / 50) * 180 - 180}deg` }],
+                opacity: 1
+              }} />
+            </View>
+
+            {/* Left Half (Only visible if > 50) */}
+            {quality.overallScore > 50 && (
+              <View style={{
+                position: 'absolute', width: 50, height: 100, left: 0, top: 0,
+                overflow: 'hidden'
               }}>
-                  {/* Dynamic Progress Layer - Simplified as a clipped circle for reliability or just border */}
-                  {/* Since true conic gradient is hard, we use a border style hack or just a solid circle with opacity if strict accuracy isn't critical, OR use the library-free method below */}
-                  
-                  {/* Background/Track */}
-                  <View style={{position:'absolute', width:'100%', height:'100%', borderWidth:10, borderColor:'#E0E0E0', borderRadius:50}}/>
-                  
-                  {/* Progress Arc (Approximation since we lack SVG) */}
-                  {/* Showing a full colored ring whose opacity/color changes is safer than broken geometry */}
-                  {/* BUT I will try the "Half Circle" method for 2 halves. */}
-                   
-                  {/* Right Half */}
-                  <View style={{
-                      position:'absolute', width:50, height:100, right:0, top:0, 
-                      overflow:'hidden'
-                  }}>
-                      <View style={{
-                           width:100, height:100, borderRadius:50, 
-                           borderWidth:10, borderColor: scoreColor,
-                           position:'absolute', right:0, top:0,
-                           transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore/50)*180 - 180}deg` }],
-                           opacity: 1
-                      }}/>
-                  </View>
-                  
-                  {/* Left Half (Only visible if > 50) */}
-                  { quality.overallScore > 50 && (
-                  <View style={{
-                      position:'absolute', width:50, height:100, left:0, top:0, 
-                      overflow:'hidden'
-                  }}>
-                      <View style={{
-                           width:100, height:100, borderRadius:50, 
-                           borderWidth:10, borderColor: scoreColor,
-                           position:'absolute', left:0, top:0,
-                           transform: [{ rotate: `${( (quality.overallScore-50)/50 ) * 180}deg` }]
-                      }}/>
-                  </View>
-                  )}
-                  
-                  {/* Cover for < 50 to hide the left part of the full Right rotation? */}
-                  {/* The math above: If score=25. Right rotates -90deg. Visible part is top-right. */}
-                  {/* This CSS-only donut is notoriously flaky in RN Android without `elevation` fixes. */}
-                  {/* FALLBACK: Just use the plain full circle but color it dynamically? No, user explicitly asked. */}
-                  {/* I will use the "Border" approach where the circle is complete but the color changes? No. */}
-                  {/* I'll stick to a simpler representation: A circular progress bar using `borderLeftColor` etc is too hard to position perfectly. */}
-                  {/* Let's try a different visualization: "Pie Chart" style is easier. */}
-                  
-                  {/* Inner White Circle to make it a Donut */}
-                  <View style={{position:'absolute', width:80, height:80, borderRadius:40, backgroundColor:'white', justifyContent:'center', alignItems:'center'}}>
-                      <Text style={{fontSize: 24, fontWeight: '700', color: '#333'}}>{quality.overallScore}</Text>
-                      <Text style={{fontSize: 8, color: '#888', textTransform: 'uppercase'}}>Score</Text>
-                  </View>
+                <View style={{
+                  width: 100, height: 100, borderRadius: 50,
+                  borderWidth: 10, borderColor: scoreColor,
+                  position: 'absolute', left: 0, top: 0,
+                  transform: [{ rotate: `${((quality.overallScore - 50) / 50) * 180}deg` }]
+                }} />
               </View>
+            )}
 
-              <Text style={{fontSize: 14, fontWeight: '600', color: getConditionColor(quality.petalCondition), textAlign:'center'}}>
-                  {quality.petalCondition?.toUpperCase()}
-              </Text>
-              <Text style={{fontSize: 10, color: '#666'}}>Overall Condition</Text>
+            {/* Cover for < 50 to hide the left part of the full Right rotation? */}
+            {/* The math above: If score=25. Right rotates -90deg. Visible part is top-right. */}
+            {/* This CSS-only donut is notoriously flaky in RN Android without `elevation` fixes. */}
+            {/* FALLBACK: Just use the plain full circle but color it dynamically? No, user explicitly asked. */}
+            {/* I will use the "Border" approach where the circle is complete but the color changes? No. */}
+            {/* I'll stick to a simpler representation: A circular progress bar using `borderLeftColor` etc is too hard to position perfectly. */}
+            {/* Let's try a different visualization: "Pie Chart" style is easier. */}
+
+            {/* Inner White Circle to make it a Donut */}
+            <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{quality.overallScore}</Text>
+              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
+            </View>
           </View>
 
-          {/* Details (Right) */}
-          <View style={{flex: 1, paddingLeft: 16, gap: 12}}>
-             <View style={{backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8}}>
-                 <Text style={{fontSize: 11, color: '#888', marginBottom: 2}}>Size Assessment</Text>
-                 <Text style={{fontSize: 15, fontWeight: '500', color: '#333'}}>{quality.sizeAssessment}</Text>
-             </View>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: getConditionColor(quality.petalCondition), textAlign: 'center' }}>
+            {quality.petalCondition?.toUpperCase()}
+          </Text>
+          <Text style={{ fontSize: 10, color: '#666' }}>Overall Condition</Text>
+        </View>
 
-             {quality.healthIndicators?.length > 0 && (
-                 <View style={{backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8}}>
-                    <Text style={{fontSize: 11, color: '#4CAF50', marginBottom: 4}}>Health Indicators</Text>
-                    <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6}}>
-                        {quality.healthIndicators.map((ind, i) => (
-                            <Text key={i} style={{fontSize: 12, fontWeight: '500', color: '#2E7D32'}}>• {ind}</Text>
-                        ))}
-                    </View>
-                 </View>
-             )}
+        {/* Details (Right) */}
+        <View style={{ flex: 1, paddingLeft: 16, gap: 12 }}>
+          <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8 }}>
+            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Size Assessment</Text>
+            <Text style={{ fontSize: 15, fontWeight: '500', color: '#333' }}>{quality.sizeAssessment}</Text>
           </View>
+
+          {quality.healthIndicators?.length > 0 && (
+            <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8 }}>
+              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>Health Indicators</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {quality.healthIndicators.map((ind, i) => (
+                  <Text key={i} style={{ fontSize: 12, fontWeight: '500', color: '#2E7D32' }}>• {ind}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -360,52 +395,52 @@ const ObservationsCard = ({ observations }) => {
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity 
-        style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingBottom: expanded ? 16 : 0}} 
+      <TouchableOpacity
+        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, {marginBottom: 0}]}>AI Reasoning</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
         <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
       </TouchableOpacity>
 
       {expanded && (
-       <View style={{gap: 12}}>
+        <View style={{ gap: 12 }}>
           {observations.strengths?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#4CAF50', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="thumbs-up" size={18} color="#4CAF50" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Strengths</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Strengths</Text>
               </View>
               {observations.strengths.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
 
           {observations.concerns?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#FF9800', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="warning" size={18} color="#FF9800" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Concerns</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Concerns</Text>
               </View>
               {observations.concerns.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
 
           {observations.recommendations?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#2196F3', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="bulb" size={18} color="#2196F3" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Recommendations</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Recommendations</Text>
               </View>
               {observations.recommendations.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
-       </View>
+        </View>
       )}
     </View>
   );
@@ -416,36 +451,36 @@ const ObservationsCard = ({ observations }) => {
  */
 const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
   return (
-    <View style={{flex:1, paddingLeft:16, justifyContent:'space-between'}}>
-      <Text style={{fontSize:12, color:'#888', fontWeight:'600', marginBottom:8, textTransform:'uppercase'}}>Confidence</Text>
+    <View style={{ flex: 1, paddingLeft: 16, justifyContent: 'space-between' }}>
+      <Text style={{ fontSize: 12, color: '#888', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' }}>Confidence</Text>
 
-      <View style={{marginBottom:8}}>
-        <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
-            <Text style={{fontSize:10, color:'#666'}}>TM</Text>
-            <Text style={{fontSize:10, fontWeight:'600', color:'#333'}}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
+      <View style={{ marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+          <Text style={{ fontSize: 10, color: '#666' }}>TM</Text>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
         </View>
-        <View style={{height:10, backgroundColor:'#E0E0E0', borderRadius:5, overflow:'hidden'}}>
-             <View style={{height:'100%', width:`${tmPrediction?.confidence || 0}%`, backgroundColor:'#2196F3'}}/>
+        <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
+          <View style={{ height: '100%', width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#2196F3' }} />
         </View>
       </View>
 
       {geminiPrediction ? (
         <View>
-          <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
-              <Text style={{fontSize:10, color:'#666'}}>AI</Text>
-              <Text style={{fontSize:10, fontWeight:'600', color:'#333'}}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+            <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
           </View>
-          <View style={{height:10, backgroundColor:'#E0E0E0', borderRadius:5, overflow:'hidden'}}>
-               <View style={{height:'100%', width:`${geminiPrediction.confidence}%`, backgroundColor:'#9C27B0'}}/>
+          <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
+            <View style={{ height: '100%', width: `${geminiPrediction.confidence}%`, backgroundColor: '#9C27B0' }} />
           </View>
         </View>
       ) : isGeminiLoading ? (
         <View>
-          <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
-              <Text style={{fontSize:10, color:'#666'}}>AI</Text>
-              <ActivityIndicator size={10} color="#9C27B0" />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+            <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
+            <ActivityIndicator size={10} color="#9C27B0" />
           </View>
-          <SkeletonLoader width="100%" height={10} style={{borderRadius:5}} />
+          <SkeletonLoader width="100%" height={10} style={{ borderRadius: 5 }} />
         </View>
       ) : null}
     </View>
@@ -506,10 +541,10 @@ const SkeletonCard = ({ title, lines = 3 }) => (
     </View>
     <View style={skeletonStyles.content}>
       {Array.from({ length: lines }).map((_, i) => (
-        <SkeletonLoader 
-          key={i} 
-          width={i === lines - 1 ? '60%' : '100%'} 
-          height={12} 
+        <SkeletonLoader
+          key={i}
+          width={i === lines - 1 ? '60%' : '100%'}
+          height={12}
           style={{ marginBottom: i < lines - 1 ? 12 : 0 }}
         />
       ))}
@@ -600,7 +635,7 @@ export const ResultsScreen = ({ route, navigation }) => {
    */
   const handleRetryGemini = async () => {
     if (!tmPrediction || tmPrediction.isNotFlower || isGeminiLoading) return;
-    
+
     console.log('🔄 Retrying Gemini analysis...');
     setIsGeminiLoading(true);
     setLoadingStage('Retrying Gemini AI analysis...');
@@ -664,7 +699,7 @@ export const ResultsScreen = ({ route, navigation }) => {
       // Determine if harvest data should be saved (only for female flowers)
       const isFemale = prediction.gender === 'female';
       const harvestData = isFemale ? backendPrediction : null;
-      
+
       console.log('💾 Saving scan:', {
         gender: prediction.gender,
         isFemale,
@@ -799,7 +834,7 @@ export const ResultsScreen = ({ route, navigation }) => {
     let timer;
     if (isAnalyzing) {
       timer = setTimeout(() => {
-        setLoadingStage((prev) => 
+        setLoadingStage((prev) =>
           prev === 'Complete!' ? prev : 'Optimizing results (taking a bit longer)...'
         );
       }, 12000); // 12 seconds
@@ -813,7 +848,7 @@ export const ResultsScreen = ({ route, navigation }) => {
    */
   const runAnalysis = async () => {
     let tmPred = null;
-    
+
     try {
       setIsAnalyzing(true);
       setIsTmComplete(false);
@@ -850,13 +885,13 @@ export const ResultsScreen = ({ route, navigation }) => {
         modelType: 'Teachable Machine',
         processingTime: tmResult.processingTime,
       };
-      
+
       // Show TM results immediately
       setTmPrediction(tmPred);
       setPrediction({ ...tmPred, geminiData: null });
       setIsTmComplete(true);
       setIsAnalyzing(false); // Stop main loading, show TM results
-      
+
       // Fade in TM results
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -1059,27 +1094,32 @@ export const ResultsScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
               ) : (
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <View style={{width: 100, alignItems:'center', paddingRight:8}}>
-                        <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom:8, marginRight:0 }]}>
-                          <Ionicons
-                            name={displayGender === 'male' ? 'male' : 'female'}
-                            size={40}
-                            color={genderColor}
-                          />
-                        </View>
-                        <Text style={[styles.varietyText, {textAlign:'center', fontSize:14}]}>{displayVariety?.toUpperCase()}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 100, alignItems: 'center', paddingRight: 8 }}>
+                    <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom: 8, marginRight: 0 }]}>
+                      <Ionicons
+                        name={displayGender === 'male' ? 'male' : 'female'}
+                        size={40}
+                        color={genderColor}
+                      />
                     </View>
+                    <Text style={[styles.varietyText, { textAlign: 'center', fontSize: 14 }]}>{displayVariety?.toUpperCase()}</Text>
+                    {displayVariety && SCIENTIFIC_NAMES[displayVariety] && (
+                      <Text style={{ fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>
+                        {SCIENTIFIC_NAMES[displayVariety]}
+                      </Text>
+                    )}
+                  </View>
 
-                    {/* Confidence Comparison */}
-                    <View style={{flex: 1, borderLeftWidth:1, borderLeftColor:'#eee'}}>
-                         <ConfidenceComparison
-                            tmPrediction={tmPrediction}
-                            geminiPrediction={geminiPrediction}
-                            comparisonResult={comparisonResult}
-                            isGeminiLoading={isGeminiLoading}
-                          />
-                    </View>
+                  {/* Confidence Comparison */}
+                  <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
+                    <ConfidenceComparison
+                      tmPrediction={tmPrediction}
+                      geminiPrediction={geminiPrediction}
+                      comparisonResult={comparisonResult}
+                      isGeminiLoading={isGeminiLoading}
+                    />
+                  </View>
                 </View>
               )}
             </View>
@@ -1107,27 +1147,27 @@ export const ResultsScreen = ({ route, navigation }) => {
                 {/* AI Reasoning */}
                 {geminiData.reasoning && (
                   <View style={styles.card}>
-                    <TouchableOpacity 
-                       style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingBottom: reasoningExpanded ? 12 : 0}}
-                       onPress={() => setReasoningExpanded(!reasoningExpanded)}
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: reasoningExpanded ? 12 : 0 }}
+                      onPress={() => setReasoningExpanded(!reasoningExpanded)}
                     >
-                        <Text style={[styles.sectionTitle, {marginBottom:0}]}>AI Reasoning</Text>
-                        <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
+                      <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                     </TouchableOpacity>
-                    
+
                     {reasoningExpanded && (
-                        <View>
-                            <Text style={styles.reasoningText}>{geminiData.reasoning}</Text>
-                            {geminiData.keyFeatures?.length > 0 && (
-                              <View style={styles.tagsContainer}>
-                                {geminiData.keyFeatures.map((feature, i) => (
-                                  <View key={i} style={styles.featureTag}>
-                                    <Text style={styles.featureTagText}>{feature}</Text>
-                                  </View>
-                                ))}
+                      <View>
+                        <Text style={styles.reasoningText}>{geminiData.reasoning}</Text>
+                        {geminiData.keyFeatures?.length > 0 && (
+                          <View style={styles.tagsContainer}>
+                            {geminiData.keyFeatures.map((feature, i) => (
+                              <View key={i} style={styles.featureTag}>
+                                <Text style={styles.featureTagText}>{feature}</Text>
                               </View>
-                            )}
-                        </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
                     )}
                   </View>
                 )}
@@ -1153,7 +1193,7 @@ export const ResultsScreen = ({ route, navigation }) => {
                     Quick scan completed using TM model only. Gemini AI analysis was unavailable.
                   </Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.retryGeminiButton}
                   onPress={handleRetryGemini}
                 >

@@ -40,6 +40,14 @@ const VARIETY_COLORS = {
   'Cucumber': '#8BC34A',
 };
 
+// Scientific names
+const SCIENTIFIC_NAMES = {
+  'Ampalaya Bilog': 'Momordica charantia',
+  'Patola': 'Luffa acutangula',
+  'Upo (Smooth)': 'Lagenaria siceraria',
+  'Cucumber': 'Cucumis sativus',
+};
+
 // Gender colors
 const GENDER_COLORS = {
   male: '#4A90E2',
@@ -170,6 +178,44 @@ const getScoreColor = (score) => {
   return '#F44336';
 };
 
+/**
+ * Animated Metric Bar Component
+ */
+const AnimatedMetricBar = ({ label, value }) => {
+  const animatedWidth = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: value,
+      duration: 1000,
+      delay: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [value]);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+      <Text style={{ width: 90, fontSize: 13, color: '#555', fontWeight: '500', textAlign: 'right', marginRight: 12 }}>
+        {label}
+      </Text>
+      <View style={{ flex: 1, height: 10, backgroundColor: '#F0F0F0', borderRadius: 5, overflow: 'hidden' }}>
+        <Animated.View style={{
+          width: animatedWidth.interpolate({
+            inputRange: [0, 100],
+            outputRange: ['0%', '100%'],
+          }),
+          height: '100%',
+          backgroundColor: getScoreColor(value),
+          borderRadius: 5,
+        }} />
+      </View>
+      <Text style={{ width: 35, fontSize: 13, fontWeight: '600', color: '#333', textAlign: 'right', marginLeft: 8 }}>
+        {value}
+      </Text>
+    </View>
+  );
+};
+
 const QualityMetricsChart = ({ metrics }) => {
   if (!metrics) return null;
 
@@ -184,30 +230,14 @@ const QualityMetricsChart = ({ metrics }) => {
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Quality Metrics</Text>
-      <View style={{paddingVertical: 10}}>
-      {metricsList.map((metric, i) => (
-        <View key={i} style={{flexDirection: 'row', alignItems: 'center', marginBottom: i === metricsList.length - 1 ? 0 : 16}}>
-            {/* Label on left, fixed width */}
-            <Text style={{width: 90, fontSize: 13, color: '#555', fontWeight: '500', textAlign:'right', marginRight: 12}}>
-                {metric.label}
-            </Text>
-            
-            {/* Bar Container - Longer width */}
-            <View style={{flex: 1, height: 10, backgroundColor: '#F0F0F0', borderRadius: 5, overflow: 'hidden'}}>
-                <View style={{
-                    width: `${metric.value}%`, 
-                    height: '100%', 
-                    backgroundColor: getScoreColor(metric.value), 
-                    borderRadius: 5,
-                }} />
-            </View>
-            
-            {/* Value on right */}
-            <Text style={{width: 35, fontSize: 13, fontWeight:'600', color: '#333', textAlign:'right', marginLeft: 8}}>
-                {metric.value}
-            </Text>
-        </View>
-      ))}
+      <View style={{ paddingVertical: 10 }}>
+        {metricsList.map((metric, i) => (
+          <AnimatedMetricBar
+            key={i}
+            label={metric.label}
+            value={metric.value}
+          />
+        ))}
       </View>
     </View>
   );
@@ -233,82 +263,82 @@ const FlowerQualityCard = ({ quality }) => {
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Flower Quality</Text>
 
-      <View style={{flexDirection:'row', alignItems:'center'}}>
-          {/* Donut Chart Simulation (Left) */}
-          <View style={{alignItems:'center', width:'40%'}}>
-              <View style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 50,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                  backgroundColor: '#F5F5F5', // Track color
-                  position: 'relative',
-                  overflow: 'hidden'
-              }}>
-                  {/* Background/Track */}
-                  <View style={{position:'absolute', width:'100%', height:'100%', borderWidth:10, borderColor:'#E0E0E0', borderRadius:50}}/>
-                  
-                  {/* Right Half */}
-                  <View style={{
-                      position:'absolute', width:50, height:100, right:0, top:0, 
-                      overflow:'hidden'
-                  }}>
-                      <View style={{
-                           width:100, height:100, borderRadius:50, 
-                           borderWidth:10, borderColor: scoreColor,
-                           position:'absolute', right:0, top:0,
-                           transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore/50)*180 - 180}deg` }],
-                           opacity: 1
-                      }}/>
-                  </View>
-                  
-                  {/* Left Half (Only visible if > 50) */}
-                  { quality.overallScore > 50 && (
-                  <View style={{
-                      position:'absolute', width:50, height:100, left:0, top:0, 
-                      overflow:'hidden'
-                  }}>
-                      <View style={{
-                           width:100, height:100, borderRadius:50, 
-                           borderWidth:10, borderColor: scoreColor,
-                           position:'absolute', left:0, top:0,
-                           transform: [{ rotate: `${( (quality.overallScore-50)/50 ) * 180}deg` }]
-                      }}/>
-                  </View>
-                  )}
-                  
-                  {/* Inner White Circle to make it a Donut */}
-                  <View style={{position:'absolute', width:80, height:80, borderRadius:40, backgroundColor:'white', justifyContent:'center', alignItems:'center'}}>
-                      <Text style={{fontSize: 24, fontWeight: '700', color: '#333'}}>{quality.overallScore}</Text>
-                      <Text style={{fontSize: 8, color: '#888', textTransform: 'uppercase'}}>Score</Text>
-                  </View>
-              </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {/* Donut Chart Simulation (Left) */}
+        <View style={{ alignItems: 'center', width: '40%' }}>
+          <View style={{
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 8,
+            backgroundColor: '#F5F5F5', // Track color
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Background/Track */}
+            <View style={{ position: 'absolute', width: '100%', height: '100%', borderWidth: 10, borderColor: '#E0E0E0', borderRadius: 50 }} />
 
-              <Text style={{fontSize: 14, fontWeight: '600', color: scoreColor, textAlign:'center'}}>
-                  {quality.petalCondition?.toUpperCase() || 'UNKNOWN'}
-              </Text>
-              <Text style={{fontSize: 10, color: '#666'}}>Overall Condition</Text>
+            {/* Right Half */}
+            <View style={{
+              position: 'absolute', width: 50, height: 100, right: 0, top: 0,
+              overflow: 'hidden'
+            }}>
+              <View style={{
+                width: 100, height: 100, borderRadius: 50,
+                borderWidth: 10, borderColor: scoreColor,
+                position: 'absolute', right: 0, top: 0,
+                transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore / 50) * 180 - 180}deg` }],
+                opacity: 1
+              }} />
+            </View>
+
+            {/* Left Half (Only visible if > 50) */}
+            {quality.overallScore > 50 && (
+              <View style={{
+                position: 'absolute', width: 50, height: 100, left: 0, top: 0,
+                overflow: 'hidden'
+              }}>
+                <View style={{
+                  width: 100, height: 100, borderRadius: 50,
+                  borderWidth: 10, borderColor: scoreColor,
+                  position: 'absolute', left: 0, top: 0,
+                  transform: [{ rotate: `${((quality.overallScore - 50) / 50) * 180}deg` }]
+                }} />
+              </View>
+            )}
+
+            {/* Inner White Circle to make it a Donut */}
+            <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{quality.overallScore}</Text>
+              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
+            </View>
           </View>
 
-           <View style={{marginLeft: 24, flex: 1}}>
-             <View style={{backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8, marginBottom: 12}}>
-                 <Text style={{fontSize: 11, color: '#888', marginBottom: 2}}>Size Assessment</Text>
-                 <Text style={{fontSize: 15, fontWeight: '500', color: '#333'}}>{quality.sizeAssessment}</Text>
-             </View>
-             
-             {quality.healthIndicators?.length > 0 && (
-                 <View style={{backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8}}>
-                    <Text style={{fontSize: 11, color: '#4CAF50', marginBottom: 4}}>Health Indicators</Text>
-                    <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6}}>
-                        {quality.healthIndicators.map((ind, i) => (
-                            <Text key={i} style={{fontSize: 12, fontWeight: '500', color: '#2E7D32'}}>• {ind}</Text>
-                        ))}
-                    </View>
-                 </View>
-             )}
-         </View>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: scoreColor, textAlign: 'center' }}>
+            {quality.petalCondition?.toUpperCase() || 'UNKNOWN'}
+          </Text>
+          <Text style={{ fontSize: 10, color: '#666' }}>Overall Condition</Text>
+        </View>
+
+        <View style={{ marginLeft: 24, flex: 1 }}>
+          <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8, marginBottom: 12 }}>
+            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Size Assessment</Text>
+            <Text style={{ fontSize: 15, fontWeight: '500', color: '#333' }}>{quality.sizeAssessment}</Text>
+          </View>
+
+          {quality.healthIndicators?.length > 0 && (
+            <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8 }}>
+              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>Health Indicators</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {quality.healthIndicators.map((ind, i) => (
+                  <Text key={i} style={{ fontSize: 12, fontWeight: '500', color: '#2E7D32' }}>• {ind}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -320,52 +350,52 @@ const ObservationsCard = ({ observations }) => {
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity 
-        style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingBottom: expanded ? 16 : 0}} 
+      <TouchableOpacity
+        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, {marginBottom: 0}]}>AI Reasoning</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
         <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
       </TouchableOpacity>
 
       {expanded && (
-       <View style={{gap: 12}}>
+        <View style={{ gap: 12 }}>
           {observations.strengths?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#4CAF50', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="thumbs-up" size={18} color="#4CAF50" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Strengths</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Strengths</Text>
               </View>
               {observations.strengths.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
 
           {observations.concerns?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#FF9800', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="warning" size={18} color="#FF9800" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Concerns</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Concerns</Text>
               </View>
               {observations.concerns.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
 
           {observations.recommendations?.length > 0 && (
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#2196F3', marginHorizontal: 0, marginBottom: 0 }]}>
-              <View style={{flexDirection:'row', alignItems:'center', marginBottom:8}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="bulb" size={18} color="#2196F3" />
-                <Text style={{fontSize:16, fontWeight:'600', color:'#333', marginLeft:8}}>Recommendations</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Recommendations</Text>
               </View>
               {observations.recommendations.map((item, i) => (
-                <Text key={i} style={{fontSize:14, color:'#444', marginBottom:4, lineHeight:20}}>• {item}</Text>
+                <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
               ))}
             </View>
           )}
-       </View>
+        </View>
       )}
     </View>
   );
@@ -376,27 +406,27 @@ const ObservationsCard = ({ observations }) => {
  */
 const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult }) => {
   return (
-    <View style={{flex:1, paddingLeft:16, justifyContent:'space-between'}}>
-      <Text style={{fontSize:12, color:'#888', fontWeight:'600', marginBottom:8, textTransform:'uppercase'}}>Confidence</Text>
+    <View style={{ flex: 1, paddingLeft: 16, justifyContent: 'space-between' }}>
+      <Text style={{ fontSize: 12, color: '#888', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' }}>Confidence</Text>
 
-      <View style={{marginBottom:8}}>
-        <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
-            <Text style={{fontSize:10, color:'#666'}}>TM</Text>
-            <Text style={{fontSize:10, fontWeight:'600', color:'#333'}}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
+      <View style={{ marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+          <Text style={{ fontSize: 10, color: '#666' }}>TM</Text>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
         </View>
-        <View style={{height:10, backgroundColor:'#E0E0E0', borderRadius:5, overflow:'hidden'}}>
-             <View style={{height:'100%', width:`${tmPrediction?.confidence || 0}%`, backgroundColor:'#2196F3'}}/>
+        <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
+          <View style={{ height: '100%', width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#2196F3' }} />
         </View>
       </View>
 
       {geminiPrediction && (
         <View>
-          <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom:2}}>
-              <Text style={{fontSize:10, color:'#666'}}>AI</Text>
-              <Text style={{fontSize:10, fontWeight:'600', color:'#333'}}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+            <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
           </View>
-          <View style={{height:10, backgroundColor:'#E0E0E0', borderRadius:5, overflow:'hidden'}}>
-               <View style={{height:'100%', width:`${geminiPrediction.confidence}%`, backgroundColor:'#9C27B0'}}/>
+          <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
+            <View style={{ height: '100%', width: `${geminiPrediction.confidence}%`, backgroundColor: '#9C27B0' }} />
           </View>
         </View>
       )}
@@ -410,18 +440,18 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
 export const ResultsScreen = ({ route, navigation }) => {
   // Mode: View (loading existing scan)
   const { scan } = route.params;
-  
+
   // Local state for UI
   const [currentScan, setCurrentScan] = useState(scan || null);
-  
+
   // Parsed state for UI components
   const [tmPrediction, setTmPrediction] = useState(null);
   const [geminiPrediction, setGeminiPrediction] = useState(null);
   const [comparisonResult, setComparisonResult] = useState(null);
   const [prediction, setPrediction] = useState(null);
   // Backend prediction is now part of geminiPrediction structure or parsed directly
-  const [backendPrediction, setBackendPrediction] = useState(null); 
-  
+  const [backendPrediction, setBackendPrediction] = useState(null);
+
   // Rename & Menu State
   const [modalVisible, setModalVisible] = useState(false);
   const [optionsVisible, setOptionsVisible] = useState(false);
@@ -449,15 +479,15 @@ export const ResultsScreen = ({ route, navigation }) => {
       if (currentScan.aiPrediction?.gemini) {
         const gData = currentScan.aiPrediction.gemini;
         setGeminiPrediction({
-            ...gData,
-            geminiData: { // Wrap nested data to match UI expectation
-                reasoning: gData.reasoning,
-                keyFeatures: gData.keyFeatures,
-                flowerQuality: gData.flowerQuality,
-                harvestPrediction: gData.harvestPrediction,
-                qualityMetrics: gData.qualityMetrics,
-                observations: gData.observations,
-            },
+          ...gData,
+          geminiData: { // Wrap nested data to match UI expectation
+            reasoning: gData.reasoning,
+            keyFeatures: gData.keyFeatures,
+            flowerQuality: gData.flowerQuality,
+            harvestPrediction: gData.harvestPrediction,
+            qualityMetrics: gData.qualityMetrics,
+            observations: gData.observations,
+          },
         });
       }
 
@@ -473,20 +503,20 @@ export const ResultsScreen = ({ route, navigation }) => {
       // 3. Comparison
       if (currentScan.aiPrediction?.comparison) {
         setComparisonResult({
-            agree: currentScan.aiPrediction.comparison.modelsAgree,
-            varietyMatch: currentScan.aiPrediction.comparison.varietyMatch,
-            genderMatch: currentScan.aiPrediction.comparison.genderMatch,
-            confidenceGap: currentScan.aiPrediction.comparison.confidenceGap,
-            recommendedSource: currentScan.aiPrediction.comparison.recommendation,
+          agree: currentScan.aiPrediction.comparison.modelsAgree,
+          varietyMatch: currentScan.aiPrediction.comparison.varietyMatch,
+          genderMatch: currentScan.aiPrediction.comparison.genderMatch,
+          confidenceGap: currentScan.aiPrediction.comparison.confidenceGap,
+          recommendedSource: currentScan.aiPrediction.comparison.recommendation,
         });
       }
 
       // 4. Main Prediction
       setPrediction({
-          variety: currentScan.variety,
-          gender: currentScan.prediction,
-          confidence: currentScan.confidence,
-          isNotFlower: currentScan.prediction === 'unknown' && currentScan.variety === null, 
+        variety: currentScan.variety,
+        gender: currentScan.prediction,
+        confidence: currentScan.confidence,
+        isNotFlower: currentScan.prediction === 'unknown' && currentScan.variety === null,
       });
 
       // Start fade in
@@ -518,19 +548,19 @@ export const ResultsScreen = ({ route, navigation }) => {
   const handleDelete = () => {
     setDeleteModalVisible(true);
   };
-  
+
   const handleRename = async () => {
-      if(!newName.trim()) return;
-      setIsRenaming(true);
-      try {
-          await scanService.updateScan(currentScan._id, { name: newName });
-          setCurrentScan(prev => ({ ...prev, name: newName }));
-          setModalVisible(false);
-      } catch (error) {
-           Alert.alert("Error", "Failed to update name");
-      } finally {
-          setIsRenaming(false);
-      }
+    if (!newName.trim()) return;
+    setIsRenaming(true);
+    try {
+      await scanService.updateScan(currentScan._id, { name: newName });
+      setCurrentScan(prev => ({ ...prev, name: newName }));
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", "Failed to update name");
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   const handleOptionsPress = () => {
@@ -552,7 +582,7 @@ export const ResultsScreen = ({ route, navigation }) => {
       return dateString;
     }
   };
-  
+
   // Computed values
   const geminiData = geminiPrediction?.geminiData;
   const hasGeminiData = !!geminiData;
@@ -574,9 +604,9 @@ export const ResultsScreen = ({ route, navigation }) => {
         title={currentScan?.name || "Scan Result"}
         onBackPress={handleBack}
         rightComponent={() => (
-           <TouchableOpacity onPress={handleOptionsPress} style={{ padding: 4 }}>
-                <Ionicons name="ellipsis-vertical" size={24} color={theme.colors.text.primary} />
-           </TouchableOpacity>
+          <TouchableOpacity onPress={handleOptionsPress} style={{ padding: 4 }}>
+            <Ionicons name="ellipsis-vertical" size={24} color={theme.colors.text.primary} />
+          </TouchableOpacity>
         )}
       />
 
@@ -607,26 +637,31 @@ export const ResultsScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
               ) : (
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <View style={{width: 100, alignItems:'center', paddingRight:8}}>
-                        <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom:8, marginRight:0 }]}>
-                          <Ionicons
-                            name={displayGender === 'male' ? 'male' : 'female'}
-                            size={40}
-                            color={genderColor}
-                          />
-                        </View>
-                        <Text style={[styles.varietyText, {textAlign:'center', fontSize:14}]}>{displayVariety?.toUpperCase()}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 100, alignItems: 'center', paddingRight: 8 }}>
+                    <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom: 8, marginRight: 0 }]}>
+                      <Ionicons
+                        name={displayGender === 'male' ? 'male' : 'female'}
+                        size={40}
+                        color={genderColor}
+                      />
                     </View>
+                    <Text style={[styles.varietyText, { textAlign: 'center', fontSize: 14 }]}>{displayVariety?.toUpperCase()}</Text>
+                    {displayVariety && SCIENTIFIC_NAMES[displayVariety] && (
+                      <Text style={{ fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>
+                        {SCIENTIFIC_NAMES[displayVariety]}
+                      </Text>
+                    )}
+                  </View>
 
-                    {/* Confidence Comparison */}
-                    <View style={{flex: 1, borderLeftWidth:1, borderLeftColor:'#eee'}}>
-                         <ConfidenceComparison
-                            tmPrediction={tmPrediction}
-                            geminiPrediction={geminiPrediction}
-                            comparisonResult={comparisonResult}
-                          />
-                    </View>
+                  {/* Confidence Comparison */}
+                  <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
+                    <ConfidenceComparison
+                      tmPrediction={tmPrediction}
+                      geminiPrediction={geminiPrediction}
+                      comparisonResult={comparisonResult}
+                    />
+                  </View>
                 </View>
               )}
             </View>
@@ -654,27 +689,27 @@ export const ResultsScreen = ({ route, navigation }) => {
                 {/* AI Reasoning */}
                 {geminiData.reasoning && (
                   <View style={styles.card}>
-                    <TouchableOpacity 
-                       style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingBottom: reasoningExpanded ? 12 : 0}}
-                       onPress={() => setReasoningExpanded(!reasoningExpanded)}
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: reasoningExpanded ? 12 : 0 }}
+                      onPress={() => setReasoningExpanded(!reasoningExpanded)}
                     >
-                        <Text style={[styles.sectionTitle, {marginBottom:0}]}>AI Reasoning</Text>
-                        <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
+                      <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                     </TouchableOpacity>
-                    
+
                     {reasoningExpanded && (
-                        <View>
-                            <Text style={styles.reasoningText}>{geminiData.reasoning}</Text>
-                            {geminiData.keyFeatures?.length > 0 && (
-                              <View style={styles.tagsContainer}>
-                                {geminiData.keyFeatures.map((feature, i) => (
-                                  <View key={i} style={styles.featureTag}>
-                                    <Text style={styles.featureTagText}>{feature}</Text>
-                                  </View>
-                                ))}
+                      <View>
+                        <Text style={styles.reasoningText}>{geminiData.reasoning}</Text>
+                        {geminiData.keyFeatures?.length > 0 && (
+                          <View style={styles.tagsContainer}>
+                            {geminiData.keyFeatures.map((feature, i) => (
+                              <View key={i} style={styles.featureTag}>
+                                <Text style={styles.featureTagText}>{feature}</Text>
                               </View>
-                            )}
-                        </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
                     )}
                   </View>
                 )}
@@ -705,9 +740,9 @@ export const ResultsScreen = ({ route, navigation }) => {
         animationType="fade"
         onRequestClose={() => setOptionsVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.optionsOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.optionsOverlay}
+          activeOpacity={1}
           onPress={() => setOptionsVisible(false)}
         >
           <View style={styles.optionsMenu}>
@@ -718,7 +753,7 @@ export const ResultsScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={styles.optionDivider} />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.optionItem}
               onPress={() => {
                 setOptionsVisible(false);
@@ -728,7 +763,7 @@ export const ResultsScreen = ({ route, navigation }) => {
               <Ionicons name="pencil-outline" size={20} color="#333" />
               <Text style={styles.optionText}>Rename</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.optionItem}
               onPress={() => {
                 setOptionsVisible(false);
@@ -763,13 +798,13 @@ export const ResultsScreen = ({ route, navigation }) => {
                   selectTextOnFocus
                 />
                 <View style={styles.modalButtons}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalButton, styles.cancelButton]}
                     onPress={() => setModalVisible(false)}
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalButton, styles.renameSaveButton, isRenaming && styles.buttonDisabled]}
                     onPress={handleRename}
                     disabled={isRenaming}
@@ -797,13 +832,13 @@ export const ResultsScreen = ({ route, navigation }) => {
               Are you sure you want to delete this scan? This action cannot be undone.
             </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setDeleteModalVisible(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.deleteConfirmButton, isDeleting && styles.buttonDisabled]}
                 onPress={confirmDelete}
                 disabled={isDeleting}
