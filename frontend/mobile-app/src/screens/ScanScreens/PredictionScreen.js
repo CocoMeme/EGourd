@@ -689,11 +689,10 @@ export const ResultsScreen = ({ route, navigation }) => {
             processingTime: geminiPrediction.processingTime,
             // Extended Gemini analysis data
             flowerQuality: geminiPrediction.geminiData?.flowerQuality,
-            harvestPrediction: geminiPrediction.geminiData?.harvestPrediction,
+            harvestPrediction: geminiPrediction.geminiData?.harvestPrediction || backendPrediction,
             qualityMetrics: geminiPrediction.geminiData?.qualityMetrics,
             observations: geminiPrediction.geminiData?.observations,
           } : null,
-          harvestPrediction: backendPrediction,
           comparison: comparisonResult ? {
             modelsAgree: comparisonResult.agree,
             varietyMatch: comparisonResult.varietyMatch,
