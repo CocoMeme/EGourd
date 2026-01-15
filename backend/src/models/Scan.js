@@ -109,6 +109,16 @@ const scanSchema = new mongoose.Schema({
       genderMatch: Boolean,      // Did genders match?
       confidenceGap: Number,     // Absolute difference in confidence
       recommendation: String     // Which model was recommended ('tflite', 'gemini', or 'manual')
+    },
+
+    // Refined harvest prediction from backend (if available)
+    harvestPrediction: {
+      daysToHarvest: Number,
+      currentStage: String,
+      confidence: Number,
+      estimatedHarvestDate: String,
+      rationale: String,
+      recommendations: [String]
     }
   },
 
@@ -134,7 +144,7 @@ const scanSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to generate default name if not provided
-scanSchema.pre('save', function(next) {
+scanSchema.pre('save', function (next) {
   if (!this.name || this.name === '') {
     const variety = this.variety || 'Unknown';
     const gender = this.prediction || 'unknown';

@@ -412,6 +412,7 @@ ${contextString}
 - **PATOLA (Sponge Gourd):** LARGE bright yellow flowers, wide petals.
 - **CUCUMBER:** Small yellow flowers, 5 rounded petals, thinner than patola.
 - **MALE vs FEMALE:** Look for the "baby fruit" (ovary bulge) behind the flower base. No bulge = MALE.
+- **HARVEST TIMING:** For most gourds (Ampalaya, Patola, Upo), it typically takes **20-35 days** from flower bloom to harvestable fruit. Do not guess 7 days unless the fruit is already very large.
 
 Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
 {
