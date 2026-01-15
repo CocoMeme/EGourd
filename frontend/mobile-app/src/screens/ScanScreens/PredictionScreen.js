@@ -661,6 +661,18 @@ export const ResultsScreen = ({ route, navigation }) => {
     if (!prediction) return;
     setIsSaving(true);
     try {
+      // Determine if harvest data should be saved (only for female flowers)
+      const isFemale = prediction.gender === 'female';
+      const harvestData = isFemale ? backendPrediction : null;
+      
+      console.log('💾 Saving scan:', {
+        gender: prediction.gender,
+        isFemale,
+        hasBackendPrediction: !!backendPrediction,
+        backendPredictionData: backendPrediction,
+        willSaveHarvest: !!harvestData
+      });
+
       // Construct payload compatible with backend
       const scanData = {
         prediction: prediction.gender || 'unknown',
@@ -689,12 +701,13 @@ export const ResultsScreen = ({ route, navigation }) => {
             processingTime: geminiPrediction.processingTime,
             // Extended Gemini analysis data
             flowerQuality: geminiPrediction.geminiData?.flowerQuality,
-            harvestPrediction: geminiPrediction.geminiData?.harvestPrediction,
+            // Only save Gemini's harvest prediction for female flowers
+            harvestPrediction: isFemale ? geminiPrediction.geminiData?.harvestPrediction : null,
             qualityMetrics: geminiPrediction.geminiData?.qualityMetrics,
             observations: geminiPrediction.geminiData?.observations,
           } : null,
-          // Backend-specific harvest prediction (separate from Gemini's)
-          harvestPrediction: backendPrediction,
+          // Backend-specific harvest prediction (only for female flowers)
+          ...(isFemale && harvestData ? { harvestPrediction: harvestData } : {}),
           comparison: comparisonResult ? {
             modelsAgree: comparisonResult.agree,
             varietyMatch: comparisonResult.varietyMatch,
@@ -1074,11 +1087,13 @@ export const ResultsScreen = ({ route, navigation }) => {
             {/* Gemini Enhanced Data - Show when available */}
             {hasGeminiData && !isNotFlower && (
               <>
-                {/* Harvest Timeline */}
-                <HarvestTimeline
-                  data={geminiData.harvestPrediction}
-                  backendData={backendPrediction}
-                />
+                {/* Harvest Timeline - Only for Female Flowers */}
+                {prediction?.gender === 'female' && (
+                  <HarvestTimeline
+                    data={geminiData.harvestPrediction}
+                    backendData={backendPrediction}
+                  />
+                )}
 
                 {/* Quality Metrics Chart */}
                 <QualityMetricsChart metrics={geminiData.qualityMetrics} genderColor={genderColor} />

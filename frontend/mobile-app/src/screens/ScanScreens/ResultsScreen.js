@@ -634,11 +634,13 @@ export const ResultsScreen = ({ route, navigation }) => {
             {/* Gemini Enhanced Data (only show if flower detected) */}
             {hasGeminiData && !isNotFlower && (
               <>
-                {/* Harvest Timeline */}
-                <HarvestTimeline
-                  data={geminiData.harvestPrediction}
-                  backendData={backendPrediction}
-                />
+                {/* Harvest Timeline - Only for Female Flowers */}
+                {scan?.prediction === 'female' && (
+                  <HarvestTimeline
+                    data={geminiData.harvestPrediction}
+                    backendData={backendPrediction}
+                  />
+                )}
 
                 {/* Quality Metrics Chart */}
                 <QualityMetricsChart metrics={geminiData.qualityMetrics} genderColor={genderColor} />
