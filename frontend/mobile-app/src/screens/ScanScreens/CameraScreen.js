@@ -58,98 +58,20 @@ export const CameraScreen = ({ navigation }) => {
   const animatedBars = useRef({});
   const animatedPositions = useRef({});
 
-  // Initialize model
-  useEffect(() => {
-    const initializeModel = async () => {
-      setIsModelReady(false);
-      stopScanning();
-
-      try {
-        console.log('🧪 Initializing TM model...');
-        await modelService.initialize();
-        setIsModelReady(true);
-        isModelReadyRef.current = true; // Sync ref for scan loop
-        console.log('✅ TM model ready');
-
-        // Warm up
-        await modelService.warmUp();
-        console.log('🔥 TM model warmed up');
-      } catch (error) {
-        console.error('❌ TM model initialization failed:', error);
-        Alert.alert(
-          'Model Error',
-          'Failed to load Teachable Machine model. Please try again.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
-      }
-    };
-
-    initializeModel();
-
-    return () => {
-      stopScanning();
-      isModelReadyRef.current = false; // Reset ref on cleanup
-      // Memory cleanup
-      recentPredictions.current = [];
-      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
-      lastFrameUri.current = { uri: null, width: 0, height: 0 };
-      animatedBars.current = {};
-      animatedPositions.current = {};
-    };
-  }, []);
-
-  // Reset state and restart scanning when screen comes into focus
-  // Also hide tab bar when on this screen
-  useFocusEffect(
-    useCallback(() => {
-      console.log('📱 CameraScreen focused - resetting state');
-      setIsCapturing(false);
-      setIsStable(false);
-
-      // Hide tab bar when on camera screen
-      navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'none' }
-      });
-
-      // Reset best frame tracking for fresh scan
-      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
-      recentPredictions.current = [];
-      lastFrameUri.current = { uri: null, width: 0, height: 0 };
-
-      // Restart scanning if model is ready
-      if (isModelReady && !scanIntervalRef.current) {
-        startScanning();
-      }
-
-      return () => {
-        // IMPORTANT: Stop scanning when screen loses focus
-        console.log('📱 CameraScreen unfocused - stopping scanning');
-        stopScanning();
-
-        // Show tab bar again when leaving
-        navigation.getParent()?.setOptions({
-          tabBarStyle: {
-            backgroundColor: theme.colors.surface,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.background.secondary,
-            height: 70,
-            paddingBottom: 12,
-            paddingTop: 8,
-          }
-        });
-      };
-    }, [isModelReady, startScanning, stopScanning, navigation])
-  );
-
-  // Start scanning when model is ready
-  useEffect(() => {
-    if (isModelReady && !isScanning && !isPaused && !isCapturing) {
-      startScanning();
+  /**
+   * Stop scanning - defined first as it has no dependencies
+   */
+  const stopScanning = useCallback(() => {
+    if (scanIntervalRef.current) {
+      console.log('🛑 Stopping TM scanning');
+      scanIntervalRef.current = false; // Signal the recursive loop to stop
+      setIsScanning(false);
     }
-  }, [isModelReady, isCapturing]);
+  }, []);
 
   /**
    * Start real-time scanning using recursive loop (smoother than setInterval)
+   * Defined before useEffects that depend on it
    */
   const startScanning = useCallback(() => {
     if (scanIntervalRef.current) {
@@ -303,18 +225,99 @@ export const CameraScreen = ({ navigation }) => {
 
     // Start the loop
     scanLoop();
-  }, [isPaused]); // Removed isModelReady - using isModelReadyRef instead
+  }, [isPaused]);
 
-  /**
-   * Stop scanning
-   */
-  const stopScanning = useCallback(() => {
-    if (scanIntervalRef.current) {
-      console.log('🛑 Stopping TM scanning');
-      scanIntervalRef.current = false; // Signal the recursive loop to stop
-      setIsScanning(false);
+  // Initialize model
+  useEffect(() => {
+    const initializeModel = async () => {
+      setIsModelReady(false);
+      stopScanning();
+
+      try {
+        console.log('🧪 Initializing TM model...');
+        await modelService.initialize();
+        setIsModelReady(true);
+        isModelReadyRef.current = true; // Sync ref for scan loop
+        console.log('✅ TM model ready');
+
+        // Warm up
+        await modelService.warmUp();
+        console.log('🔥 TM model warmed up');
+      } catch (error) {
+        console.error('❌ TM model initialization failed:', error);
+        Alert.alert(
+          'Model Error',
+          'Failed to load Teachable Machine model. Please try again.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
+    };
+
+    initializeModel();
+
+    return () => {
+      stopScanning();
+      isModelReadyRef.current = false; // Reset ref on cleanup
+      // Memory cleanup
+      recentPredictions.current = [];
+      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+      lastFrameUri.current = { uri: null, width: 0, height: 0 };
+      animatedBars.current = {};
+      animatedPositions.current = {};
+    };
+  }, [stopScanning]);
+
+  // Reset state and restart scanning when screen comes into focus
+  // Also hide tab bar when on this screen
+  useFocusEffect(
+    useCallback(() => {
+      console.log('📱 CameraScreen focused - resetting state');
+      setIsCapturing(false);
+      setIsStable(false);
+
+      // Hide tab bar when on camera screen
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
+
+      // Reset best frame tracking for fresh scan
+      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+      recentPredictions.current = [];
+      lastFrameUri.current = { uri: null, width: 0, height: 0 };
+
+      // Restart scanning if model is ready (use ref to avoid stale closure)
+      if (isModelReadyRef.current && !scanIntervalRef.current) {
+        console.log('📱 Model ready on focus, starting scan immediately');
+        startScanning();
+      }
+
+      return () => {
+        // IMPORTANT: Stop scanning when screen loses focus
+        console.log('📱 CameraScreen unfocused - stopping scanning');
+        stopScanning();
+
+        // Show tab bar again when leaving
+        navigation.getParent()?.setOptions({
+          tabBarStyle: {
+            backgroundColor: theme.colors.surface,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.background.secondary,
+            height: 70,
+            paddingBottom: 12,
+            paddingTop: 8,
+          }
+        });
+      };
+    }, [startScanning, stopScanning, navigation])
+  );
+
+  // Start scanning when model becomes ready (handles first load case)
+  useEffect(() => {
+    if (isModelReady && !scanIntervalRef.current && !isPaused && !isCapturing) {
+      console.log('🚀 Model just became ready, starting scanning...');
+      startScanning();
     }
-  }, []);
+  }, [isModelReady, isPaused, isCapturing, startScanning]);
 
   /**
    * Helper: Extract variety from TM label
