@@ -9,10 +9,10 @@ const GEMINI_API_KEYS = [
 ].filter(key => key && key.length > 0);
 
 // Model fallback chain - when primary model is overloaded (503), try next model
+// Only using free tier models that are confirmed to work with v1beta API
 const MODEL_FALLBACK_CHAIN = [
-  'gemini-2.0-flash-lite',   // Primary - fast and lightweight
-  'gemini-2.0-flash',        // Fallback 1 - more capable
-  'gemini-1.5-flash',        // Fallback 2 - stable and reliable (no -latest suffix)
+  'gemini-2.5-flash-lite',   // Primary - newest, fast and lightweight (free)
+  'gemini-2.0-flash-lite',   // Fallback - stable and reliable (free)
 ];
 
 // Delay between retries (in milliseconds)
