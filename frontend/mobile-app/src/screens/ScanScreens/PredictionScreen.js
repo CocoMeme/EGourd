@@ -248,42 +248,37 @@ const QualityMetricsChart = ({ metrics }) => {
 };
 
 /**
- * Flower Quality Card Component
+ * Flower Quality Card Component with Animated Donut
  */
 const FlowerQualityCard = ({ quality }) => {
   if (!quality) return null;
 
-  const getConditionColor = (condition) => {
-    switch (condition) {
-      case 'excellent': return '#4CAF50';
-      case 'good': return '#8BC34A';
-      case 'fair': return '#FFEB3B';
-      case 'poor': return '#F44336';
-      default: return '#9E9E9E';
-    }
-  };
+  const animatedScore = useRef(new Animated.Value(0)).current;
+  const score = quality.overallScore || 0;
 
-  const scoreColor = getScoreColor(quality.overallScore);
+  useEffect(() => {
+    Animated.timing(animatedScore, {
+      toValue: score,
+      duration: 1500,
+      delay: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [score]);
 
-  // Donut logic: 100 score is full circle (360 degrees)
-  // For < 50%, we hide the left half and rotate the right half.
-  // For > 50%, we show the right half fully, and rotate the left half.
-  // Actually, simplified prop-less implementation using 2 half-circles is complex in inline styles.
-  // Simpler approach: Use a hack with borderWidth or SVG. 
-  // Since we can't usage SVG, let's stick to the visual provided before but make it look more dynamic by
-  // using a layered approach if possible, OR just stick to the full border for now as implementing
-  // a true partial donut without SVG is 50-lines of styles.
-  //
-  // WAIT - User asked "donut should be dynamic, 100 score will take the whole circle."
-  // I will use a very simple mechanic: A wrapper view with a background color (empty), and two absolute semi-circles.
-  // But due to complexity, I'll stick to a border "progress" bar if I can, OR
-  // I will revert to a simpler "Prop" style implementation if I had a library.
-  //
-  // Let's implement the "4 Quadrant" trick or just "2 Half Circles".
-  // Due to tool limitations, I will use a simplified visual that LOOKS like a progress bar (e.g. standard circle with a gap?).
-  //
-  // ACTUALLY: The user asked for "100 score will take the whole circle". Implicitly < 100 takes less.
-  // I will use a reliable snippet for "Pure CSS Circle Progress" adapted for RN.
+  const scoreColor = getScoreColor(score);
+
+  // Rotation logic for semi-circles
+  // Right half stays at 0deg if score > 50, else rotates from -180 to 0
+  const rightRotate = animatedScore.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '0deg', '0deg'],
+  });
+
+  // Left half stays at -180deg if score < 50, else rotates from -180 to 0
+  const leftRotate = animatedScore.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '-180deg', '0deg'],
+  });
 
   return (
     <View style={styles.card}>
@@ -299,73 +294,46 @@ const FlowerQualityCard = ({ quality }) => {
             justifyContent: 'center',
             alignItems: 'center',
             marginBottom: 8,
-            backgroundColor: '#F5F5F5', // Track color
+            backgroundColor: '#F5F5F5',
             position: 'relative',
-            overflow: 'hidden'
           }}>
-            {/* Dynamic Progress Layer - Simplified as a clipped circle for reliability or just border */}
-            {/* Since true conic gradient is hard, we use a border style hack or just a solid circle with opacity if strict accuracy isn't critical, OR use the library-free method below */}
-
             {/* Background/Track */}
             <View style={{ position: 'absolute', width: '100%', height: '100%', borderWidth: 10, borderColor: '#E0E0E0', borderRadius: 50 }} />
 
-            {/* Progress Arc (Approximation since we lack SVG) */}
-            {/* Showing a full colored ring whose opacity/color changes is safer than broken geometry */}
-            {/* BUT I will try the "Half Circle" method for 2 halves. */}
-
-            {/* Right Half */}
-            <View style={{
-              position: 'absolute', width: 50, height: 100, right: 0, top: 0,
-              overflow: 'hidden'
-            }}>
-              <View style={{
-                width: 100, height: 100, borderRadius: 50,
-                borderWidth: 10, borderColor: scoreColor,
+            {/* Right Half Container */}
+            <View style={{ position: 'absolute', width: 50, height: 100, right: 0, top: 0, overflow: 'hidden' }}>
+              <Animated.View style={{
+                width: 100, height: 100, borderRadius: 50, borderWidth: 10, borderColor: scoreColor,
                 position: 'absolute', right: 0, top: 0,
-                transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore / 50) * 180 - 180}deg` }],
-                opacity: 1
+                transform: [{ translateX: 0 }, { rotate: rightRotate }],
               }} />
             </View>
 
-            {/* Left Half (Only visible if > 50) */}
-            {quality.overallScore > 50 && (
-              <View style={{
-                position: 'absolute', width: 50, height: 100, left: 0, top: 0,
-                overflow: 'hidden'
-              }}>
-                <View style={{
-                  width: 100, height: 100, borderRadius: 50,
-                  borderWidth: 10, borderColor: scoreColor,
-                  position: 'absolute', left: 0, top: 0,
-                  transform: [{ rotate: `${((quality.overallScore - 50) / 50) * 180}deg` }]
-                }} />
-              </View>
-            )}
+            {/* Left Half Container */}
+            <View style={{ position: 'absolute', width: 50, height: 100, left: 0, top: 0, overflow: 'hidden' }}>
+              <Animated.View style={{
+                width: 100, height: 100, borderRadius: 50, borderWidth: 10, borderColor: scoreColor,
+                position: 'absolute', left: 0, top: 0,
+                transform: [{ translateX: 0 }, { rotate: leftRotate }],
+              }} />
+            </View>
 
-            {/* Cover for < 50 to hide the left part of the full Right rotation? */}
-            {/* The math above: If score=25. Right rotates -90deg. Visible part is top-right. */}
-            {/* This CSS-only donut is notoriously flaky in RN Android without `elevation` fixes. */}
-            {/* FALLBACK: Just use the plain full circle but color it dynamically? No, user explicitly asked. */}
-            {/* I will use the "Border" approach where the circle is complete but the color changes? No. */}
-            {/* I'll stick to a simpler representation: A circular progress bar using `borderLeftColor` etc is too hard to position perfectly. */}
-            {/* Let's try a different visualization: "Pie Chart" style is easier. */}
-
-            {/* Inner White Circle to make it a Donut */}
+            {/* Inner White Circle (The "Hole") */}
             <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{quality.overallScore}</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{score}</Text>
               <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
             </View>
           </View>
 
-          <Text style={{ fontSize: 14, fontWeight: '600', color: getConditionColor(quality.petalCondition), textAlign: 'center' }}>
-            {quality.petalCondition?.toUpperCase()}
+          <Text style={{ fontSize: 14, fontWeight: '600', color: scoreColor, textAlign: 'center' }}>
+            {quality.petalCondition?.toUpperCase() || 'UNKNOWN'}
           </Text>
           <Text style={{ fontSize: 10, color: '#666' }}>Overall Condition</Text>
         </View>
 
         {/* Details (Right) */}
-        <View style={{ flex: 1, paddingLeft: 16, gap: 12 }}>
-          <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8 }}>
+        <View style={{ marginLeft: 24, flex: 1 }}>
+          <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8, marginBottom: 12 }}>
             <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Size Assessment</Text>
             <Text style={{ fontSize: 15, fontWeight: '500', color: '#333' }}>{quality.sizeAssessment}</Text>
           </View>

@@ -244,20 +244,35 @@ const QualityMetricsChart = ({ metrics }) => {
 };
 
 /**
- * Flower Quality Card Component
+ * Flower Quality Card Component with Animated Donut
  */
 const FlowerQualityCard = ({ quality }) => {
   if (!quality) return null;
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#4CAF50';
-    if (score >= 60) return '#8BC34A';
-    if (score >= 40) return '#FFEB3B';
-    if (score >= 20) return '#FF9800';
-    return '#F44336';
-  };
+  const animatedScore = useRef(new Animated.Value(0)).current;
+  const score = quality.overallScore || 0;
 
-  const scoreColor = getScoreColor(quality.overallScore);
+  useEffect(() => {
+    Animated.timing(animatedScore, {
+      toValue: score,
+      duration: 1500,
+      delay: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [score]);
+
+  const scoreColor = getScoreColor(score);
+
+  // Rotation logic for semi-circles
+  const rightRotate = animatedScore.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '0deg', '0deg'],
+  });
+
+  const leftRotate = animatedScore.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '-180deg', '0deg'],
+  });
 
   return (
     <View style={styles.card}>
@@ -273,45 +288,33 @@ const FlowerQualityCard = ({ quality }) => {
             justifyContent: 'center',
             alignItems: 'center',
             marginBottom: 8,
-            backgroundColor: '#F5F5F5', // Track color
+            backgroundColor: '#F5F5F5',
             position: 'relative',
-            overflow: 'hidden'
           }}>
             {/* Background/Track */}
             <View style={{ position: 'absolute', width: '100%', height: '100%', borderWidth: 10, borderColor: '#E0E0E0', borderRadius: 50 }} />
 
-            {/* Right Half */}
-            <View style={{
-              position: 'absolute', width: 50, height: 100, right: 0, top: 0,
-              overflow: 'hidden'
-            }}>
-              <View style={{
-                width: 100, height: 100, borderRadius: 50,
-                borderWidth: 10, borderColor: scoreColor,
+            {/* Right Half Container */}
+            <View style={{ position: 'absolute', width: 50, height: 100, right: 0, top: 0, overflow: 'hidden' }}>
+              <Animated.View style={{
+                width: 100, height: 100, borderRadius: 50, borderWidth: 10, borderColor: scoreColor,
                 position: 'absolute', right: 0, top: 0,
-                transform: [{ rotate: quality.overallScore > 50 ? '0deg' : `${(quality.overallScore / 50) * 180 - 180}deg` }],
-                opacity: 1
+                transform: [{ rotate: rightRotate }],
               }} />
             </View>
 
-            {/* Left Half (Only visible if > 50) */}
-            {quality.overallScore > 50 && (
-              <View style={{
-                position: 'absolute', width: 50, height: 100, left: 0, top: 0,
-                overflow: 'hidden'
-              }}>
-                <View style={{
-                  width: 100, height: 100, borderRadius: 50,
-                  borderWidth: 10, borderColor: scoreColor,
-                  position: 'absolute', left: 0, top: 0,
-                  transform: [{ rotate: `${((quality.overallScore - 50) / 50) * 180}deg` }]
-                }} />
-              </View>
-            )}
+            {/* Left Half Container */}
+            <View style={{ position: 'absolute', width: 50, height: 100, left: 0, top: 0, overflow: 'hidden' }}>
+              <Animated.View style={{
+                width: 100, height: 100, borderRadius: 50, borderWidth: 10, borderColor: scoreColor,
+                position: 'absolute', left: 0, top: 0,
+                transform: [{ rotate: leftRotate }],
+              }} />
+            </View>
 
             {/* Inner White Circle to make it a Donut */}
             <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{quality.overallScore}</Text>
+              <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{score}</Text>
               <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
             </View>
           </View>
