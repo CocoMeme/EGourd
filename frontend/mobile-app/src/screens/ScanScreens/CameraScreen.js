@@ -47,6 +47,7 @@ export const CameraScreen = ({ navigation }) => {
 
   const cameraRef = useRef(null);
   const scanIntervalRef = useRef(null);
+  const isModelReadyRef = useRef(false); // Ref to avoid stale closure in scan loop
 
   // LOGIC PRESERVATION: Store dimensions to fix distortion
   const lastFrameUri = useRef({ uri: null, width: 0, height: 0 });
@@ -67,6 +68,7 @@ export const CameraScreen = ({ navigation }) => {
         console.log('🧪 Initializing TM model...');
         await modelService.initialize();
         setIsModelReady(true);
+        isModelReadyRef.current = true; // Sync ref for scan loop
         console.log('✅ TM model ready');
 
         // Warm up
@@ -86,6 +88,7 @@ export const CameraScreen = ({ navigation }) => {
 
     return () => {
       stopScanning();
+      isModelReadyRef.current = false; // Reset ref on cleanup
       // Memory cleanup
       recentPredictions.current = [];
       bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
@@ -122,7 +125,7 @@ export const CameraScreen = ({ navigation }) => {
         // IMPORTANT: Stop scanning when screen loses focus
         console.log('📱 CameraScreen unfocused - stopping scanning');
         stopScanning();
-        
+
         // Show tab bar again when leaving
         navigation.getParent()?.setOptions({
           tabBarStyle: {
@@ -161,8 +164,8 @@ export const CameraScreen = ({ navigation }) => {
       // Check if we should stop
       if (!scanIntervalRef.current) return;
 
-      // Skip if camera not ready or paused
-      if (!cameraRef.current || !isModelReady || isPaused) {
+      // Skip if camera not ready or paused (use ref to avoid stale closure)
+      if (!cameraRef.current || !isModelReadyRef.current || isPaused) {
         // Schedule next iteration after delay
         setTimeout(scanLoop, SCAN_INTERVAL);
         return;
@@ -300,7 +303,7 @@ export const CameraScreen = ({ navigation }) => {
 
     // Start the loop
     scanLoop();
-  }, [isModelReady, isPaused]);
+  }, [isPaused]); // Removed isModelReady - using isModelReadyRef instead
 
   /**
    * Stop scanning
@@ -493,7 +496,7 @@ export const CameraScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       {/* 1. Header using CustomHeader scanner variant */}
       <CustomHeader
         variant="scanner"
