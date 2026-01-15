@@ -20,9 +20,16 @@ if (fs.existsSync(renderSecretPath)) {
 const App = require('./app');
 const os = require('os');
 const validateEnv = require('./config/validateEnv');
+const { startMemoryMonitor, logMemoryUsage } = require('./utils/memoryUtils');
 
 const startServer = async () => {
   try {
+    // Memory optimization: Log startup memory and start monitor in production
+    logMemoryUsage('Server starting');
+    if (process.env.NODE_ENV === 'production') {
+      startMemoryMonitor(60000); // Log every 60 seconds in production
+    }
+
     validateEnv();
 
     // Create and initialize the app
@@ -31,12 +38,12 @@ const startServer = async () => {
 
     // Get port from environment or default to 5000
     const PORT = process.env.PORT || 5000;
-    
+
     // Get network IP address (prioritize WiFi/Ethernet over VM adapters)
     const getLocalIP = () => {
       const interfaces = os.networkInterfaces();
       const priorities = ['Wi-Fi', 'Ethernet', 'en0', 'eth0'];
-      
+
       // First try priority interfaces
       for (const priority of priorities) {
         const iface = interfaces[priority];
@@ -48,25 +55,25 @@ const startServer = async () => {
           }
         }
       }
-      
+
       // Fallback to any non-internal IPv4 that's not a VM adapter
       for (const name of Object.keys(interfaces)) {
         if (name.includes('VirtualBox') || name.includes('VMware') || name.includes('vEthernet')) {
           continue;
         }
         for (const addr of interfaces[name]) {
-          if (addr.family === 'IPv4' && !addr.internal && 
-              !addr.address.startsWith('169.254')) {
+          if (addr.family === 'IPv4' && !addr.internal &&
+            !addr.address.startsWith('169.254')) {
             return addr.address;
           }
         }
       }
-      
+
       return 'localhost';
     };
 
     const localIP = getLocalIP();
-    
+
     // Start the server
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('🌟 ========================================');
@@ -83,10 +90,10 @@ const startServer = async () => {
     // Graceful shutdown
     const gracefulShutdown = (signal) => {
       console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
-      
+
       server.close(async () => {
         console.log('🔌 HTTP server closed');
-        
+
         // Close database connection
         try {
           const database = require('./config/database');
@@ -94,7 +101,7 @@ const startServer = async () => {
         } catch (error) {
           console.error('❌ Error closing database connection:', error);
         }
-        
+
         console.log('✅ Graceful shutdown completed');
         process.exit(0);
       });

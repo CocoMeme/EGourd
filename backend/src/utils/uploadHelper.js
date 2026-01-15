@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
     const baseName = path.basename(file.originalname, fileExtension)
       .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
       .substring(0, 20); // Limit length
-    
+
     cb(null, `${baseName}_${uniqueSuffix}${fileExtension}`);
   }
 });
@@ -44,7 +44,7 @@ const memoryStorage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   // Check file type
   const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg').split(',');
-  
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -57,7 +57,7 @@ const uploadToDisk = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 3 * 1024 * 1024, // 3MB for free tier memory
     files: 5 // Maximum 5 files
   }
 });
@@ -67,7 +67,7 @@ const uploadToMemory = multer({
   storage: memoryStorage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 3 * 1024 * 1024, // 3MB for free tier memory
     files: 5
   }
 });
@@ -94,7 +94,7 @@ const uploadToCloudinary = async (file, options = {}) => {
     if (file.path) {
       // Upload from disk
       uploadResult = await cloudinary.uploader.upload(file.path, defaultOptions);
-      
+
       // Delete local file after upload
       try {
         await fs.unlink(file.path);
