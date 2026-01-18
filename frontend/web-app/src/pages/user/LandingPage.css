@@ -94,7 +94,11 @@
 .hero-badge {
   display: inline-block;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(45, 90, 39, 0.1), rgba(74, 124, 89, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(45, 90, 39, 0.1),
+    rgba(74, 124, 89, 0.1)
+  );
   border: 1px solid rgba(74, 124, 89, 0.2);
   border-radius: 30px;
   font-size: 14px;
@@ -200,7 +204,11 @@
   position: relative;
   width: 400px;
   height: 400px;
-  background: linear-gradient(135deg, rgba(45, 90, 39, 0.1), rgba(74, 124, 89, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(45, 90, 39, 0.1),
+    rgba(74, 124, 89, 0.2)
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -213,8 +221,13 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .floating-card {
@@ -258,8 +271,13 @@
 }
 
 @keyframes floatCard {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 /* Features Section */
