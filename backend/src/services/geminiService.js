@@ -270,7 +270,7 @@ async function generateMessage(prompt, conversationHistory = []) {
     return {
       success: true,
       message: text,
-      model: GEMINI_MODEL,
+      model: MODEL_FALLBACK_CHAIN[currentModelIndex],
       timestamp: new Date().toISOString()
     };
 
