@@ -1,6 +1,7 @@
 /**
  * CameraScreen - Teachable Machine Scanner
- * Real-time flower classification using TM floating point model
+ * Real-time classification using TM floating point model
+ * Supports: Flower and Leaf scanning modes
  * Features: Real-time scanning, Capture with Gemini AI analysis
  */
 
@@ -20,7 +21,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
-import { modelService } from '../../services/modelService';
+import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
@@ -45,6 +46,10 @@ export const CameraScreen = ({ navigation }) => {
   // Capture State
   const [isCapturing, setIsCapturing] = useState(false);
 
+  // Scan Mode State
+  const [scanMode, setScanMode] = useState(SCAN_MODES.FLOWER);
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false);
+
   const cameraRef = useRef(null);
   const scanIntervalRef = useRef(null);
   const isModelReadyRef = useRef(false); // Ref to avoid stale closure in scan loop
@@ -68,6 +73,46 @@ export const CameraScreen = ({ navigation }) => {
       setIsScanning(false);
     }
   }, []);
+
+  /**
+   * Handle scan mode switching between Flower and Leaf
+   */
+  const handleScanModeSwitch = useCallback(async (newMode) => {
+    if (newMode === scanMode || isSwitchingMode) return;
+
+    console.log(`🔄 Switching scan mode to: ${newMode}`);
+    setIsSwitchingMode(true);
+    stopScanning();
+    setPredictions([]);
+    setIsStable(false);
+
+    // Reset tracking refs
+    recentPredictions.current = [];
+    bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+    animatedBars.current = {};
+    animatedPositions.current = {};
+
+    try {
+      setIsModelReady(false);
+      isModelReadyRef.current = false;
+      setScanMode(newMode);
+
+      // Switch model
+      await modelService.setScanMode(newMode);
+      await modelService.warmUp();
+
+      setIsModelReady(true);
+      isModelReadyRef.current = true;
+      console.log(`✅ Switched to ${newMode} mode`);
+    } catch (error) {
+      console.error(`❌ Failed to switch to ${newMode} mode:`, error);
+      Alert.alert('Mode Switch Error', `Failed to switch to ${newMode} mode.`);
+      // Revert to previous mode
+      setScanMode(scanMode);
+    } finally {
+      setIsSwitchingMode(false);
+    }
+  }, [scanMode, isSwitchingMode, stopScanning]);
 
   /**
    * Start real-time scanning using recursive loop (smoother than setInterval)
@@ -234,15 +279,15 @@ export const CameraScreen = ({ navigation }) => {
       stopScanning();
 
       try {
-        console.log('🧪 Initializing TM model...');
-        await modelService.initialize();
+        console.log(`🧪 Initializing ${scanMode} model...`);
+        await modelService.setScanMode(scanMode);
         setIsModelReady(true);
         isModelReadyRef.current = true; // Sync ref for scan loop
-        console.log('✅ TM model ready');
+        console.log(`✅ ${scanMode} model ready`);
 
         // Warm up
         await modelService.warmUp();
-        console.log('🔥 TM model warmed up');
+        console.log(`🔥 ${scanMode} model warmed up`);
       } catch (error) {
         console.error('❌ TM model initialization failed:', error);
         Alert.alert(
@@ -411,6 +456,7 @@ export const CameraScreen = ({ navigation }) => {
           height: photo.height,
           isLoading: true,
           returnTo: 'CameraMain',
+          scanMode: scanMode, // Pass current scan mode
         });
       } catch (error) {
         console.error('❌ Capture failed:', error);
@@ -432,6 +478,7 @@ export const CameraScreen = ({ navigation }) => {
       height: imageHeight,
       isLoading: true,
       returnTo: 'CameraMain',
+      scanMode: scanMode, // Pass current scan mode
     });
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
@@ -505,10 +552,43 @@ export const CameraScreen = ({ navigation }) => {
         variant="scanner"
         onBackPress={() => navigation.goBack()}
         centerComponent={() => (
-          <View style={styles.headerBadge}>
-            <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
-              <Text style={styles.badgeText}>TM Model</Text>
-            </View>
+          <View style={styles.segmentedControl}>
+            <TouchableOpacity
+              style={[
+                styles.segmentButton,
+                scanMode === SCAN_MODES.FLOWER && styles.segmentButtonActive
+              ]}
+              onPress={() => handleScanModeSwitch(SCAN_MODES.FLOWER)}
+              disabled={isSwitchingMode}
+            >
+              <Ionicons
+                name="flower-outline"
+                size={16}
+                color={scanMode === SCAN_MODES.FLOWER ? '#FFFFFF' : 'rgba(255,255,255,0.6)'}
+              />
+              <Text style={[
+                styles.segmentText,
+                scanMode === SCAN_MODES.FLOWER && styles.segmentTextActive
+              ]}>Flower</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.segmentButton,
+                scanMode === SCAN_MODES.LEAF && styles.segmentButtonActive
+              ]}
+              onPress={() => handleScanModeSwitch(SCAN_MODES.LEAF)}
+              disabled={isSwitchingMode}
+            >
+              <Ionicons
+                name="leaf-outline"
+                size={16}
+                color={scanMode === SCAN_MODES.LEAF ? '#FFFFFF' : 'rgba(255,255,255,0.6)'}
+              />
+              <Text style={[
+                styles.segmentText,
+                scanMode === SCAN_MODES.LEAF && styles.segmentTextActive
+              ]}>Leaf</Text>
+            </TouchableOpacity>
           </View>
         )}
         rightComponent={() => (
@@ -615,19 +695,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
 
-  // Header badge and flip button
-  headerBadge: {
+  // Segmented Control for mode switching
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    padding: 3,
+  },
+  segmentButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  badge: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 17,
+    gap: 4,
   },
-  badgeText: {
-    color: '#FFF',
+  segmentButtonActive: {
+    backgroundColor: '#4CAF50',
+  },
+  segmentText: {
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  segmentTextActive: {
+    color: '#FFFFFF',
   },
   flipButton: {
     width: 44,

@@ -22,7 +22,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
-import { modelService } from '../../services/modelService';
+import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
 
@@ -556,7 +556,8 @@ const skeletonStyles = StyleSheet.create({
  */
 export const ResultsScreen = ({ route, navigation }) => {
   // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
-  const { imageUri, isLoading: initialLoading, width, height } = route.params;
+  const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params;
+  const isLeafMode = scanMode === SCAN_MODES.LEAF;
 
   // Loading and analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
@@ -740,15 +741,31 @@ export const ResultsScreen = ({ route, navigation }) => {
   // Helper functions
   const getVarietyFromLabel = (label) => {
     if (!label) return null;
+
+    // Leaf mode: extract variety from leaf labels
+    if (isLeafMode) {
+      if (label.includes('Ampalaya')) return 'Ampalaya';
+      if (label.includes('Patola')) return 'Patola';
+      if (label.includes('Upo')) return 'Upo';
+      if (label.includes('Kalabasa')) return 'Kalabasa';
+      if (label.includes('Pipino')) return 'Pipino';
+      return label.replace(' Leaves', ''); // Fallback: remove " Leaves" suffix
+    }
+
+    // Flower mode
     if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
     if (label.includes('Patola')) return 'Patola';
     if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label.includes('Cucumber')) return 'Cucumber';
     if (label === 'Not Flower') return null;
     return null;
   };
 
   const getGenderFromLabel = (label) => {
     if (!label) return 'unknown';
+    // Leaf mode: no gender
+    if (isLeafMode) return 'n/a';
+    // Flower mode
     if (label.includes('Male')) return 'male';
     if (label.includes('Female')) return 'female';
     return 'unknown';
@@ -850,8 +867,9 @@ export const ResultsScreen = ({ route, navigation }) => {
         isNotFlower: topTmPrediction.label === 'Not Flower',
         allPredictions: tmResult.predictions,
         source: 'tflite',
-        modelType: 'Teachable Machine',
+        modelType: isLeafMode ? 'Teachable Machine (Leaf)' : 'Teachable Machine (Flower)',
         processingTime: tmResult.processingTime,
+        scanMode: scanMode, // Track scan mode in prediction
       };
 
       // Show TM results immediately
@@ -867,9 +885,9 @@ export const ResultsScreen = ({ route, navigation }) => {
         useNativeDriver: true,
       }).start();
 
-      // Skip Gemini if not a flower
-      if (tmPred.isNotFlower) {
-        console.log('⏭️ Skipping Gemini - Not a flower detected');
+      // Skip Gemini if not a flower OR if in leaf mode (Gemini is flower-specific)
+      if (tmPred.isNotFlower || isLeafMode) {
+        console.log(`⏭️ Skipping Gemini - ${isLeafMode ? 'Leaf mode' : 'Not a flower detected'}`);
         return;
       }
 
