@@ -189,11 +189,14 @@ export const CameraScreen = ({ navigation }) => {
         const lastFive = recent.slice(-5);
         const stableNow = lastFive.length >= 5 && lastFive.every(p => p.label === currentLabel);
 
+        // Mode-aware rejection label check
+        const rejectionLabel = isLeafMode ? 'Not Leaf' : 'Not Flower';
+
         // Update UI stability indicator
-        setIsStable(stableNow && currentLabel !== 'Not Flower');
+        setIsStable(stableNow && currentLabel !== rejectionLabel);
 
         // Update best frame if:
-        if (stableNow && currentLabel !== 'Not Flower') {
+        if (stableNow && currentLabel !== rejectionLabel) {
           if (currentLabel === bestFrame.current.label) {
             // Same label - update if higher confidence
             if (currentConfidence > bestFrame.current.confidence) {
@@ -450,14 +453,17 @@ export const CameraScreen = ({ navigation }) => {
         });
 
         console.log('✅ Image captured:', photo.uri);
-        navigation.navigate('Prediction', {
-          imageUri: photo.uri,
-          width: photo.width,
-          height: photo.height,
-          isLoading: true,
-          returnTo: 'CameraMain',
-          scanMode: scanMode, // Pass current scan mode
-        });
+        navigation.navigate(
+          scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
+          {
+            imageUri: photo.uri,
+            width: photo.width,
+            height: photo.height,
+            isLoading: true,
+            returnTo: 'CameraMain',
+            scanMode: scanMode,
+          }
+        );
       } catch (error) {
         console.error('❌ Capture failed:', error);
         Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
@@ -472,14 +478,17 @@ export const CameraScreen = ({ navigation }) => {
 
     // Navigate IMMEDIATELY - no waiting!
     // Logic Preservation: Passing width and height to fix distortion
-    navigation.navigate('Prediction', {
-      imageUri: imageUri,
-      width: imageWidth,
-      height: imageHeight,
-      isLoading: true,
-      returnTo: 'CameraMain',
-      scanMode: scanMode, // Pass current scan mode
-    });
+    navigation.navigate(
+      scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
+      {
+        imageUri: imageUri,
+        width: imageWidth,
+        height: imageHeight,
+        isLoading: true,
+        returnTo: 'CameraMain',
+        scanMode: scanMode,
+      }
+    );
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
 

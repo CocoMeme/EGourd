@@ -491,10 +491,111 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
   }
 }
 
+/**
+ * Analyze leaf image for variety and health assessment
+ * @param {string} base64Image - Base64 encoded image string
+ * @param {Object} tmPrediction - Optional context from TFLite model
+ * @returns {Promise<Object>} Leaf analysis result
+ */
+async function analyzeLeaf(base64Image, tmPrediction = null) {
+  try {
+    // Memory optimization: Log before processing
+    logMemoryUsage('Before Gemini leaf analysis');
+
+    // Compress image before sending to Gemini
+    const compressedBase64 = await compressForGemini(base64Image);
+
+    // Prepare context string if prediction is available
+    let contextString = '';
+    if (tmPrediction) {
+      contextString = `
+CONTEXT FROM SPECIALIZED MODEL:
+This leaf was identified by a specialized local model as: "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence.
+Please verify this identification.
+`;
+    }
+
+    const prompt = `Analyze this gourd/vegetable leaf image. Identify the variety and assess the leaf health.
+${contextString}
+
+**Varieties:** Ampalaya (bitter gourd), Patola (sponge gourd), Upo (bottle gourd), Kalabasa (squash), Pipino (cucumber)
+
+**IDENTIFICATION TIPS:**
+- **AMPALAYA:** Deeply lobed leaves with pointed tips, 5-7 lobes, jagged edges
+- **PATOLA:** Large, rounded leaves with shallow lobes, rough texture
+- **UPO:** Heart-shaped or rounded leaves, soft texture, velvety underside
+- **KALABASA:** Large, rounded leaves with shallow lobes, hairy stems
+- **PIPINO:** Triangular leaves with pointed tips, rough texture, 3-5 lobes
+
+Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
+{
+  "variety": "ampalaya" | "patola" | "upo" | "kalabasa" | "pipino" | "not_leaf",
+  "confidence": 0.0-1.0,
+  "reasoning": "One sentence explanation citing key visual features",
+  "keyFeatures": ["feature1", "feature2"],
+  "leafHealth": {
+    "healthScore": 0-100,
+    "chlorophyllLevel": "healthy|yellowing|deficient",
+    "maturityStage": "young|mature|aging",
+    "visibleIssues": ["issue1"],
+    "nutrientDeficiencies": ["deficiency1"]
+  },
+  "observations": {
+    "strengths": ["strength1"],
+    "concerns": ["concern1"],
+    "recommendations": ["recommendation1"]
+  }
+}`;
+
+    // Use compressed image (already cleaned of data URI prefix)
+    const cleanBase64 = compressedBase64.replace(/^data:image\/\w+;base64,/, '');
+
+    const result = await executeWithRetry(async (activeModel) => {
+      return await activeModel.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: cleanBase64,
+          },
+        },
+      ]);
+    });
+
+    const response = await result.response;
+    const text = response.text();
+
+    // Parse JSON
+    let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
+
+    // Ensure we have a valid JSON object
+    const firstBrace = jsonStr.indexOf('{');
+    const lastBrace = jsonStr.lastIndexOf('}');
+
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+    }
+
+    const parsedResult = JSON.parse(jsonStr);
+
+    // Memory optimization: Cleanup and hint GC after heavy operation
+    logMemoryUsage('After Gemini leaf analysis');
+    forceGC();
+
+    return parsedResult;
+
+  } catch (error) {
+    console.error('Gemini Leaf Analysis Error:', error.message);
+    forceGC(); // Cleanup even on error
+    throw error;
+  }
+}
+
 module.exports = {
   generateMessage,
   getQuickSuggestions,
   isAvailable,
   generateHarvestPrediction,
-  analyzeImage
+  analyzeImage,
+  analyzeLeaf
 };

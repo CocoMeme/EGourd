@@ -5,6 +5,9 @@ const scanController = require('../controllers/scanController');
 // Route to analyze image (Gemini)
 router.post('/analyze', scanController.analyzeImage);
 
+// Route to analyze leaf image (Gemini)
+router.post('/analyze-leaf', scanController.analyzeLeaf);
+
 // Route to get harvest prediction
 router.post('/predict-harvest', scanController.getHarvestPrediction);
 

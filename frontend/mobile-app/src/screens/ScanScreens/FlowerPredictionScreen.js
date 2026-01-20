@@ -554,7 +554,7 @@ const skeletonStyles = StyleSheet.create({
 /**
  * Main Results Screen Component
  */
-export const ResultsScreen = ({ route, navigation }) => {
+export const FlowerPredictionScreen = ({ route, navigation }) => {
   // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
   const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params;
   const isLeafMode = scanMode === SCAN_MODES.LEAF;
@@ -1804,4 +1804,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ResultsScreen;
+export default FlowerPredictionScreen;

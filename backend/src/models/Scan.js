@@ -21,12 +21,26 @@ const scanSchema = new mongoose.Schema({
     required: true  // Main confidence score (0-100)
   },
 
+  // ===== SCAN TYPE =====
+  scanType: {
+    type: String,
+    enum: ['flower', 'leaf'],
+    default: 'flower',
+    description: 'Type of scan: flower or leaf'
+  },
+
   // ===== MULTI-CLASS SUPPORT =====
   variety: {
     type: String,
-    enum: ['Ampalaya Bilog', 'Patola', 'Upo (Smooth)', 'Cucumber', null],
+    enum: [
+      // Flower varieties
+      'Ampalaya Bilog', 'Patola', 'Upo (Smooth)', 'Cucumber',
+      // Leaf varieties
+      'Ampalaya', 'Patola', 'Upo', 'Kalabasa', 'Pipino',
+      null
+    ],
     default: null,
-    description: 'Gourd variety detected'
+    description: 'Gourd variety detected (flower or leaf)'
   },
 
   // ===== USER-EDITABLE NAME =====
@@ -119,6 +133,15 @@ const scanSchema = new mongoose.Schema({
       estimatedHarvestDate: String,
       rationale: String,
       recommendations: [String]
+    },
+
+    // Leaf-specific AI analysis data
+    leaf: {
+      healthScore: Number,
+      chlorophyllLevel: String,        // 'healthy', 'yellowing', 'deficient'
+      visibleIssues: [String],         // e.g., ['pest damage', 'disease spots']
+      maturityStage: String,           // 'young', 'mature', 'aging'
+      nutrientDeficiencies: [String],  // e.g., ['nitrogen', 'potassium']
     }
   },
 

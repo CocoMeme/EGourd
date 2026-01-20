@@ -440,7 +440,7 @@ const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult
 /**
  * Main Results Screen Component
  */
-export const ResultsScreen = ({ route, navigation }) => {
+export const FlowerResultsScreen = ({ route, navigation }) => {
   // Mode: View (loading existing scan)
   const { scan } = route.params;
 
@@ -1538,4 +1538,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ResultsScreen;
+export default FlowerResultsScreen;

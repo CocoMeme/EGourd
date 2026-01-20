@@ -40,7 +40,7 @@ class GeminiService {
       console.log('⚠️ Gemini validation is disabled in environment');
       return;
     }
-    
+
     // We consider it initialized if enabled
     this.isInitialized = true;
     console.log('✅ Gemini Service (Backend Proxy) ready');
@@ -84,7 +84,7 @@ class GeminiService {
         [{ resize: { width: 1024 } }],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       );
-      
+
       const base64Image = manipulatedImage.base64;
       console.log('📦 Image optimized. Length:', base64Image.length);
 
@@ -116,7 +116,7 @@ class GeminiService {
       }
 
       const geminiResult = await response.json();
-      
+
       console.log('📄 Gemini backend response received');
 
       // Validate response structure
@@ -132,6 +132,131 @@ class GeminiService {
       console.error('❌ Gemini analysis error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Analyze leaf image using Gemini AI via Backend
+   * @param {string} imageUri - Local image URI
+   * @param {Object} tmPrediction - Optional context from TFLite model
+   * @returns {Promise<Object>} Formatted leaf prediction
+   */
+  async analyzeLeaf(imageUri, tmPrediction = null) {
+    const startTime = Date.now();
+
+    try {
+      // Ensure initialized
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
+      if (!this.isAvailable()) {
+        throw new Error('Gemini service not available');
+      }
+
+      console.log('🍃 Gemini analyzing leaf via backend:', imageUri.slice(-30));
+
+      // Optimize image
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 1024 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      const base64Image = manipulatedImage.base64;
+
+      // Get auth token
+      const token = await authService.getToken();
+
+      // Setup timeout controller
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      // Call Backend API
+      const response = await fetch(`${API_BASE_URL}/scans/analyze-leaf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          image: base64Image,
+          tmPrediction: tmPrediction
+        })
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Backend leaf analysis failed: ${response.status} ${response.statusText}`);
+      }
+
+      const geminiResult = await response.json();
+
+      console.log('📄 Gemini leaf response received');
+
+      // Validate response structure
+      if (!geminiResult.variety || geminiResult.confidence === undefined) {
+        console.error('Invalid leaf response:', geminiResult);
+        throw new Error('Invalid response structure from Gemini Service');
+      }
+
+      // Format prediction for app usage
+      return this.formatLeafPrediction(geminiResult, Date.now() - startTime);
+
+    } catch (error) {
+      console.error('❌ Gemini leaf analysis error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Format Gemini leaf response
+   */
+  formatLeafPrediction(geminiResult, processingTime) {
+    const {
+      variety,
+      confidence,
+      reasoning,
+      keyFeatures,
+      leafHealth,
+      observations
+    } = geminiResult;
+
+    const isNotLeaf = variety === 'not_leaf';
+    const isLeaf = !isNotLeaf;
+
+    // Variety display mapping
+    const varietyMap = {
+      'ampalaya': 'Ampalaya',
+      'patola': 'Patola',
+      'upo': 'Upo',
+      'kalabasa': 'Kalabasa',
+      'pipino': 'Pipino'
+    };
+    const varietyDisplay = varietyMap[variety] || (isNotLeaf ? 'Not a Leaf' : variety);
+
+    const confidencePercent = Math.round(confidence * 100 * 10) / 10;
+
+    return {
+      predictedClass: isNotLeaf ? 'not_leaf' : `${variety}_leaf`,
+      variety: varietyDisplay,
+      isLeaf,
+      confidence: confidencePercent,
+      rawScore: confidence,
+      isNotLeaf,
+      message: isNotLeaf ? 'Not a gourd leaf' : `${varietyDisplay} leaf (${confidencePercent}%)`,
+      modelType: 'Gemini 2.5 Flash',
+      source: 'gemini',
+      processingTime,
+      timestamp: new Date().toISOString(),
+      geminiData: {
+        reasoning,
+        keyFeatures: keyFeatures || [],
+        leaf: isLeaf ? leafHealth : null,
+        observations: isLeaf ? observations : null
+      }
+    };
   }
 
   /**

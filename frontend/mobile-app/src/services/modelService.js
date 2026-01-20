@@ -31,13 +31,14 @@ const FLOWER_LABELS = [
   'Cucumber Male',             // 8
 ];
 
-// Leaf model labels (5 classes)
+// Leaf model labels (6 classes - includes rejection class)
 const LEAF_LABELS = [
   'Ampalaya Leaves',           // 0
   'Patola Leaves',             // 1
   'Upo Leaves',                // 2
   'Kalabasa Leaves',           // 3
   'Pipino Leaves',             // 4
+  'Not Leaf',                  // 5 - rejection class
 ];
 
 // Confidence Thresholds

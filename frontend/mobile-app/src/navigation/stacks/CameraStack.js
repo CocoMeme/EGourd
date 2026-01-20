@@ -2,8 +2,10 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import {
     CameraScreen,
-    ResultsScreen,
-    PredictionScreen
+    FlowerPredictionScreen,
+    LeafPredictionScreen,
+    FlowerResultsScreen,
+    LeafResultsScreen,
 } from '../../screens';
 
 const Stack = createStackNavigator();
@@ -25,13 +27,23 @@ export const CameraStack = () => {
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="Prediction"
-                component={PredictionScreen}
+                name="FlowerPrediction"
+                component={FlowerPredictionScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="Results"
-                component={ResultsScreen}
+                name="LeafPrediction"
+                component={LeafPredictionScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="FlowerResults"
+                component={FlowerResultsScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LeafResults"
+                component={LeafResultsScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

@@ -5,10 +5,14 @@ export { ChatbotScreen } from './HomeScreens/ChatbotScreen';
 export { default as HowToUseScreen } from './HomeScreens/HowToUseScreen';
 export { default as EducationalScreen } from './HomeScreens/EducationalScreen';
 
-// Scan Screens
+// Scan Screens - Flower
 export { CameraScreen } from './ScanScreens/CameraScreen';
-export { ResultsScreen } from './ScanScreens/ResultsScreen';
-export { ResultsScreen as PredictionScreen } from './ScanScreens/PredictionScreen';
+export { FlowerPredictionScreen } from './ScanScreens/FlowerPredictionScreen';
+export { FlowerResultsScreen } from './ScanScreens/FlowerResultsScreen';
+
+// Scan Screens - Leaf
+export { LeafPredictionScreen } from './ScanScreens/LeafPredictionScreen';
+export { LeafResultsScreen } from './ScanScreens/LeafResultsScreen';
 
 // Account Screens
 export { LoginScreen } from './AccountScreens/LoginScreen';
