@@ -39,12 +39,37 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
+const SunIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2"></path>
+    <path d="M12 20v2"></path>
+    <path d="m4.93 4.93 1.41 1.41"></path>
+    <path d="m17.66 17.66 1.41 1.41"></path>
+    <path d="M2 12h2"></path>
+    <path d="M20 12h2"></path>
+    <path d="m6.34 17.66-1.41 1.41"></path>
+    <path d="m19.07 4.93-1.41 1.41"></path>
+  </svg>
+);
+
 const UserHome = () => {
   const { user } = useUserAuth();
   const navigate = useNavigate();
   const [recentPosts, setRecentPosts] = useState([]);
   const [recentNews, setRecentNews] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Farming tips
+  const farmingTips = [
+    { icon: '💧', title: 'Morning Watering', tip: 'Water your gourds in the early morning to reduce evaporation and prevent fungal diseases.' },
+    { icon: '🌱', title: 'Soil Health', tip: 'Add organic compost to your soil regularly for better nutrient absorption and healthier plants.' },
+    { icon: '🐝', title: 'Pollination', tip: 'Encourage pollinators by planting flowers nearby to improve your gourd yield.' },
+    { icon: '✂️', title: 'Pruning', tip: 'Prune excess vines to direct energy to fruit production and improve air circulation.' },
+    { icon: '🌡️', title: 'Temperature', tip: 'Gourds thrive in temperatures between 65-85°F (18-29°C). Monitor your growing conditions.' },
+  ];
+
+  const [currentTip] = useState(farmingTips[Math.floor(Math.random() * farmingTips.length)]);
 
   useEffect(() => {
     fetchData();
@@ -73,9 +98,9 @@ const UserHome = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return { text: 'Good morning', icon: '🌅', period: 'morning' };
+    if (hour < 18) return { text: 'Good afternoon', icon: '☀️', period: 'afternoon' };
+    return { text: 'Good evening', icon: '🌙', period: 'evening' };
   };
 
   const formatDate = (date) => {
@@ -85,31 +110,95 @@ const UserHome = () => {
     });
   };
 
+  const greeting = getGreeting();
+
   return (
     <UserLayout>
       <div className="user-home-page">
-        {/* Welcome Section */}
-        <div className="welcome-section">
+        {/* Hero Welcome Section */}
+        <div className="welcome-hero">
+          <div className="welcome-bg-pattern"></div>
           <div className="welcome-content">
-            <h1>{getGreeting()}, {user?.firstName || 'Farmer'}! 👋</h1>
-            <p>Welcome back to eGourd. Here's what's happening in your community.</p>
+            <div className="welcome-left">
+              <span className="welcome-badge">
+                <span className="badge-icon">{greeting.icon}</span>
+                Dashboard
+              </span>
+              <h1>{greeting.text}, {user?.firstName || 'Farmer'}!</h1>
+              <p>Welcome back to your farming hub. Here's what's happening in your community today.</p>
+              <div className="welcome-stats">
+                <div className="mini-stat">
+                  <span className="mini-stat-icon">🌱</span>
+                  <div className="mini-stat-content">
+                    <span className="mini-stat-number">{recentPosts.length}</span>
+                    <span className="mini-stat-label">New Posts</span>
+                  </div>
+                </div>
+                <div className="mini-stat">
+                  <span className="mini-stat-icon">📰</span>
+                  <div className="mini-stat-content">
+                    <span className="mini-stat-number">{recentNews.length}</span>
+                    <span className="mini-stat-label">News Updates</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="welcome-illustration">
+              <div className="illustration-scene">
+                <span className="scene-sun">☀️</span>
+                <span className="scene-plant plant-1">🌱</span>
+                <span className="scene-plant plant-2">🥒</span>
+                <span className="scene-plant plant-3">🎃</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="quick-actions">
-          <Link to="/user/forum/create" className="action-card create">
-            <span className="action-icon">✍️</span>
-            <span className="action-text">Create Post</span>
-          </Link>
-          <Link to="/user/forum" className="action-card forum">
-            <span className="action-icon">💬</span>
-            <span className="action-text">Browse Forum</span>
-          </Link>
-          <Link to="/user/news" className="action-card news">
-            <span className="action-icon">📰</span>
-            <span className="action-text">Read News</span>
-          </Link>
+        <div className="quick-actions-section">
+          <h2 className="section-title">Quick Actions</h2>
+          <div className="quick-actions">
+            <Link to="/user/forum/create" className="action-card action-create">
+              <div className="action-icon-wrapper">
+                <span className="action-icon">✍️</span>
+              </div>
+              <div className="action-info">
+                <span className="action-title">Create Post</span>
+                <span className="action-desc">Share your thoughts</span>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+            <Link to="/user/forum" className="action-card action-forum">
+              <div className="action-icon-wrapper">
+                <span className="action-icon">💬</span>
+              </div>
+              <div className="action-info">
+                <span className="action-title">Browse Forum</span>
+                <span className="action-desc">Join discussions</span>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+            <Link to="/user/news" className="action-card action-news">
+              <div className="action-icon-wrapper">
+                <span className="action-icon">📰</span>
+              </div>
+              <div className="action-info">
+                <span className="action-title">Read News</span>
+                <span className="action-desc">Stay informed</span>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+            <Link to="/user/learn" className="action-card action-learn">
+              <div className="action-icon-wrapper">
+                <span className="action-icon">📚</span>
+              </div>
+              <div className="action-info">
+                <span className="action-title">Learn</span>
+                <span className="action-desc">Farming guides</span>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+          </div>
         </div>
 
         {/* Content Grid */}
@@ -118,10 +207,15 @@ const UserHome = () => {
           <div className="content-section">
             <div className="section-header">
               <div className="header-left">
-                <ForumIcon />
-                <h2>Recent Discussions</h2>
+                <div className="header-icon">
+                  <ForumIcon />
+                </div>
+                <div className="header-text">
+                  <h2>Community Discussions</h2>
+                  <p>Latest from fellow farmers</p>
+                </div>
               </div>
-              <Link to="/user/forum" className="view-all">
+              <Link to="/user/forum" className="view-all-btn">
                 View all <ChevronRightIcon />
               </Link>
             </div>
@@ -140,25 +234,34 @@ const UserHome = () => {
                     className="post-card"
                     onClick={() => navigate(`/user/forum/post/${post._id}`)}
                   >
-                    <div className="post-category">{post.category}</div>
-                    <h3>{post.title}</h3>
-                    <p>{post.content?.substring(0, 80)}...</p>
-                    <div className="post-meta">
-                      <span className="author">
-                        {post.author?.firstName || 'Anonymous'}
-                      </span>
-                      <div className="stats">
-                        <span><HeartIcon /> {post.likes?.length || 0}</span>
-                        <span><MessageIcon /> {post.comments?.length || 0}</span>
+                    <div className="post-header">
+                      <div className="post-avatar">
+                        {post.author?.firstName?.[0] || 'U'}
                       </div>
+                      <div className="post-author-info">
+                        <span className="post-author-name">{post.author?.firstName || 'Anonymous'}</span>
+                        <span className="post-time">{formatDate(post.createdAt)}</span>
+                      </div>
+                      <span className="post-category">{post.category}</span>
+                    </div>
+                    <h3 className="post-title">{post.title}</h3>
+                    <p className="post-excerpt">{post.content?.substring(0, 100)}...</p>
+                    <div className="post-footer">
+                      <div className="post-stats">
+                        <span className="stat-item"><HeartIcon /> {post.likes?.length || 0}</span>
+                        <span className="stat-item"><MessageIcon /> {post.comments?.length || 0}</span>
+                      </div>
+                      <span className="read-more">Read more →</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <p>No discussions yet. Be the first to start one!</p>
-                <Link to="/user/forum/create" className="btn-link">Create a post</Link>
+                <div className="empty-icon">💬</div>
+                <h3>No discussions yet</h3>
+                <p>Be the first to start a conversation!</p>
+                <Link to="/user/forum/create" className="empty-cta">Create a post</Link>
               </div>
             )}
           </div>
@@ -167,10 +270,15 @@ const UserHome = () => {
           <div className="content-section">
             <div className="section-header">
               <div className="header-left">
-                <NewsIcon />
-                <h2>Latest News</h2>
+                <div className="header-icon news-icon">
+                  <NewsIcon />
+                </div>
+                <div className="header-text">
+                  <h2>Latest News</h2>
+                  <p>Updates & announcements</p>
+                </div>
               </div>
-              <Link to="/user/news" className="view-all">
+              <Link to="/user/news" className="view-all-btn">
                 View all <ChevronRightIcon />
               </Link>
             </div>
@@ -189,30 +297,64 @@ const UserHome = () => {
                     className="news-card"
                     onClick={() => navigate(`/user/news/${item._id}`)}
                   >
+                    <div className="news-image">
+                      {item.category === 'Tips' && '💡'}
+                      {item.category === 'Update' && '📢'}
+                      {item.category === 'Event' && '🎉'}
+                      {!['Tips', 'Update', 'Event'].includes(item.category) && '📰'}
+                    </div>
                     <div className="news-content">
                       <span className="news-category">{item.category || 'News'}</span>
                       <h3>{item.title}</h3>
-                      <span className="news-date">{formatDate(item.createdAt)}</span>
+                      <div className="news-meta">
+                        <span className="news-date">{formatDate(item.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <p>No news available at the moment.</p>
+                <div className="empty-icon">📰</div>
+                <h3>No news yet</h3>
+                <p>Check back soon for updates!</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Tips Section */}
-        <div className="tips-section">
+        {/* Farming Tip Section */}
+        <div className="tip-section">
           <div className="tip-card">
-            <span className="tip-icon">💡</span>
-            <div className="tip-content">
-              <h3>Farming Tip of the Day</h3>
-              <p>Water your gourds in the early morning to reduce evaporation and prevent fungal diseases. Consistent watering promotes steady growth!</p>
+            <div className="tip-header">
+              <span className="tip-badge">💡 Tip of the Day</span>
             </div>
+            <div className="tip-body">
+              <span className="tip-icon">{currentTip.icon}</span>
+              <div className="tip-content">
+                <h3>{currentTip.title}</h3>
+                <p>{currentTip.tip}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Farm Services Banner */}
+        <div className="services-banner">
+          <div className="banner-content">
+            <div className="banner-text">
+              <h3>Grow Smarter with GourdVision</h3>
+              <p>Access AI-powered tools, connect with experts, and optimize your harvest.</p>
+            </div>
+            <Link to="/user/learn" className="banner-cta">
+              Explore Features
+              <ChevronRightIcon />
+            </Link>
+          </div>
+          <div className="banner-decoration">
+            <span className="deco-item">🌱</span>
+            <span className="deco-item">🥒</span>
+            <span className="deco-item">🎃</span>
           </div>
         </div>
       </div>

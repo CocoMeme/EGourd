@@ -4,7 +4,6 @@ import { verificationService } from '../../services/userApi';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import { toast } from 'react-toastify';
 import './UserAuth.css';
-import './VerifyEmail.css';
 
 const VerifyEmail = () => {
   const navigate = useNavigate();

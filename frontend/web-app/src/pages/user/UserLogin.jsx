@@ -70,7 +70,7 @@ const UserLogin = () => {
             <div className="logo-icon">🥒</div>
           </div>
           <h1>Welcome Back</h1>
-          <p>Sign in to your eGourd account</p>
+          <p>Sign in to your GourdVision account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="user-auth-form">

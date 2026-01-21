@@ -89,7 +89,7 @@ const UserLayout = ({ children }) => {
           {/* Logo */}
           <Link to="/user/home" className="header-logo">
             <span className="logo-icon">🌱</span>
-            <span className="logo-text">eGourd</span>
+            <span className="logo-text">GourdVision</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -182,7 +182,7 @@ const UserLayout = ({ children }) => {
       {/* Footer */}
       <footer className="user-footer">
         <div className="footer-container">
-          <p>&copy; {new Date().getFullYear()} eGourd. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} GourdVision. All rights reserved.</p>
         </div>
       </footer>
     </div>

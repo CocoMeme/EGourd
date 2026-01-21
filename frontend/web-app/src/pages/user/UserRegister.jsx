@@ -102,7 +102,7 @@ const UserRegister = () => {
             <div className="logo-icon">🥒</div>
           </div>
           <h1>Create Account</h1>
-          <p>Join the eGourd community today</p>
+          <p>Join the GourdVision community today</p>
         </div>
 
         <form onSubmit={handleSubmit} className="user-auth-form">

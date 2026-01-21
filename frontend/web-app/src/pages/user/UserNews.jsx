@@ -107,7 +107,7 @@ const UserNews = () => {
         <div className="news-header">
           <div className="header-content">
             <h1>📰 News & Updates</h1>
-            <p>Stay informed with the latest eGourd announcements and tips</p>
+            <p>Stay informed with the latest GourdVision announcements and tips</p>
           </div>
         </div>
 
