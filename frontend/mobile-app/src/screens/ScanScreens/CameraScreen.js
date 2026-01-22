@@ -190,7 +190,7 @@ export const CameraScreen = ({ navigation }) => {
         const stableNow = lastFive.length >= 5 && lastFive.every(p => p.label === currentLabel);
 
         // Mode-aware rejection label check
-        const rejectionLabel = isLeafMode ? 'Not Leaf' : 'Not Flower';
+        const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
 
         // Update UI stability indicator
         setIsStable(stableNow && currentLabel !== rejectionLabel);
@@ -273,7 +273,7 @@ export const CameraScreen = ({ navigation }) => {
 
     // Start the loop
     scanLoop();
-  }, [isPaused]);
+  }, [isPaused, scanMode]);
 
   // Initialize model
   useEffect(() => {
