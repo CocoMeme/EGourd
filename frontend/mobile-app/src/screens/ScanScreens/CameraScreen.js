@@ -36,6 +36,9 @@ export const CameraScreen = ({ navigation }) => {
   // Model State
   const [isModelReady, setIsModelReady] = useState(false);
 
+  // Camera State
+  const [isCameraReady, setIsCameraReady] = useState(false);
+
   // Scanning State
   const [isScanning, setIsScanning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -53,6 +56,7 @@ export const CameraScreen = ({ navigation }) => {
   const cameraRef = useRef(null);
   const scanIntervalRef = useRef(null);
   const isModelReadyRef = useRef(false); // Ref to avoid stale closure in scan loop
+  const isCameraReadyRef = useRef(false); // Ref to track camera readiness in scan loop
 
   // LOGIC PRESERVATION: Store dimensions to fix distortion
   const lastFrameUri = useRef({ uri: null, width: 0, height: 0 });
@@ -104,6 +108,12 @@ export const CameraScreen = ({ navigation }) => {
       setIsModelReady(true);
       isModelReadyRef.current = true;
       console.log(`✅ Switched to ${newMode} mode`);
+
+      // Start scanning immediately if camera is ready
+      if (isCameraReadyRef.current && !scanIntervalRef.current) {
+        console.log('🚀 Starting scanning after mode switch');
+        startScanning();
+      }
     } catch (error) {
       console.error(`❌ Failed to switch to ${newMode} mode:`, error);
       Alert.alert('Mode Switch Error', `Failed to switch to ${newMode} mode.`);
@@ -112,7 +122,7 @@ export const CameraScreen = ({ navigation }) => {
     } finally {
       setIsSwitchingMode(false);
     }
-  }, [scanMode, isSwitchingMode, stopScanning]);
+  }, [scanMode, isSwitchingMode, stopScanning, startScanning]);
 
   /**
    * Start real-time scanning using recursive loop (smoother than setInterval)
@@ -132,7 +142,7 @@ export const CameraScreen = ({ navigation }) => {
       if (!scanIntervalRef.current) return;
 
       // Skip if camera not ready or paused (use ref to avoid stale closure)
-      if (!cameraRef.current || !isModelReadyRef.current || isPaused) {
+      if (!cameraRef.current || !isModelReadyRef.current || !isCameraReadyRef.current || isPaused) {
         // Schedule next iteration after delay
         setTimeout(scanLoop, SCAN_INTERVAL);
         return;
@@ -333,13 +343,17 @@ export const CameraScreen = ({ navigation }) => {
       recentPredictions.current = [];
       lastFrameUri.current = { uri: null, width: 0, height: 0 };
 
-      // Restart scanning if model is ready (use ref to avoid stale closure)
-      if (isModelReadyRef.current && !scanIntervalRef.current) {
-        console.log('📱 Model ready on focus, starting scan immediately');
-        startScanning();
-      }
+      // Small delay to allow camera to reinitialize after returning from another screen
+      const startDelay = setTimeout(() => {
+        // Restart scanning if model and camera are ready
+        if (isModelReadyRef.current && isCameraReadyRef.current && !scanIntervalRef.current) {
+          console.log('📱 Model and camera ready on focus, starting scan');
+          startScanning();
+        }
+      }, 300);
 
       return () => {
+        clearTimeout(startDelay);
         // IMPORTANT: Stop scanning when screen loses focus
         console.log('📱 CameraScreen unfocused - stopping scanning');
         stopScanning();
@@ -359,13 +373,13 @@ export const CameraScreen = ({ navigation }) => {
     }, [startScanning, stopScanning, navigation])
   );
 
-  // Start scanning when model becomes ready (handles first load case)
+  // Start scanning when both model and camera become ready
   useEffect(() => {
-    if (isModelReady && !scanIntervalRef.current && !isPaused && !isCapturing) {
-      console.log('🚀 Model just became ready, starting scanning...');
+    if (isModelReady && isCameraReady && !scanIntervalRef.current && !isPaused && !isCapturing) {
+      console.log('🚀 Model and camera ready, starting scanning...');
       startScanning();
     }
-  }, [isModelReady, isPaused, isCapturing, startScanning]);
+  }, [isModelReady, isCameraReady, isPaused, isCapturing, startScanning]);
 
   /**
    * Helper: Extract variety from TM label
@@ -516,6 +530,13 @@ export const CameraScreen = ({ navigation }) => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
+  // Handle camera ready callback
+  const handleCameraReady = useCallback(() => {
+    console.log('📷 Camera is ready');
+    setIsCameraReady(true);
+    isCameraReadyRef.current = true;
+  }, []);
+
   // Get color for confidence level
   const getConfidenceColor = (percentage, isUncertain) => {
     if (isUncertain) return '#9E9E9E'; // Gray for uncertain
@@ -616,6 +637,7 @@ export const CameraScreen = ({ navigation }) => {
           facing={facing}
           ref={cameraRef}
           animateShutter={false}
+          onCameraReady={handleCameraReady}
         />
       </View>
 
