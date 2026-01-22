@@ -421,8 +421,10 @@ export const CameraScreen = ({ navigation }) => {
     }
     // Logic Preservation: 2. Try Best Recent Frame (Intelligent Capture)
     else {
+      // Mode-aware rejection label
+      const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
       const bestRecent = recentPredictions.current
-        .filter(p => p.label !== 'Not Flower')
+        .filter(p => p.label !== rejectionLabel)
         .sort((a, b) => b.confidence - a.confidence)[0];
 
       if (bestRecent && bestRecent.confidence > 60) {

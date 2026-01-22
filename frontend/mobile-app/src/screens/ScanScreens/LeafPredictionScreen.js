@@ -278,6 +278,13 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             setIsTmComplete(true);
             setIsAnalyzing(false);
 
+            // Fade in TM results
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+
             // Step 2: Gemini AI Analysis
             if (geminiService.isAvailable() && tmPred && !tmPred.isNotLeaf) {
                 setIsGeminiLoading(true);
