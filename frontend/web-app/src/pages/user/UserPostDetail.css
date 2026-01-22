@@ -1,5 +1,5 @@
 /* ======================================
-   Post Detail Page - Dark Green Theme
+   Post Detail Page - Light & Accessible Theme
    ====================================== */
 
 .post-detail-page {
@@ -52,7 +52,7 @@
   padding: 6px 14px;
   background: var(--gradient-accent);
   border-radius: var(--radius-full);
-  color: var(--color-primary-dark);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -63,7 +63,7 @@
 .post-title {
   font-size: 28px;
   font-weight: 700;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
   line-height: 1.3;
   margin-bottom: 20px;
 }
@@ -90,7 +90,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--color-primary-dark);
+  color: #ffffff;
   font-size: 16px;
 }
 
@@ -109,7 +109,7 @@
 
 .author-name {
   font-weight: 600;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
 }
 
 .post-date {
@@ -172,7 +172,7 @@
 .action-btn.active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-primary-dark);
+  color: #ffffff;
 }
 
 .action-btn svg {
@@ -195,7 +195,7 @@
 .comments-header h3 {
   font-size: 20px;
   font-weight: 600;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
 }
 
 .comments-count {
@@ -220,14 +220,14 @@
   border-radius: var(--radius);
   padding: 14px;
   font-size: 15px;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
   resize: vertical;
   transition: var(--transition-smooth);
 }
 
 .comment-form textarea:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 4px rgba(197, 248, 42, 0.1);
+  box-shadow: 0 0 0 4px rgba(64, 145, 108, 0.1);
   outline: none;
 }
 
@@ -242,7 +242,7 @@
   background: var(--gradient-accent);
   border: none;
   border-radius: var(--radius-full);
-  color: var(--color-primary-dark);
+  color: #ffffff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -251,7 +251,7 @@
 
 .comment-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(197, 248, 42, 0.3);
+  box-shadow: 0 4px 15px rgba(64, 145, 108, 0.3);
 }
 
 .comment-submit-btn:disabled {
@@ -275,7 +275,7 @@
 }
 
 .comment-item:hover {
-  border-color: rgba(197, 248, 42, 0.3);
+  border-color: rgba(64, 145, 108, 0.3);
 }
 
 .comment-author {
@@ -294,7 +294,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--color-primary-dark);
+  color: #ffffff;
   font-size: 14px;
 }
 
@@ -306,7 +306,7 @@
 
 .comment-author-name {
   font-weight: 600;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
   font-size: 14px;
 }
 

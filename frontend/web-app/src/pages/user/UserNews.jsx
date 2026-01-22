@@ -103,12 +103,16 @@ const UserNews = () => {
   return (
     <UserLayout>
       <div className="user-news-page">
-        {/* Header */}
-        <div className="news-header">
-          <div className="header-content">
-            <h1>📰 News & Updates</h1>
-            <p>Stay informed with the latest GourdVision announcements and tips</p>
+        {/* Welcome Card Header - Like Learn Page */}
+        <div className="welcome-card">
+          <div className="welcome-icon">
+            <NewspaperIcon />
           </div>
+          <h1>News & Updates</h1>
+          <p>
+            Stay informed with the latest GourdVision announcements, farming tips, 
+            community updates, and agricultural news.
+          </p>
         </div>
 
         {/* Search and Filters */}

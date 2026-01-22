@@ -54,6 +54,38 @@ export const UserAuthProvider = ({ children }) => {
     }
   };
 
+  // Username-based login (no email verification required)
+  const loginWithUsername = async (username, password) => {
+    try {
+      const response = await userAuthService.loginWithUsername(username, password);
+      
+      if (response.success) {
+        setUser(response.user);
+        return { success: true, user: response.user };
+      }
+      
+      return { success: false, message: response.message || 'Login failed' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Login failed' };
+    }
+  };
+
+  // Username-based registration (no email verification required)
+  const registerWithUsername = async (userData) => {
+    try {
+      const response = await userAuthService.registerWithUsername(userData);
+      
+      if (response.success) {
+        setUser(response.user);
+        return { success: true, user: response.user };
+      }
+      
+      return { success: false, message: response.message || 'Registration failed' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Registration failed' };
+    }
+  };
+
   const logout = () => {
     userAuthService.logout();
     setUser(null);
@@ -68,6 +100,8 @@ export const UserAuthProvider = ({ children }) => {
     user,
     login,
     register,
+    loginWithUsername,
+    registerWithUsername,
     logout,
     updateUser,
     isAuthenticated: !!user,

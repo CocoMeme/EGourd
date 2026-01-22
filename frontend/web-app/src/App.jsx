@@ -21,6 +21,7 @@ import UserRegister from './pages/user/UserRegister';
 import VerifyEmail from './pages/user/VerifyEmail';
 import LandingPage from './pages/user/LandingPage';
 import UserHome from './pages/user/UserHome';
+import UserDashboard from './pages/user/UserDashboard';
 import UserForum from './pages/user/UserForum';
 import UserPostDetail from './pages/user/UserPostDetail';
 import UserCreatePost from './pages/user/UserCreatePost';
@@ -98,6 +99,16 @@ function App() {
               element={
                 <UserProtectedRoute>
                   <UserHome />
+                </UserProtectedRoute>
+              }
+            />
+
+            {/* User Dashboard - Protected (logged in AND verified users) */}
+            <Route
+              path="/user/dashboard"
+              element={
+                <UserProtectedRoute>
+                  <UserDashboard />
                 </UserProtectedRoute>
               }
             />

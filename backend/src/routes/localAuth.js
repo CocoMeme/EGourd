@@ -2,6 +2,8 @@ const express = require('express');
 const {
   register,
   login,
+  registerWithUsername,
+  loginWithUsername,
   getCurrentUser,
   updateProfile,
   changePassword,
@@ -152,5 +154,84 @@ router.put(
  * @access  Private
  */
 router.delete('/account', authenticateToken, deleteAccount);
+
+/**
+ * @route   POST /auth/local/register-username
+ * @desc    Register a new user with username and password (no email verification required)
+ * @access  Public
+ */
+router.post(
+  '/register-username',
+  [
+    (req, res, next) => {
+      const { username, password, firstName, lastName } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username and password are required',
+        });
+      }
+
+      if (!firstName || !lastName) {
+        return res.status(400).json({
+          success: false,
+          message: 'First name and last name are required',
+        });
+      }
+
+      // Username validation
+      if (username.length < 3 || username.length > 30) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be between 3 and 30 characters',
+        });
+      }
+
+      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(username)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username can only contain letters, numbers, and underscores',
+        });
+      }
+
+      // Password validation
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password must be at least 6 characters long',
+        });
+      }
+
+      next();
+    }
+  ],
+  registerWithUsername
+);
+
+/**
+ * @route   POST /auth/local/login-username
+ * @desc    Login user with username and password
+ * @access  Public
+ */
+router.post(
+  '/login-username',
+  [
+    (req, res, next) => {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username and password are required',
+        });
+      }
+
+      next();
+    }
+  ],
+  loginWithUsername
+);
 
 module.exports = router;

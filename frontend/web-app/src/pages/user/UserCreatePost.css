@@ -1,5 +1,5 @@
 /* ======================================
-   Create Post Page - Dark Green Theme
+   Create Post Page - Light & Accessible Theme
    ====================================== */
 
 .create-post-page {
@@ -39,7 +39,7 @@
 .create-post-header h1 {
   font-size: 26px;
   font-weight: 700;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
 }
 
 /* Form */
@@ -58,7 +58,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
   margin-bottom: 10px;
 }
 
@@ -71,7 +71,7 @@
   border-radius: var(--radius);
   padding: 14px 18px;
   font-size: 15px;
-  color: var(--color-text-light);
+  color: var(--color-text-dark);
   transition: var(--transition-smooth);
 }
 
@@ -79,7 +79,7 @@
 .form-section textarea:focus,
 .form-section select:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 4px rgba(197, 248, 42, 0.1);
+  box-shadow: 0 0 0 4px rgba(64, 145, 108, 0.1);
   outline: none;
 }
 
@@ -98,8 +98,8 @@
 }
 
 .form-section select option {
-  background: var(--color-primary);
-  color: var(--color-text-light);
+  background: var(--color-surface);
+  color: var(--color-text-dark);
 }
 
 /* Image Upload */
@@ -114,7 +114,7 @@
 
 .image-upload-section:hover {
   border-color: var(--color-accent);
-  background: rgba(197, 248, 42, 0.03);
+  background: rgba(64, 145, 108, 0.03);
 }
 
 .upload-icon {
@@ -200,17 +200,17 @@
   background: var(--gradient-accent);
   border: none;
   border-radius: var(--radius-full);
-  color: var(--color-primary-dark);
+  color: #ffffff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: 0 4px 15px rgba(197, 248, 42, 0.3);
+  box-shadow: 0 4px 15px rgba(64, 145, 108, 0.3);
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(197, 248, 42, 0.4);
+  box-shadow: 0 6px 25px rgba(64, 145, 108, 0.4);
 }
 
 .submit-btn:disabled {

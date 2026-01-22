@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { verificationService } from '../../services/userApi';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import { toast } from 'react-toastify';
+import logoTransparent from '../../assets/gourdvision-name-high-resolution-logo-transparent.png';
 import './UserAuth.css';
 
 const VerifyEmail = () => {
@@ -134,12 +135,12 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="user-auth-container">
-      <div className="user-auth-card verify-card">
-        <div className="user-auth-header">
-          <div className="logo">
-            <div className="logo-icon">📧</div>
-          </div>
+    <div className="auth-page">
+      <div className="auth-card verify-card">
+        <div className="auth-header">
+          <a href="/" className="auth-logo">
+            <img src={logoTransparent} alt="GourdVision" className="logo-img" />
+          </a>
           <h1>Verify Your Email</h1>
           <p>We sent a 6-digit code to</p>
           <p className="email-display">{email}</p>
@@ -165,7 +166,7 @@ const VerifyEmail = () => {
           </div>
 
           <button
-            className="verify-btn"
+            className="auth-submit"
             onClick={() => handleVerify()}
             disabled={loading || pin.join('').length !== 6}
           >

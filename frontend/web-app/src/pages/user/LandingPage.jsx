@@ -3,12 +3,59 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import './LandingPage.css';
 
+// Import logo
+import logoTransparent from '../../assets/gourdvision-name-high-resolution-logo-transparent.png';
+import logoIcon from '../../assets/gourdvision-high-resolution-logo-green.png';
+
+// Import Muntinlupa farm images for hero carousel
+import heroImg1 from '../../assets/images/muntinlupa/IMG_20251201_103711.jpg';
+import heroImg2 from '../../assets/images/muntinlupa/20260113_100915.jpg';
+import heroImg3 from '../../assets/images/muntinlupa/20260113_100951.jpg';
+import heroImg4 from '../../assets/images/muntinlupa/20260113_101232.jpg';
+import heroImg5 from '../../assets/images/muntinlupa/20260113_102142.jpg';
+import heroImg6 from '../../assets/images/muntinlupa/IMG_8444.jpg';
+import heroImg7 from '../../assets/images/muntinlupa/IMG_8946.jpg';
+import heroImg8 from '../../assets/images/muntinlupa/IMG_8982.jpg';
+import heroImg9 from '../../assets/images/muntinlupa/IMG_8997.jpg';
+
+// Hero carousel images array
+const heroCarouselImages = [
+  { id: 1, src: heroImg1, alt: 'Muntinlupa Farm' },
+  { id: 2, src: heroImg2, alt: 'Muntinlupa Farm' },
+  { id: 3, src: heroImg3, alt: 'Muntinlupa Farm' },
+  { id: 4, src: heroImg4, alt: 'Muntinlupa Farm' },
+  { id: 5, src: heroImg5, alt: 'Muntinlupa Farm' },
+  { id: 6, src: heroImg6, alt: 'Muntinlupa Farm' },
+  { id: 7, src: heroImg7, alt: 'Muntinlupa Farm' },
+  { id: 8, src: heroImg8, alt: 'Muntinlupa Farm' },
+  { id: 9, src: heroImg9, alt: 'Muntinlupa Farm' },
+];
+
 const LandingPage = () => {
   const { isAuthenticated, isEmailVerified, user } = useUserAuth();
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+
+  // Auto-advance hero carousel
+  useEffect(() => {
+    if (heroCarouselImages.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentHeroSlide((prev) => (prev + 1) % heroCarouselImages.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  const nextHeroSlide = () => {
+    setCurrentHeroSlide((prev) => (prev + 1) % heroCarouselImages.length);
+  };
+
+  const prevHeroSlide = () => {
+    setCurrentHeroSlide((prev) => (prev - 1 + heroCarouselImages.length) % heroCarouselImages.length);
+  };
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -19,7 +66,7 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Redirect logged-in users appropriately
+  // Redirect logged-in users to user home (not landing page anymore)
   useEffect(() => {
     if (isAuthenticated) {
       if (isEmailVerified) {
@@ -30,19 +77,11 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, isEmailVerified, user, navigate]);
 
-  // Statistics data
-  const stats = [
-    { value: '100%', label: 'Customer Satisfaction', icon: '✓' },
-    { value: '20+', label: 'Partner Farms', icon: '🌾' },
-    { value: '5K+', label: 'Active Farmers', icon: '👨‍🌾' },
-    { value: '98%', label: 'Prediction Accuracy', icon: '📊' },
-  ];
 
   // Features data
   const features = [
     { icon: '🔬', title: 'AI Analysis', desc: 'Smart crop analysis' },
     { icon: '📈', title: 'Yield Prediction', desc: 'Accurate forecasts' },
-    { icon: '🌡️', title: 'Weather Sync', desc: 'Real-time updates' },
     { icon: '💡', title: 'Smart Tips', desc: 'Expert guidance' },
     { icon: '🤝', title: 'Community', desc: 'Farmer network' },
     { icon: '📱', title: 'Mobile App', desc: 'Farm on the go' },
@@ -55,7 +94,48 @@ const LandingPage = () => {
     { id: 3, title: 'Ampalaya Vines', category: 'Crops' },
     { id: 4, title: 'Organic Farming', category: 'Methods' },
     { id: 5, title: 'Farm Workers', category: 'Community' },
-    { id: 6, title: 'Fresh Produce', category: 'Products' },
+  ];
+
+  // Muntinlupa City Farms data
+  // To add your own images, place them in: src/assets/images/muntinlupa/
+  // Then import them at the top and add them to the image property
+  const muntinlupaFarms = [
+    { 
+      id: 1, 
+      name: 'Tunasan Community Farm',
+      location: 'Barangay Tunasan',
+      description: 'A thriving community farm specializing in gourd cultivation with over 2 hectares of productive land.',
+      image: null, // Replace with: muntinlupaFarm1 after importing
+      placeholder: '🌾',
+      crops: ['Ampalaya', 'Upo', 'Patola']
+    },
+    { 
+      id: 2, 
+      name: 'Poblacion Urban Garden',
+      location: 'Barangay Poblacion',
+      description: 'Urban farming initiative bringing fresh gourds to the heart of Muntinlupa City.',
+      image: null, // Replace with: muntinlupaFarm2 after importing
+      placeholder: '🥬',
+      crops: ['Kalabasa', 'Sayote']
+    },
+    { 
+      id: 3, 
+      name: 'Sucat Agricultural Center',
+      location: 'Barangay Sucat',
+      description: 'Modern agricultural facility combining traditional methods with smart farming technology.',
+      image: null, // Replace with: muntinlupaFarm3 after importing
+      placeholder: '👨‍🌾',
+      crops: ['Ampalaya', 'Kalabasa', 'Upo']
+    },
+    { 
+      id: 4, 
+      name: 'Alabang Hills Farm',
+      location: 'Barangay Alabang',
+      description: 'Premium organic gourd farm serving local markets and restaurants.',
+      image: null, // Replace with: muntinlupaFarm4 after importing
+      placeholder: '🌱',
+      crops: ['Patola', 'Upo', 'Sayote']
+    },
   ];
 
   // FAQ data
@@ -92,8 +172,7 @@ const LandingPage = () => {
       <header className={`landing-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="header-container">
           <Link to="/" className="logo">
-            <span className="logo-icon">🌱</span>
-            <span className="logo-text">GourdVision</span>
+            <img src={logoTransparent} alt="GourdVision" className="logo-img" />
           </Link>
           
           <nav className={`header-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -106,7 +185,7 @@ const LandingPage = () => {
 
           <div className="header-actions">
             <Link to="/user/login" className="btn-login">Sign In</Link>
-            <Link to="/user/register" className="btn-contact">Get Started</Link>
+            <Link to="/user/register" className="btn-get-started">Get Started</Link>
           </div>
 
           <button 
@@ -123,58 +202,110 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section id="home" className="hero-section">
         <div className="hero-background">
+          <div className="hero-image-bg"></div>
           <div className="hero-overlay"></div>
-          <div className="hero-pattern"></div>
         </div>
         
         <div className="hero-content">
           <div className="hero-text">
+            <div className="hero-badge">
+              <span className="badge-dot"></span>
+              <span>Part of future Agriculture</span>
+            </div>
             <h1>
-              Grow the Future with
-              <span className="highlight"> Smart Gourd</span>
-              <span className="highlight"> Farming</span>
+              Smart Gourd Farming
+              <span className="highlight"> with AI Technology</span>
             </h1>
             <p className="hero-description">
-              Harness the power of AI technology to optimize your gourd farming operations. 
-              From seed to harvest, we provide intelligent insights for sustainable agriculture.
+              Elevate your agricultural operations to new heights with our AI-powered gourd farming platform. 
+              Get real-time insights, yield predictions, and expert guidance for sustainable farming.
             </p>
             <div className="hero-buttons">
               <Link to="/user/register" className="btn-primary">
-                <span>Explore Our Platform</span>
+                <span>Explore Platform</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </Link>
-              <a href="#about" className="btn-secondary">
+              <a href="#about" className="btn-outline-light">
                 <span>Learn More</span>
               </a>
+            </div>
+
+            {/* Weather Widget */}
+            <div className="weather-widget">
+              <div className="weather-icon">☀️</div>
+              <div className="weather-info">
+                <span className="weather-temp">29°</span>
+                <span className="weather-desc">Perfect for farming</span>
+              </div>
             </div>
           </div>
 
           <div className="hero-visual">
-            <div className="hero-image-container">
-              <div className="hero-image-placeholder">
-                <div className="farmer-illustration">
-                  <div className="farmer-icon">👨‍🌾</div>
-                  <div className="plant-icons">
-                    <span>🌱</span>
-                    <span>🥒</span>
-                    <span>🌿</span>
+            <div className="hero-carousel">
+              {heroCarouselImages.length > 0 ? (
+                <>
+                  <div className="hero-carousel-track">
+                    {heroCarouselImages.map((img, index) => (
+                      <div
+                        key={img.id}
+                        className={`hero-carousel-slide ${index === currentHeroSlide ? 'active' : ''}`}
+                      >
+                        <img src={img.src} alt={img.alt} className="hero-carousel-image" />
+                      </div>
+                    ))}
+                  </div>
+                  {heroCarouselImages.length > 1 && (
+                    <>
+                      <button className="hero-carousel-btn hero-prev" onClick={prevHeroSlide}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                      </button>
+                      <button className="hero-carousel-btn hero-next" onClick={nextHeroSlide}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </button>
+                      <div className="hero-carousel-dots">
+                        {heroCarouselImages.map((_, index) => (
+                          <button
+                            key={index}
+                            className={`hero-dot ${index === currentHeroSlide ? 'active' : ''}`}
+                            onClick={() => setCurrentHeroSlide(index)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="hero-image-container">
+                  <div className="hero-main-visual">
+                    <img src={logoIcon} alt="GourdVision" className="hero-main-image hero-logo-fallback" />
                   </div>
                 </div>
-              </div>
-              <div className="floating-card card-1">
+              )}
+              <div className="floating-card card-accuracy">
                 <span className="card-icon">📊</span>
                 <div className="card-info">
                   <span className="card-value">98%</span>
                   <span className="card-label">Accuracy</span>
                 </div>
               </div>
-              <div className="floating-card card-2">
+              <div className="floating-card card-yield">
                 <span className="card-icon">🌾</span>
                 <div className="card-info">
                   <span className="card-value">+45%</span>
                   <span className="card-label">Yield Increase</span>
+                </div>
+              </div>
+              <div className="floating-card card-farmers">
+                <span className="card-icon">👨‍🌾</span>
+                <div className="card-info">
+                  <span className="card-value">5K+</span>
+                  <span className="card-label">Farmers</span>
                 </div>
               </div>
             </div>
@@ -187,7 +318,10 @@ const LandingPage = () => {
             {features.map((feature, index) => (
               <div key={index} className="feature-item">
                 <span className="feature-icon">{feature.icon}</span>
-                <span className="feature-title">{feature.title}</span>
+                <div className="feature-text">
+                  <span className="feature-title">{feature.title}</span>
+                  <span className="feature-desc">{feature.desc}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -206,15 +340,6 @@ const LandingPage = () => {
               Innovating the Future
               <span className="title-accent"> of Agriculture</span>
             </h2>
-            
-            <div className="stats-grid">
-              {stats.map((stat, index) => (
-                <div key={index} className="stat-card">
-                  <div className="stat-value">{stat.value}</div>
-                  <div className="stat-label">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="about-right">
@@ -325,6 +450,68 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Muntinlupa City Farms Section */}
+      <section id="muntinlupa-farms" className="muntinlupa-farms-section">
+        <div className="muntinlupa-container">
+          <div className="muntinlupa-header">
+            <div className="section-label">
+              <span className="label-line"></span>
+              <span>Partner Farms</span>
+            </div>
+            <h2 className="section-title">
+              Farms of
+              <span className="title-accent"> Muntinlupa City</span>
+            </h2>
+            <p className="section-description">
+              Discover our partner farms in Muntinlupa City, where local farmers are growing quality gourds 
+              using sustainable practices and modern agricultural technology.
+            </p>
+          </div>
+
+          <div className="muntinlupa-farms-grid">
+            {muntinlupaFarms.map((farm) => (
+              <div key={farm.id} className="farm-card">
+                <div className="farm-image-wrapper">
+                  {farm.image ? (
+                    <img src={farm.image} alt={farm.name} className="farm-image" />
+                  ) : (
+                    <div className="farm-image-placeholder">
+                      <span>{farm.placeholder}</span>
+                    </div>
+                  )}
+                  <div className="farm-location-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <span>{farm.location}</span>
+                  </div>
+                </div>
+                <div className="farm-content">
+                  <h3 className="farm-name">{farm.name}</h3>
+                  <p className="farm-description">{farm.description}</p>
+                  <div className="farm-crops">
+                    {farm.crops.map((crop, index) => (
+                      <span key={index} className="crop-tag">{crop}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="muntinlupa-cta">
+            <p>Are you a farm owner in Muntinlupa City?</p>
+            <Link to="/user/register" className="btn-partner">
+              Become a Partner Farm
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
@@ -443,8 +630,7 @@ const LandingPage = () => {
           <div className="footer-main">
             <div className="footer-brand">
               <Link to="/" className="footer-logo">
-                <span className="logo-icon">🌱</span>
-                <span className="logo-text">GourdVision</span>
+                <img src={logoTransparent} alt="GourdVision" className="footer-logo-img" />
               </Link>
               <p className="footer-tagline">
                 Empowering Filipino farmers with smart agricultural technology for a sustainable future.

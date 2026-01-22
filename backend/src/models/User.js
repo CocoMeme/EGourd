@@ -17,14 +17,23 @@ const userSchema = new mongoose.Schema({
 
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: function() {
+      // Email is required only if username is not provided
+      return !this.username;
+    },
     unique: true,
+    sparse: true, // Allows multiple null values (for username-only accounts)
     trim: true,
     lowercase: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please enter a valid email address'
-    ]
+    validate: {
+      validator: function(v) {
+        // Skip validation if no email provided (username-only account)
+        if (!v) return true;
+        // Allow standard emails
+        return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(v);
+      },
+      message: 'Please enter a valid email address'
+    }
   },
 
   password: {

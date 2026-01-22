@@ -58,6 +58,25 @@ export const userAuthService = {
     return response;
   },
 
+  // Username-based authentication (no email verification required)
+  loginWithUsername: async (username, password) => {
+    const response = await userApi.post('/auth/local/login-username', { username, password });
+    if (response.success && response.token) {
+      localStorage.setItem('userToken', response.token);
+      localStorage.setItem('userData', JSON.stringify(response.user));
+    }
+    return response;
+  },
+
+  registerWithUsername: async (userData) => {
+    const response = await userApi.post('/auth/local/register-username', userData);
+    if (response.success && response.token) {
+      localStorage.setItem('userToken', response.token);
+      localStorage.setItem('userData', JSON.stringify(response.user));
+    }
+    return response;
+  },
+
   logout: () => {
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');

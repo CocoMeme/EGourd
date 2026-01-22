@@ -398,9 +398,205 @@ const deleteAccount = async (req, res) => {
   }
 };
 
+/**
+ * Register a new user with username and password (no email verification required)
+ */
+const registerWithUsername = async (req, res) => {
+  try {
+    const { username, password, firstName, lastName } = req.body;
+
+    // Check if username already exists
+    const existingUser = await User.findOne({
+      username: username.toLowerCase().trim()
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Username is already taken',
+      });
+    }
+
+    // Create new user (no email required for username-based accounts)
+    const newUser = new User({
+      username: username.toLowerCase().trim(),
+      // No email for username-based accounts
+      password: password,
+      firstName: firstName ? firstName.trim() : '',
+      lastName: lastName ? lastName.trim() : '',
+      provider: 'local',
+      isActive: true,
+      isEmailVerified: true, // No email verification needed for username accounts
+      lastLogin: new Date(),
+      createdAt: new Date(),
+    });
+
+    await newUser.save();
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      {
+        userId: newUser._id,
+        username: newUser.username,
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    // Remove sensitive information from response
+    const userResponse = {
+      id: newUser._id,
+      username: newUser.username,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      profilePicture: newUser.profilePicture,
+      isEmailVerified: newUser.isEmailVerified,
+      provider: newUser.provider,
+      authMethod: 'username',
+      createdAt: newUser.createdAt,
+    };
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      user: userResponse,
+      token: jwtToken,
+    });
+
+  } catch (error) {
+    console.error('Username registration error:', error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Username is already taken',
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during registration',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * Login user with username and password
+ */
+const loginWithUsername = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    console.log(`🔐 Username login attempt for: ${username}`);
+
+    if (!username || !password) {
+      console.log('❌ Login failed: Missing username or password');
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password are required',
+      });
+    }
+
+    // Find user by username
+    const user = await User.findOne({
+      username: username.toLowerCase().trim()
+    }).select('+password');
+
+    if (!user) {
+      console.log(`❌ Login failed: User not found - ${username}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password',
+      });
+    }
+    
+    console.log(`👤 User found: ${user.username} | Role: ${user.role} | Active: ${user.isActive}`);
+
+    // Check if account is deactivated
+    if (!user.isActive) {
+      console.log(`❌ Login failed: Account deactivated - ${username}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support for assistance.',
+        accountDeactivated: true,
+        deactivationReason: user.deactivationReason || null,
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+      console.log(`❌ Login failed: Invalid password - ${username}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password',
+      });
+    }
+    
+    console.log(`✅ Username login successful: ${username} | Role: ${user.role}`);
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      {
+        userId: user._id,
+        username: user.username,
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    // Remove sensitive information from response
+    const userResponse = {
+      id: user._id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture,
+      isEmailVerified: user.isEmailVerified,
+      provider: user.provider,
+      authMethod: 'username',
+      role: user.role,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin,
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: userResponse,
+      token: jwtToken,
+    });
+
+  } catch (error) {
+    console.error('Username login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during login',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
+  registerWithUsername,
+  loginWithUsername,
   getCurrentUser,
   updateProfile,
   changePassword,

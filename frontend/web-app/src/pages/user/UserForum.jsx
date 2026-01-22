@@ -155,18 +155,22 @@ const UserForum = () => {
   return (
     <UserLayout>
       <div className="user-forum-page">
-        {/* Header */}
-        <div className="forum-header">
-          <div className="forum-header-content">
-            <h1>Community Forum</h1>
-            <p>Connect with fellow gourd enthusiasts</p>
+        {/* Welcome Card Header - Like Learn Page */}
+        <div className="welcome-card">
+          <div className="welcome-icon">
+            <MessagesSquare size={48} />
           </div>
+          <h1>Community Forum</h1>
+          <p>
+            Connect with fellow gourd enthusiasts, share tips, ask questions, 
+            and showcase your farming journey with the community.
+          </p>
           <button 
-            className="btn btn-primary create-post-btn"
+            className="welcome-action-btn"
             onClick={() => navigate('/user/forum/create')}
           >
             <Plus size={20} />
-            New Post
+            Create New Post
           </button>
         </div>
 
