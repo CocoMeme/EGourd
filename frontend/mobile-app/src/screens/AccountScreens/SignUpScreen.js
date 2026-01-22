@@ -558,11 +558,12 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xl * 2,
+    paddingHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
   },
   formContainer: {
     padding: theme.spacing.xl,
@@ -664,7 +665,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   dividerLine: {
     flex: 1,
@@ -710,7 +711,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: theme.fonts.semiBold,
     color: theme.colors.primary,
-    textDecorationLine: 'underline',
   },
   guestButton: {
     flexDirection: 'row',
