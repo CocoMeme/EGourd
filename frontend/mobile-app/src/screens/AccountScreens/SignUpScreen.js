@@ -255,12 +255,12 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={[theme.colors.gradient.start, theme.colors.gradient.end]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
+      <View style={styles.backgroundContainer}>
+        {/* Blurred colored shapes */}
+        <View style={[styles.shape, styles.shape1]} />
+        <View style={[styles.shape, styles.shape2]} />
+        <View style={[styles.shape, styles.shape3]} />
+        <View style={[styles.shape, styles.shape4]} />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
@@ -277,14 +277,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                 style={styles.logo}
                 resizeMode="contain"
               />
-              <Text style={styles.title}>Join eGourd</Text>
-              <Text style={styles.subtitle}>
-                Create your account to start tracking and analyzing gourds
-              </Text>
             </View>
 
-            {/* Sign Up Form Card */}
-            <View style={styles.card}>
+            {/* Sign Up Form */}
+            <View style={styles.formContainer}>
               <Text style={styles.cardTitle}>Create Account</Text>
 
               {/* Name Inputs */}
@@ -464,6 +460,25 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                 />
                 <Text style={styles.googleButtonText}>Sign up with Google</Text>
               </TouchableOpacity>
+
+              {/* Guest Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  if (onAuthSuccess) {
+                    onAuthSuccess(true); // true indicates guest mode
+                  }
+                }}
+                disabled={loading}
+                style={[styles.guestButton, loading && styles.buttonDisabled]}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={theme.colors.text.secondary}
+                  style={styles.googleIcon}
+                />
+                <Text style={styles.guestButtonText}>Continue as Guest</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Login Link */}
@@ -475,7 +490,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </LinearGradient>
+      </View>
 
       {/* Custom Alert */}
       <CustomAlert
@@ -493,9 +508,44 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  gradient: {
+  backgroundContainer: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  shape: {
+    position: 'absolute',
+    borderRadius: 200,
+    opacity: 0.15,
+  },
+  shape1: {
+    width: 300,
+    height: 300,
+    backgroundColor: theme.colors.primary,
+    top: -100,
+    right: -100,
+  },
+  shape2: {
+    width: 250,
+    height: 250,
+    backgroundColor: '#2196F3',
+    bottom: -80,
+    left: -80,
+  },
+  shape3: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#FF9800',
+    top: '30%',
+    left: -50,
+  },
+  shape4: {
+    width: 180,
+    height: 180,
+    backgroundColor: '#E91E63',
+    bottom: '35%',
+    right: -60,
   },
   keyboardAvoid: {
     flex: 1,
@@ -514,37 +564,13 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    marginBottom: theme.spacing.md,
   },
-  title: {
-    fontSize: 32,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-    marginBottom: theme.spacing.xs,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: theme.spacing.lg,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: theme.borderRadius.large,
+  formContainer: {
     padding: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
   cardTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: theme.fonts.bold,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
@@ -681,12 +707,28 @@ const styles = StyleSheet.create({
   loginText: {
     fontSize: 14,
     fontFamily: theme.fonts.regular,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: theme.colors.text.secondary,
   },
   loginLink: {
     fontSize: 14,
     fontFamily: theme.fonts.semiBold,
-    color: '#FFFFFF',
+    color: theme.colors.primary,
     textDecorationLine: 'underline',
+  },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: theme.colors.text.disabled,
+    borderRadius: theme.borderRadius.medium,
+    paddingVertical: theme.spacing.md,
+    marginTop: theme.spacing.md,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    fontFamily: theme.fonts.semiBold,
+    color: theme.colors.text.secondary,
   },
 });
