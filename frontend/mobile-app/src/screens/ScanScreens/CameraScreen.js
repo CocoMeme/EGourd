@@ -508,6 +508,17 @@ export const CameraScreen = ({ navigation }) => {
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
 
+  // Handle camera ready callback - MUST be before early returns to maintain hooks order
+  const handleCameraReady = useCallback(() => {
+    console.log('📷 Camera is ready');
+    setIsCameraReady(true);
+    isCameraReadyRef.current = true;
+  }, []);
+
+  const toggleCameraFacing = useCallback(() => {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  }, []);
+
   if (!permission) {
     return <View style={styles.container} />;
   }
@@ -525,17 +536,6 @@ export const CameraScreen = ({ navigation }) => {
       </View>
     );
   }
-
-  const toggleCameraFacing = () => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  };
-
-  // Handle camera ready callback
-  const handleCameraReady = useCallback(() => {
-    console.log('📷 Camera is ready');
-    setIsCameraReady(true);
-    isCameraReadyRef.current = true;
-  }, []);
 
   // Get color for confidence level
   const getConfidenceColor = (percentage, isUncertain) => {
