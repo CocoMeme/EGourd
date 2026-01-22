@@ -273,7 +273,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
             {/* Logo Section */}
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')}
+                source={require('../../../assets/logo/gourdvision-name-high-resolution-logo-transparent.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />

@@ -136,7 +136,7 @@ const SplashScreen = ({ onFinish, updateStatus = 'idle' }) => {
           ]}
         >
           <Image
-            source={require('../../../assets/logo/egourd-high-resolution-logo-transparent.png')}
+            source={require('../../../assets/logo/gourdvision-high-resolution-logo-transparent-green.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -154,7 +154,7 @@ const SplashScreen = ({ onFinish, updateStatus = 'idle' }) => {
           ]}
         >
           <Image
-            source={require('../../../assets/logo/egourd-high-resolution-logo-name-transparent.png')}
+            source={require('../../../assets/logo/gourdvision-name-high-resolution-logo-transparent.png')}
             style={styles.logoWithName}
             resizeMode="contain"
           />

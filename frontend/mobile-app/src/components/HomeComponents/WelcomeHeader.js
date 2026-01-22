@@ -39,7 +39,7 @@ export const WelcomeHeader = ({
     >
         {/* Background Logo */}
         <Image 
-          source={require('../../../assets/logo/egourd-high-resolution-logo-white-transparent.png')} 
+          source={require('../../../assets/logo/gourdvision-name-high-resolution-logo-transparent.png')} 
           style={styles.backgroundLogo}
           resizeMode="contain"
         />
@@ -94,7 +94,7 @@ export const WelcomeHeader = ({
         {/* Logo Section */}
         <View style={styles.logoContainer}>
           <Image 
-            source={require('../../../assets/logo/egourd-high-resolution-logo-name-grayscale-transparent.png')} 
+            source={require('../../../assets/logo/gourdvision-name-high-resolution-logo-grayscale-transparent.png')} 
             style={styles.mainLogo}
             resizeMode="contain"
           />

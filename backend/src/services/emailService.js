@@ -264,7 +264,7 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1765767466/egourd-high-resolution-logo-name-transparent_bcmk0s.png" alt="eGourd" style="max-width: 180px; height: auto;" />
+            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1769076175/gourdvision-name-high-resolution-logo-transparent_bhihll.png" alt="GourdVision" style="max-width: 180px; height: auto;" />
           </div>
           <div class="content">
             <h2>Hello ${userName}!</h2>
@@ -342,7 +342,7 @@ This is an automated email. Please do not reply to this message.
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1765767466/egourd-high-resolution-logo-name-transparent_bcmk0s.png" alt="eGourd" style="max-width: 180px; height: auto;" />
+            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1769076175/gourdvision-name-high-resolution-logo-transparent_bhihll.png" alt="GourdVision" style="max-width: 180px; height: auto;" />
           </div>
           <div class="content">
             <h2>Password Reset Request</h2>
@@ -405,7 +405,7 @@ If you didn't request this password reset, please ignore this email or contact s
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1765767466/egourd-high-resolution-logo-name-transparent_bcmk0s.png" alt="eGourd" style="max-width: 180px; height: auto;" />
+            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1769076175/gourdvision-name-high-resolution-logo-transparent_bhihll.png" alt="GourdVision" style="max-width: 180px; height: auto;" />
             <h2 style="color: #4CAF50; margin-top: 10px;">Welcome!</h2>
           </div>
           <div class="content">

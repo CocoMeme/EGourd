@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "EGourd",
+    "name": "GourdVision",
     "slug": "egourd",
     "scheme": "egourd",
     "version": "1.0.1",
@@ -9,11 +9,11 @@
       "ios"
     ],
     "orientation": "portrait",
-    "icon": "./assets/logo/egourd-high-resolution-logo.png",
+    "icon": "./assets/logo/gourdvision-high-resolution-logo-green.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logo/egourd-high-resolution-logo.png",
+      "image": "./assets/logo/gourdvision-high-resolution-logo-green.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff",
       "hideExpoLoadingScreen": true
@@ -33,7 +33,7 @@
     "android": {
       "package": "com.coandrei.egourd",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo/egourd-high-resolution-logo.png",
+        "foregroundImage": "./assets/logo/gourdvision-high-resolution-logo-green.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -51,7 +51,7 @@
       "runtimeVersion": "1.0.0"
     },
     "web": {
-      "favicon": "./assets/logo/egourd-high-resolution-logo.png"
+      "favicon": "./assets/logo/gourdvision-high-resolution-logo-green.png"
     },
     "plugins": [
       "expo-dev-client",

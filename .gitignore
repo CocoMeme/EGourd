@@ -112,3 +112,8 @@ env_secrets.txt
 
 # Agent
 .agent/
+
+# Design System
+design-system/
+MASTER.md
+

@@ -154,8 +154,8 @@ class ModelService {
           console.log('✅ Leaf model already in memory');
           return;
         }
-        console.log('📦 Loading leaf-v01.15.26/model_unquant.tflite...');
-        modelSource = require('../../assets/models/leaf-v01.15.26/model_unquant.tflite');
+        console.log('📦 Loading leaf/model_unquant.tflite...');
+        modelSource = require('../../assets/models/leaf/model_unquant.tflite');
         this._leafModel = await loadTensorflowModel(modelSource);
         console.log('✅ Leaf TFLite model loaded');
         console.log('📊 Model info:', JSON.stringify(this._leafModel.inputs, null, 2));
@@ -165,8 +165,8 @@ class ModelService {
           console.log('✅ Flower model already in memory');
           return;
         }
-        console.log('📦 Loading flower-v01.03.26/model_unquant.tflite...');
-        modelSource = require('../../assets/models/flower-v01.03.26/model_unquant.tflite');
+        console.log('📦 Loading flower/model_unquant.tflite...');
+        modelSource = require('../../assets/models/flower/model_unquant.tflite');
         this._flowerModel = await loadTensorflowModel(modelSource);
         console.log('✅ Flower TFLite model loaded');
         console.log('📊 Model info:', JSON.stringify(this._flowerModel.inputs, null, 2));
