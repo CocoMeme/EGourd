@@ -2,7 +2,8 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { 
     ProfileScreen, 
-    ResultsScreen 
+    FlowerResultsScreen,
+    LeafResultsScreen 
 } from '../../screens';
 import { theme } from '../../styles';
 
@@ -30,8 +31,13 @@ export const ProfileStack = ({ onAuthChange }) => {
                 {(props) => <ProfileScreen {...props} onAuthChange={onAuthChange} />}
             </Stack.Screen>
             <Stack.Screen
-                name="Results"
-                component={ResultsScreen}
+                name="FlowerResults"
+                component={FlowerResultsScreen}
+                options={{ title: 'Scan Results', headerShown: false }}
+            />
+            <Stack.Screen
+                name="LeafResults"
+                component={LeafResultsScreen}
                 options={{ title: 'Scan Results', headerShown: false }}
             />
         </Stack.Navigator>

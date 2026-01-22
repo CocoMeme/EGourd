@@ -73,7 +73,9 @@ export const HistoryTab = ({ navigation, route }) => {
     const handleScanPress = (scan) => {
         if (navigation) {
             try {
-                navigation.navigate('Results', {
+                // Navigate to appropriate Results screen based on scan type
+                const screenName = scan.scanType === 'leaf' ? 'LeafResults' : 'FlowerResults';
+                navigation.navigate(screenName, {
                     scan: scan,
                     returnTo: 'ProfileMain',
                 });

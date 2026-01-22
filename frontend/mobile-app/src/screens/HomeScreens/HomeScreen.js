@@ -360,9 +360,10 @@ export const HomeScreen = ({ navigation, route }) => {
   };
 
   const handleScanPress = (scan) => {
-    // Navigate to the Results screen which is nested inside the Camera tab
+    // Navigate to the appropriate Results screen based on scan type
+    const screenName = scan.scanType === 'leaf' ? 'LeafResults' : 'FlowerResults';
     navigation.navigate('Camera', {
-      screen: 'Results',
+      screen: screenName,
       params: {
         scan: scan,
         returnTo: 'HomeMain',
