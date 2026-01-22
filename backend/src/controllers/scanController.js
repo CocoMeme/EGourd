@@ -200,3 +200,222 @@ exports.analyzeLeaf = async (req, res) => {
     });
   }
 };
+
+// Get analytics data for user scans
+exports.getAnalytics = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { startDate, endDate, scanType, variety } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Build query
+    const query = { userId };
+    
+    if (scanType) {
+      query.scanType = scanType;
+    }
+    
+    if (variety) {
+      query.variety = variety;
+    }
+    
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    // Get all scans for analysis
+    const scans = await Scan.find(query).sort({ date: 1 });
+
+    // Calculate summary statistics
+    const totalScans = scans.length;
+    const avgConfidence = totalScans > 0
+      ? scans.reduce((sum, scan) => sum + scan.confidence, 0) / totalScans
+      : 0;
+
+    // Scan type distribution
+    const scanTypeDistribution = {
+      flower: scans.filter(s => s.scanType === 'flower').length,
+      leaf: scans.filter(s => s.scanType === 'leaf').length,
+    };
+
+    // Variety distribution
+    const varietyDistribution = {};
+    scans.forEach(scan => {
+      if (scan.variety) {
+        varietyDistribution[scan.variety] = (varietyDistribution[scan.variety] || 0) + 1;
+      }
+    });
+
+    // Gender distribution
+    const genderDistribution = {
+      male: scans.filter(s => s.prediction === 'male').length,
+      female: scans.filter(s => s.prediction === 'female').length,
+    };
+
+    // Validation status distribution
+    const validationDistribution = {
+      tflite_only: scans.filter(s => s.validationStatus === 'tflite_only').length,
+      validated: scans.filter(s => s.validationStatus === 'validated').length,
+      manual_override: scans.filter(s => s.validationStatus === 'manual_override').length,
+      conflict: scans.filter(s => s.validationStatus === 'conflict').length,
+    };
+
+    // Time series data (daily aggregation)
+    const timeSeries = {};
+    scans.forEach(scan => {
+      const date = new Date(scan.date).toISOString().split('T')[0];
+      if (!timeSeries[date]) {
+        timeSeries[date] = {
+          date,
+          count: 0,
+          flowerCount: 0,
+          leafCount: 0,
+          avgConfidence: 0,
+          totalConfidence: 0,
+        };
+      }
+      timeSeries[date].count++;
+      if (scan.scanType === 'flower') timeSeries[date].flowerCount++;
+      if (scan.scanType === 'leaf') timeSeries[date].leafCount++;
+      timeSeries[date].totalConfidence += scan.confidence;
+    });
+
+    // Calculate average confidence per day
+    Object.values(timeSeries).forEach(day => {
+      day.avgConfidence = day.totalConfidence / day.count;
+      delete day.totalConfidence;
+    });
+
+    // Confidence ranges
+    const confidenceRanges = {
+      low: scans.filter(s => s.confidence < 70).length,
+      medium: scans.filter(s => s.confidence >= 70 && s.confidence < 85).length,
+      high: scans.filter(s => s.confidence >= 85).length,
+    };
+
+    // Quality metrics (for Gemini-validated scans)
+    const geminiScans = scans.filter(s => s.aiPrediction?.gemini);
+    const avgQualityMetrics = geminiScans.length > 0 ? {
+      petalQuality: geminiScans.reduce((sum, s) => sum + (s.aiPrediction.gemini.qualityMetrics?.petalQuality || 0), 0) / geminiScans.length,
+      colorScore: geminiScans.reduce((sum, s) => sum + (s.aiPrediction.gemini.qualityMetrics?.colorScore || 0), 0) / geminiScans.length,
+      developmentScore: geminiScans.reduce((sum, s) => sum + (s.aiPrediction.gemini.qualityMetrics?.developmentScore || 0), 0) / geminiScans.length,
+      healthScore: geminiScans.reduce((sum, s) => sum + (s.aiPrediction.gemini.qualityMetrics?.healthScore || 0), 0) / geminiScans.length,
+      pollinationPotential: geminiScans.reduce((sum, s) => sum + (s.aiPrediction.gemini.qualityMetrics?.pollinationPotential || 0), 0) / geminiScans.length,
+    } : null;
+
+    // Upcoming harvests (scans with harvest predictions within next 30 days)
+    const upcomingHarvests = scans
+      .filter(s => s.aiPrediction?.harvestPrediction?.daysToHarvest)
+      .map(s => ({
+        id: s._id,
+        variety: s.variety,
+        daysToHarvest: s.aiPrediction.harvestPrediction.daysToHarvest,
+        currentStage: s.aiPrediction.harvestPrediction.currentStage,
+        estimatedDate: s.aiPrediction.harvestPrediction.estimatedHarvestDate,
+        imageUrl: s.imageUrl,
+        name: s.name,
+      }))
+      .filter(h => h.daysToHarvest <= 30)
+      .sort((a, b) => a.daysToHarvest - b.daysToHarvest);
+
+    // Weekly comparison
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    const thisWeekScans = scans.filter(s => new Date(s.date) >= weekAgo);
+    const lastWeekScans = scans.filter(s => new Date(s.date) >= twoWeeksAgo && new Date(s.date) < weekAgo);
+    
+    const weeklyComparison = {
+      thisWeek: thisWeekScans.length,
+      lastWeek: lastWeekScans.length,
+      change: thisWeekScans.length - lastWeekScans.length,
+      percentChange: lastWeekScans.length > 0 
+        ? ((thisWeekScans.length - lastWeekScans.length) / lastWeekScans.length * 100).toFixed(1)
+        : 100,
+    };
+
+    res.status(200).json({
+      summary: {
+        totalScans,
+        avgConfidence: avgConfidence.toFixed(2),
+        weeklyComparison,
+      },
+      distributions: {
+        scanType: scanTypeDistribution,
+        variety: varietyDistribution,
+        gender: genderDistribution,
+        validation: validationDistribution,
+        confidence: confidenceRanges,
+      },
+      timeSeries: Object.values(timeSeries),
+      qualityMetrics: avgQualityMetrics,
+      upcomingHarvests,
+      insights: generateInsights(scans, avgConfidence, varietyDistribution),
+    });
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ message: 'Server error while fetching analytics', error: error.message });
+  }
+};
+
+// Helper function to generate insights
+function generateInsights(scans, avgConfidence, varietyDistribution) {
+  const insights = [];
+
+  // Confidence insight
+  if (avgConfidence >= 90) {
+    insights.push({
+      type: 'success',
+      icon: 'trophy',
+      message: `Excellent scanning! Your average confidence is ${avgConfidence.toFixed(1)}%`,
+    });
+  } else if (avgConfidence < 70) {
+    insights.push({
+      type: 'warning',
+      icon: 'information-circle',
+      message: 'Try scanning in better lighting to improve accuracy',
+    });
+  }
+
+  // Most scanned variety
+  const sortedVarieties = Object.entries(varietyDistribution).sort((a, b) => b[1] - a[1]);
+  if (sortedVarieties.length > 0) {
+    insights.push({
+      type: 'info',
+      icon: 'leaf',
+      message: `${sortedVarieties[0][0]} is your most scanned variety (${sortedVarieties[0][1]} scans)`,
+    });
+  }
+
+  // Recent activity
+  const recentScans = scans.filter(s => {
+    const daysDiff = (new Date() - new Date(s.date)) / (1000 * 60 * 60 * 24);
+    return daysDiff <= 7;
+  });
+  
+  if (recentScans.length >= 10) {
+    insights.push({
+      type: 'success',
+      icon: 'flame',
+      message: `You're on fire! ${recentScans.length} scans this week`,
+    });
+  }
+
+  // Validation rate
+  const validatedScans = scans.filter(s => s.validationStatus === 'validated').length;
+  if (scans.length > 0 && (validatedScans / scans.length) >= 0.8) {
+    insights.push({
+      type: 'success',
+      icon: 'checkmark-circle',
+      message: `${((validatedScans / scans.length) * 100).toFixed(0)}% of your scans are AI-validated`,
+    });
+  }
+
+  return insights;
+}

@@ -46,7 +46,6 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-
       "googleServicesFile": "./google-services.json",
       "runtimeVersion": "1.0.0"
     },
@@ -69,7 +68,8 @@
         }
       ],
       "react-native-fast-tflite",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "assetBundlePatterns": [
       "**/*"

@@ -11,6 +11,9 @@ router.post('/analyze-leaf', scanController.analyzeLeaf);
 // Route to get harvest prediction
 router.post('/predict-harvest', scanController.getHarvestPrediction);
 
+// Route to get analytics data for a user
+router.get('/analytics/:userId', scanController.getAnalytics);
+
 
 // Route to save a new scan
 router.post('/save', scanController.saveScan);

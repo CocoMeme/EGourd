@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services';
 import { theme } from '../../styles';
-import { ProfileTab, HistoryTab, SettingsTab } from '../../components/Profile';
+import { ProfileTab, HistoryTab, SettingsTab, AnalysisTab } from '../../components/Profile';
 
 export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   const [user, setUser] = useState(null);
@@ -47,6 +47,8 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
         return <ProfileTab user={user} navigation={navigation} loadUserData={loadUserData} />;
       case 'history':
         return <HistoryTab navigation={navigation} route={route} />;
+      case 'analysis':
+        return <AnalysisTab />;
       case 'settings':
         return <SettingsTab navigation={navigation} onAuthChange={onAuthChange} />;
       default:
@@ -114,6 +116,19 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           />
           <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
             History
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'analysis' && styles.activeTab]}
+          onPress={() => setActiveTab('analysis')}
+        >
+          <Ionicons
+            name={activeTab === 'analysis' ? "analytics" : "analytics-outline"}
+            size={20}
+            color={activeTab === 'analysis' ? theme.colors.primary : theme.colors.text.secondary}
+          />
+          <Text style={[styles.tabText, activeTab === 'analysis' && styles.activeTabText]}>
+            Analysis
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
