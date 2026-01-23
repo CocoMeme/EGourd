@@ -90,9 +90,10 @@ export const CameraScreen = ({ navigation }) => {
     setPredictions([]);
     setIsStable(false);
 
-    // Reset tracking refs
+    // Reset tracking refs - IMPORTANT: Reset ALL frame refs to prevent stale frames from previous mode
     recentPredictions.current = [];
     bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+    lastFrameUri.current = { uri: null, width: 0, height: 0 }; // Clear stale frames from previous mode
     animatedBars.current = {};
     animatedPositions.current = {};
 
