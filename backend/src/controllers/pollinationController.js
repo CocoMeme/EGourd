@@ -1043,6 +1043,146 @@ const deleteFlowerPrediction = async (req, res) => {
   }
 };
 
+// @desc    Get flower prediction statistics for authenticated user
+// @route   GET /api/pollination/predictions/stats
+// @access  Private
+const getFlowerPredictionStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all flower predictions for this user
+    const predictions = await FlowerPrediction.find({ user: userId });
+
+    const totalPredictions = predictions.length;
+
+    if (totalPredictions === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalPredictions: 0,
+          averageConfidence: 0,
+          totalMaleFlowers: { min: 0, max: 0, average: 0 },
+          totalFemaleFlowers: { min: 0, max: 0, average: 0 },
+          genderRatio: { male: 0, female: 0 },
+          byPlantType: {},
+          recentPredictions: [],
+          weeklyStats: { thisWeek: 0, lastWeek: 0, change: 0 }
+        }
+      });
+    }
+
+    // Calculate averages
+    let totalMaleMin = 0, totalMaleMax = 0, totalMaleAvg = 0;
+    let totalFemaleMin = 0, totalFemaleMax = 0, totalFemaleAvg = 0;
+    let totalConfidence = 0;
+
+    const byPlantType = {};
+
+    predictions.forEach(pred => {
+      const male = pred.prediction?.maleFlowers || { min: 0, max: 0, average: 0 };
+      const female = pred.prediction?.femaleFlowers || { min: 0, max: 0, average: 0 };
+
+      totalMaleMin += male.min || 0;
+      totalMaleMax += male.max || 0;
+      totalMaleAvg += male.average || 0;
+      totalFemaleMin += female.min || 0;
+      totalFemaleMax += female.max || 0;
+      totalFemaleAvg += female.average || 0;
+      totalConfidence += pred.prediction?.confidence || 0;
+
+      // Group by plant type
+      const plantType = pred.plantType || 'unknown';
+      if (!byPlantType[plantType]) {
+        byPlantType[plantType] = {
+          count: 0,
+          totalMale: 0,
+          totalFemale: 0,
+          avgConfidence: 0
+        };
+      }
+      byPlantType[plantType].count++;
+      byPlantType[plantType].totalMale += male.average || 0;
+      byPlantType[plantType].totalFemale += female.average || 0;
+      byPlantType[plantType].avgConfidence += pred.prediction?.confidence || 0;
+    });
+
+    // Calculate per-type averages
+    Object.keys(byPlantType).forEach(type => {
+      const data = byPlantType[type];
+      data.avgMale = Math.round(data.totalMale / data.count);
+      data.avgFemale = Math.round(data.totalFemale / data.count);
+      data.avgConfidence = Math.round(data.avgConfidence / data.count);
+      delete data.totalMale;
+      delete data.totalFemale;
+    });
+
+    // Calculate gender ratio
+    const totalMale = totalMaleAvg;
+    const totalFemale = totalFemaleAvg;
+    const total = totalMale + totalFemale;
+    const genderRatio = total > 0 ? {
+      male: Math.round((totalMale / total) * 100),
+      female: Math.round((totalFemale / total) * 100)
+    } : { male: 50, female: 50 };
+
+    // Weekly comparison
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const thisWeekPreds = predictions.filter(p => new Date(p.createdAt) >= weekAgo).length;
+    const lastWeekPreds = predictions.filter(p => new Date(p.createdAt) >= twoWeeksAgo && new Date(p.createdAt) < weekAgo).length;
+
+    // Recent predictions (last 5)
+    const recentPredictions = await FlowerPrediction.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('plantType plantAge prediction createdAt')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalPredictions,
+        averageConfidence: Math.round(totalConfidence / totalPredictions),
+        totalMaleFlowers: {
+          min: Math.round(totalMaleMin / totalPredictions),
+          max: Math.round(totalMaleMax / totalPredictions),
+          average: Math.round(totalMaleAvg / totalPredictions)
+        },
+        totalFemaleFlowers: {
+          min: Math.round(totalFemaleMin / totalPredictions),
+          max: Math.round(totalFemaleMax / totalPredictions),
+          average: Math.round(totalFemaleAvg / totalPredictions)
+        },
+        genderRatio,
+        byPlantType,
+        recentPredictions: recentPredictions.map(p => ({
+          id: p._id,
+          plantType: p.plantType,
+          plantAge: p.plantAge,
+          maleFlowers: p.prediction?.maleFlowers?.average || 0,
+          femaleFlowers: p.prediction?.femaleFlowers?.average || 0,
+          confidence: p.prediction?.confidence || 0,
+          createdAt: p.createdAt
+        })),
+        weeklyStats: {
+          thisWeek: thisWeekPreds,
+          lastWeek: lastWeekPreds,
+          change: thisWeekPreds - lastWeekPreds
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get flower prediction stats error:', error);
+    res.status(400).json({
+      success: false,
+      message: 'Error fetching flower prediction statistics',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Predict crop yield using ML model
 // @route   POST /api/pollination/predict-yield
 // @access  Private
@@ -1375,6 +1515,7 @@ module.exports = {
   predictFlowerProduction,
   getFlowerPredictions,
   getFlowerPrediction,
+  getFlowerPredictionStats,
   deleteFlowerPrediction,
   predictYield,
   getYieldPredictions,

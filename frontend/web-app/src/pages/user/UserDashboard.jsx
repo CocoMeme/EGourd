@@ -20,33 +20,47 @@ import {
   Scan,
   Target,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Sprout,
+  AlertTriangle,
+  TreeDeciduous
 } from 'lucide-react';
 
 const UserDashboard = () => {
   const { user } = useUserAuth();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
+  const [pollinationStats, setPollinationStats] = useState(null);
+  const [flowerPredictionStats, setFlowerPredictionStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (user?._id || user?.id) {
-      fetchAnalytics();
+      fetchAllData();
     }
   }, [user]);
 
-  const fetchAnalytics = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
       setError(null);
       const userId = user?._id || user?.id;
-      const response = await userApi.get(`/scans/analytics/${userId}`);
-      setAnalytics(response);
+      
+      // Fetch scan analytics, pollination stats, and flower prediction stats in parallel
+      const [scanResponse, pollinationResponse, flowerPredResponse] = await Promise.all([
+        userApi.get(`/scans/analytics/${userId}`).catch(() => null),
+        userApi.get('/pollination/dashboard/stats').catch(() => null),
+        userApi.get('/pollination/predictions/stats').catch(() => null)
+      ]);
+      
+      setAnalytics(scanResponse);
+      setPollinationStats(pollinationResponse?.data || null);
+      setFlowerPredictionStats(flowerPredResponse?.data || null);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
-      setError('Unable to load analytics data');
+      console.error('Error fetching dashboard data:', error);
+      setError('Unable to load dashboard data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -55,7 +69,7 @@ const UserDashboard = () => {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchAnalytics();
+    fetchAllData();
   };
 
   const getGreeting = () => {
@@ -198,6 +212,239 @@ const UserDashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* Pollination Stats Section */}
+            {pollinationStats && (
+              <div className="pollination-section">
+                <div className="section-header">
+                  <div className="header-title">
+                    <Sprout size={20} />
+                    <h3>Plant & Pollination Tracking</h3>
+                  </div>
+                </div>
+                <div className="stats-grid pollination-stats">
+                  <div className="stat-card plants">
+                    <div className="stat-icon plant">
+                      <TreeDeciduous size={24} />
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-number">{pollinationStats.counts?.total || 0}</span>
+                      <span className="stat-title">Total Plants</span>
+                    </div>
+                    <div className="stat-trend positive">
+                      <Activity size={14} />
+                      <span>{pollinationStats.counts?.active || 0} Active</span>
+                    </div>
+                  </div>
+
+                  <div className="stat-card flowering">
+                    <div className="stat-icon flower">
+                      <Flower2 size={24} />
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-number">
+                        {pollinationStats.statusBreakdown?.find(s => s._id === 'flowering')?.count || 0}
+                      </span>
+                      <span className="stat-title">Flowering</span>
+                    </div>
+                    <div className="stat-trend positive">
+                      <TrendingUp size={14} />
+                      <span>Ready</span>
+                    </div>
+                  </div>
+
+                  <div className="stat-card pollinated">
+                    <div className="stat-icon success">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-number">
+                        {pollinationStats.statusBreakdown?.find(s => s._id === 'pollinated')?.count || 0}
+                      </span>
+                      <span className="stat-title">Pollinated</span>
+                    </div>
+                    <div className="stat-trend positive">
+                      <TrendingUp size={14} />
+                      <span>Growing</span>
+                    </div>
+                  </div>
+
+                  <div className="stat-card attention">
+                    <div className="stat-icon warning">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-number">{pollinationStats.counts?.needsAttention || 0}</span>
+                      <span className="stat-title">Needs Attention</span>
+                    </div>
+                    <div className={`stat-trend ${pollinationStats.counts?.needsAttention > 0 ? 'warning' : 'positive'}`}>
+                      <Activity size={14} />
+                      <span>{pollinationStats.counts?.needsAttention > 0 ? 'Check Now' : 'All Good'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Plant Type Breakdown */}
+                {pollinationStats.plantTypeBreakdown && pollinationStats.plantTypeBreakdown.length > 0 && (
+                  <div className="plant-types-card">
+                    <h4>Plant Types</h4>
+                    <div className="plant-types-list">
+                      {pollinationStats.plantTypeBreakdown.slice(0, 5).map((type, index) => (
+                        <div key={type._id || index} className="plant-type-item">
+                          <span className="plant-type-name">{type._id || 'Unknown'}</span>
+                          <div className="plant-type-bar-container">
+                            <div 
+                              className="plant-type-bar"
+                              style={{ 
+                                width: `${(type.count / pollinationStats.counts?.total) * 100}%`,
+                                backgroundColor: index === 0 ? '#40916c' : index === 1 ? '#52b788' : '#95d5b2'
+                              }}
+                            ></div>
+                          </div>
+                          <span className="plant-type-count">{type.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Plants Needing Attention */}
+                {pollinationStats.needsAttention && pollinationStats.needsAttention.length > 0 && (
+                  <div className="attention-plants-card">
+                    <h4>Plants Needing Attention</h4>
+                    <div className="attention-list">
+                      {pollinationStats.needsAttention.slice(0, 3).map((plant, index) => (
+                        <div key={plant._id || index} className="attention-item">
+                          <div className="attention-icon">
+                            <AlertTriangle size={16} />
+                          </div>
+                          <div className="attention-info">
+                            <span className="attention-name">{plant.name || 'Unnamed Plant'}</span>
+                            <span className="attention-status">{plant.status}</span>
+                          </div>
+                          <span className="attention-reason">{plant.attentionReason || 'Check required'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Flower Production Predictions Section */}
+            {flowerPredictionStats && flowerPredictionStats.totalPredictions > 0 && (
+              <div className="flower-predictions-section">
+                <div className="section-header">
+                  <div className="header-title">
+                    <Flower2 size={20} />
+                    <h3>Flower Production Predictions</h3>
+                  </div>
+                  <span className="prediction-count">{flowerPredictionStats.totalPredictions} predictions</span>
+                </div>
+
+                {/* Gender Distribution Donut */}
+                <div className="flower-gender-distribution">
+                  <div className="distribution-visual">
+                    <div className="donut-chart large">
+                      <svg viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#e5e5e5"
+                          strokeWidth="3"
+                        />
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#4A90E2"
+                          strokeWidth="3"
+                          strokeDasharray={`${flowerPredictionStats.genderRatio?.male || 50}, 100`}
+                        />
+                      </svg>
+                      <div className="chart-center">
+                        <span className="center-value">{flowerPredictionStats.averageConfidence}%</span>
+                        <span className="center-label">Avg Confidence</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="gender-stats">
+                    <div className="gender-stat male">
+                      <div className="gender-icon">♂</div>
+                      <div className="gender-info">
+                        <span className="gender-label">Male Flowers</span>
+                        <span className="gender-value">{flowerPredictionStats.totalMaleFlowers?.average || 0}</span>
+                        <span className="gender-range">
+                          ({flowerPredictionStats.totalMaleFlowers?.min || 0}-{flowerPredictionStats.totalMaleFlowers?.max || 0} range)
+                        </span>
+                      </div>
+                      <span className="gender-percent">{flowerPredictionStats.genderRatio?.male || 50}%</span>
+                    </div>
+                    <div className="gender-stat female">
+                      <div className="gender-icon">♀</div>
+                      <div className="gender-info">
+                        <span className="gender-label">Female Flowers</span>
+                        <span className="gender-value">{flowerPredictionStats.totalFemaleFlowers?.average || 0}</span>
+                        <span className="gender-range">
+                          ({flowerPredictionStats.totalFemaleFlowers?.min || 0}-{flowerPredictionStats.totalFemaleFlowers?.max || 0} range)
+                        </span>
+                      </div>
+                      <span className="gender-percent">{flowerPredictionStats.genderRatio?.female || 50}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* By Plant Type */}
+                {flowerPredictionStats.byPlantType && Object.keys(flowerPredictionStats.byPlantType).length > 0 && (
+                  <div className="plant-type-predictions">
+                    <h4>By Plant Type</h4>
+                    <div className="plant-type-grid">
+                      {Object.entries(flowerPredictionStats.byPlantType).map(([type, data], index) => (
+                        <div key={type} className="plant-type-prediction-card">
+                          <span className="plant-type-label">{type.replace('_', ' ')}</span>
+                          <div className="prediction-details">
+                            <div className="detail-row">
+                              <span className="detail-label">Predictions:</span>
+                              <span className="detail-value">{data.count}</span>
+                            </div>
+                            <div className="detail-row male">
+                              <span className="detail-label">♂ Avg Male:</span>
+                              <span className="detail-value">{data.avgMale}</span>
+                            </div>
+                            <div className="detail-row female">
+                              <span className="detail-label">♀ Avg Female:</span>
+                              <span className="detail-value">{data.avgFemale}</span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="detail-label">Confidence:</span>
+                              <span className="detail-value">{data.avgConfidence}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Weekly Stats */}
+                <div className="weekly-prediction-stats">
+                  <div className="weekly-stat">
+                    <span className="weekly-label">This Week</span>
+                    <span className="weekly-value">{flowerPredictionStats.weeklyStats?.thisWeek || 0}</span>
+                  </div>
+                  <div className="weekly-stat">
+                    <span className="weekly-label">Last Week</span>
+                    <span className="weekly-value">{flowerPredictionStats.weeklyStats?.lastWeek || 0}</span>
+                  </div>
+                  <div className={`weekly-stat change ${(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? 'positive' : 'negative'}`}>
+                    <span className="weekly-label">Change</span>
+                    <span className="weekly-value">
+                      {(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? '+' : ''}
+                      {flowerPredictionStats.weeklyStats?.change || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Main Analytics Grid */}
             <div className="analytics-grid">

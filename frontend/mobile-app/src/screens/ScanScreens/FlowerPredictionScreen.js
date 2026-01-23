@@ -681,6 +681,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       const scanData = {
         prediction: prediction.gender || 'unknown',
         confidence: prediction.confidence || 0,
+        scanType: isLeafMode ? 'leaf' : 'flower', // Important: Set scan type for analytics
 
         // Extended data
         variety: prediction.variety || null,

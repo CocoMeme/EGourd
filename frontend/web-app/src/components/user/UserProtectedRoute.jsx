@@ -26,7 +26,7 @@ const UserProtectedRoute = ({ children }) => {
             width: '48px',
             height: '48px',
             border: '4px solid #e5e7eb',
-            borderTopColor: '#4a7c59',
+            borderTopColor: '#40916c',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }}></div>
@@ -44,6 +44,11 @@ const UserProtectedRoute = ({ children }) => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/user/login" state={{ from: location }} replace />;
+  }
+
+  // Redirect admin users to admin dashboard
+  if (user?.role === 'admin') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Redirect to verify email if not verified

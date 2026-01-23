@@ -24,6 +24,7 @@ const {
   predictFlowerProduction,
   getFlowerPredictions,
   getFlowerPrediction,
+  getFlowerPredictionStats,
   deleteFlowerPrediction,
   predictYield,
   getYieldPredictions,
@@ -55,6 +56,7 @@ router.get('/notifications/pending', getPendingNotifications);
 
 // Flower production prediction routes (must be before /:id routes)
 router.post('/predict-flowers', predictFlowerProduction);
+router.get('/predictions/stats', getFlowerPredictionStats);
 router.get('/predictions', getFlowerPredictions);
 router.route('/predictions/:id')
   .get(getFlowerPrediction)

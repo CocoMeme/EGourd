@@ -36,8 +36,11 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* ==================== ADMIN ROUTES ==================== */}
-            {/* Admin Login */}
-            <Route path="/login" element={<Login />} />
+            {/* Admin Login - accessible at /admin/login */}
+            <Route path="/admin/login" element={<Login />} />
+            
+            {/* Redirect /login to user login */}
+            <Route path="/login" element={<Navigate to="/user/login" replace />} />
 
             {/* Admin Protected Routes */}
             <Route
