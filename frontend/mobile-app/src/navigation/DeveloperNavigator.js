@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
 
-import { HomeScreen, CameraScreen, ResultsScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
+import { HomeScreen, CameraScreen, CameraScreenTest, FlowerPredictionScreen, LeafPredictionScreen, FlowerResultsScreen, LeafResultsScreen, NewsScreen, ChatbotScreen, LoginScreen, SignUpScreen, ProfileScreen, PollinationScreen, PlantFormScreen, PlantDetailScreen, HowToUseScreen, EducationalScreen, CommunityScreen, CreatePostScreen, PostDetailScreen } from '../screens';
 import { AdminDashboardScreen, UserManagementScreen, UserDetailScreen, ForumManagementScreen } from '../screens/AdminScreens';
 import { theme } from '../styles';
 import { pollinationNotificationHelper } from '../utils/pollinationNotificationHelper';
@@ -107,7 +107,7 @@ const HomeStack = ({ route }) => {
   );
 };
 
-// DEVELOPER MODE: CameraStack with Model Selection
+// DEVELOPER MODE: CameraStack with Fresh Capture + Multi-Run Prediction
 const CameraStack = () => {
   return (
     <Stack.Navigator
@@ -121,13 +121,28 @@ const CameraStack = () => {
     >
       <Stack.Screen 
         name="CameraMain" 
-        component={CameraScreen} 
-        options={{ title: 'Scanner' }}
+        component={CameraScreenTest} 
+        options={{ title: 'Scanner (Dev Mode)' }}
       />
       <Stack.Screen 
-        name="Results" 
-        component={ResultsScreen} 
-        options={{ title: 'Scan Results' }}
+        name="FlowerPrediction" 
+        component={FlowerPredictionScreen} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="LeafPrediction" 
+        component={LeafPredictionScreen} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="FlowerResults" 
+        component={FlowerResultsScreen} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="LeafResults" 
+        component={LeafResultsScreen} 
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

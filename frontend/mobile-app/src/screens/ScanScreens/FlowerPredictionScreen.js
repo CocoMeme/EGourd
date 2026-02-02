@@ -774,6 +774,54 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
   // Sync state when route params change (important for navigation from history)
   useEffect(() => {
+    // Check if we received pre-computed prediction from Developer Mode (multi-run format)
+    if (route.params.tmPrediction && route.params.tmPrediction.runs) {
+      console.log('🔬 [DEV MODE] Using pre-computed prediction from CameraScreen.test');
+      const preComputed = route.params.tmPrediction;
+      
+      const tmPred = {
+        variety: getVarietyFromLabel(preComputed.topPrediction.label),
+        gender: getGenderFromLabel(preComputed.topPrediction.label),
+        confidence: preComputed.topPrediction.percentage,
+        rawScore: preComputed.topPrediction.probability,
+        label: preComputed.topPrediction.label,
+        isNotFlower: preComputed.topPrediction.label === 'Not Flower',
+        allPredictions: preComputed.predictions,
+        source: 'tflite',
+        modelType: `Teachable Machine (Flower) - ${preComputed.runs} runs averaged`,
+        processingTime: preComputed.processingTime,
+      };
+      
+      setTmPrediction(tmPred);
+      setPrediction(tmPred);
+      setIsTmComplete(true);
+      setIsAnalyzing(false);
+      setIsGeminiLoading(false);
+      setAnalysisError(null);
+      setBackendPrediction(null);
+      
+      // Fade in results
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      // Still run Gemini analysis if available
+      if (geminiService.isAvailable() && !tmPred.isNotFlower) {
+        runGeminiAnalysisOnly(tmPred);
+      }
+      return;
+    }
+    
+    // DEV MODE: Run multi-run prediction here with loading animation
+    if (route.params.devMode && route.params.isLoading && route.params.imageUri) {
+      console.log('🔬 [DEV MODE] Running multi-run prediction in FlowerPredictionScreen');
+      runDevModeAnalysis();
+      return;
+    }
+    
+    // Original logic for non-dev mode
     // Update all states from route params
     setTmPrediction(route.params.tmPrediction || null);
     setGeminiPrediction(route.params.geminiPrediction || null);
@@ -969,6 +1017,172 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       setAnalysisError(error.message);
       setIsAnalyzing(false);
       setIsGeminiLoading(false);
+    }
+  };
+
+  /**
+   * Run Gemini analysis only (for Dev Mode where TM is pre-computed)
+   */
+  const runGeminiAnalysisOnly = async (tmPred) => {
+    setIsGeminiLoading(true);
+    setLoadingStage('Validating with AI...');
+    console.log('🤖 Running Gemini flower analysis...');
+
+    try {
+      const geminiPred = await geminiService.analyzeFlower(imageUri, tmPred);
+      console.log('✅ Gemini Flower Analysis complete');
+
+      if (geminiPred) {
+        setGeminiPrediction(geminiPred);
+
+        // Compare predictions
+        const comparison = geminiService.comparePredictions(tmPred, geminiPred);
+        setComparisonResult(comparison);
+
+        // Update final prediction with Gemini data
+        setPrediction(geminiPred);
+      }
+
+      // Backend harvest prediction
+      const finalPred = geminiPred || tmPred;
+      if (finalPred && !finalPred.isNotFlower) {
+        try {
+          setLoadingStage('Refining harvest prediction...');
+          const bPrediction = await scanService.getHarvestPrediction(
+            {
+              prediction: finalPred.gender,
+              variety: finalPred.variety,
+              confidence: finalPred.confidence
+            },
+            { date: new Date().toISOString() }
+          );
+          setBackendPrediction(bPrediction);
+        } catch (backendError) {
+          console.warn('⚠️ Backend harvest prediction failed:', backendError.message);
+        }
+      }
+    } catch (geminiError) {
+      console.error('❌ Gemini flower analysis failed:', geminiError);
+    } finally {
+      setIsGeminiLoading(false);
+    }
+  };
+
+  /**
+   * Run Dev Mode Analysis - performs multiple prediction runs and averages results
+   */
+  const runDevModeAnalysis = async () => {
+    const runCount = route.params.multiRunCount || 5;
+    console.log(`🔬 [DEV MODE] Running ${runCount}-run prediction analysis for Flower...`);
+    
+    setIsAnalyzing(true);
+    setLoadingStage(`Analyzing... (0/${runCount})`);
+    
+    try {
+      const allPredictions = [];
+      
+      // Run model multiple times
+      for (let i = 0; i < runCount; i++) {
+        setLoadingStage(`Analyzing... (${i + 1}/${runCount})`);
+        console.log(`🔄 [DEV MODE] Flower prediction run ${i + 1}/${runCount}...`);
+        
+        const pred = await modelService.classifyFlower(imageUri, imageDimensions);
+        
+        if (pred && !pred.isNotFlower) {
+          allPredictions.push(pred);
+          console.log(`   Run ${i + 1}: ${pred.label} (${(pred.confidence * 100).toFixed(1)}%)`);
+        } else if (pred?.isNotFlower) {
+          console.log(`   Run ${i + 1}: Not a flower`);
+          allPredictions.push(pred);
+        }
+        
+        // Small delay between runs
+        if (i < runCount - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Calculate averaged result
+      let finalPrediction;
+      
+      if (allPredictions.length === 0) {
+        finalPrediction = { isNotFlower: true, confidence: 0 };
+      } else if (allPredictions.every(p => p.isNotFlower)) {
+        finalPrediction = { isNotFlower: true, confidence: 1.0 };
+      } else {
+        // Average the valid flower predictions
+        const validPreds = allPredictions.filter(p => !p.isNotFlower);
+        
+        // Aggregate by label
+        const labelCounts = {};
+        const labelConfidences = {};
+        
+        validPreds.forEach(pred => {
+          const label = pred.label;
+          if (!labelCounts[label]) {
+            labelCounts[label] = 0;
+            labelConfidences[label] = 0;
+          }
+          labelCounts[label]++;
+          labelConfidences[label] += pred.confidence;
+        });
+        
+        // Find the most common label
+        let bestLabel = null;
+        let bestCount = 0;
+        Object.keys(labelCounts).forEach(label => {
+          if (labelCounts[label] > bestCount) {
+            bestCount = labelCounts[label];
+            bestLabel = label;
+          }
+        });
+        
+        // Average confidence for the winning label
+        const avgConfidence = labelConfidences[bestLabel] / labelCounts[bestLabel];
+        
+        // Extract variety and gender from label
+        const variety = getVarietyFromLabel(bestLabel);
+        const gender = getGenderFromLabel(bestLabel);
+        
+        finalPrediction = {
+          label: bestLabel,
+          variety: variety,
+          gender: gender,
+          confidence: avgConfidence,
+          isNotFlower: false,
+          runs: runCount,
+          allResults: allPredictions.map(p => ({
+            label: p.label,
+            confidence: p.confidence,
+            isNotFlower: p.isNotFlower
+          }))
+        };
+        
+        console.log(`📊 [DEV MODE] Multi-run result: ${bestLabel} with ${(avgConfidence * 100).toFixed(1)}% avg confidence (${bestCount}/${validPreds.length} votes)`);
+      }
+      
+      // Update state with final prediction
+      setTmPrediction(finalPrediction);
+      setIsTmComplete(true);
+      setPrediction(finalPrediction);
+      setIsAnalyzing(false);
+      
+      // Fade in results
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      // Run Gemini analysis if available and it's a flower
+      if (geminiService.isAvailable() && !finalPrediction.isNotFlower) {
+        runGeminiAnalysisOnly(finalPrediction);
+      }
+      
+    } catch (error) {
+      console.error('❌ [DEV MODE] Multi-run analysis failed:', error);
+      setAnalysisError(error.message);
+      setIsAnalyzing(false);
     }
   };
 

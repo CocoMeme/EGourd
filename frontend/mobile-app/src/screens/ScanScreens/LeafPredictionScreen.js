@@ -208,6 +208,50 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
     // Sync state when route params change
     useEffect(() => {
+        // Check if we received pre-computed prediction from Developer Mode (old approach)
+        if (route.params.tmPrediction) {
+            console.log('🔬 [DEV MODE] Using pre-computed prediction from CameraScreen.test');
+            const preComputed = route.params.tmPrediction;
+            
+            const tmPred = {
+                variety: getVarietyFromLabel(preComputed.topPrediction.label),
+                confidence: preComputed.topPrediction.percentage,
+                rawScore: preComputed.topPrediction.probability,
+                label: preComputed.topPrediction.label,
+                isNotLeaf: preComputed.topPrediction.label === 'Not Leaf',
+                allPredictions: preComputed.predictions,
+                source: 'tflite',
+                modelType: `Teachable Machine (Leaf) - ${preComputed.runs} runs averaged`,
+                processingTime: preComputed.processingTime,
+            };
+            
+            setTmPrediction(tmPred);
+            setPrediction(tmPred);
+            setIsTmComplete(true);
+            setIsAnalyzing(false);
+            
+            // Fade in results
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+            
+            // Still run Gemini analysis if available
+            if (geminiService.isAvailable() && !tmPred.isNotLeaf) {
+                runGeminiAnalysis(tmPred);
+            }
+            return;
+        }
+        
+        // DEV MODE: Run multi-run prediction here with loading animation
+        if (route.params.devMode && route.params.isLoading && route.params.imageUri) {
+            console.log('🔬 [DEV MODE] Running multi-run prediction in LeafPredictionScreen');
+            runDevModeAnalysis();
+            return;
+        }
+        
+        // Original logic for non-dev mode
         setIsAnalyzing(route.params.isLoading || false);
         setIsTmComplete(false);
         setIsGeminiLoading(false);
@@ -239,6 +283,95 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             spinAnim.setValue(0);
         }
     }, [isAnalyzing, isGeminiLoading]);
+
+    /**
+     * DEV MODE: Run multi-run prediction with averaged results
+     */
+    const runDevModeAnalysis = async () => {
+        const runs = route.params.multiRunCount || 5;
+        
+        try {
+            setIsAnalyzing(true);
+            setIsTmComplete(false);
+            setAnalysisError(null);
+
+            setLoadingStage(`Running ${runs} predictions for accuracy...`);
+            console.log(`🔬 [DEV MODE] Running ${runs} predictions...`);
+
+            const startTime = Date.now();
+            
+            // Collect all prediction runs
+            const allRuns = [];
+            for (let i = 0; i < runs; i++) {
+                const result = await modelService.quickPredict(imageUri, imgWidth, imgHeight);
+                allRuns.push(result);
+                console.log(`  Run ${i + 1}/${runs}: ${result.topPrediction.label} (${result.topPrediction.percentage.toFixed(1)}%)`);
+                setLoadingStage(`Analyzing... (${i + 1}/${runs})`);
+            }
+
+            // Get labels from first run
+            const labels = allRuns[0].predictions.map(p => p.label);
+            
+            // Average the percentages for each label
+            const averagedPredictions = labels.map(label => {
+                const percentages = allRuns.map(run => {
+                    const pred = run.predictions.find(p => p.label === label);
+                    return pred ? pred.percentage : 0;
+                });
+                const avgPercentage = percentages.reduce((a, b) => a + b, 0) / runs;
+                
+                return {
+                    label,
+                    percentage: Math.round(avgPercentage * 10) / 10,
+                    probability: avgPercentage / 100,
+                };
+            });
+
+            // Sort by percentage (highest first)
+            averagedPredictions.sort((a, b) => b.percentage - a.percentage);
+
+            const topPrediction = averagedPredictions[0];
+            const totalTime = Date.now() - startTime;
+
+            console.log(`✅ Multi-run complete in ${totalTime}ms`);
+            console.log(`📊 AVERAGED RESULT: ${topPrediction.label} (${topPrediction.percentage.toFixed(1)}%)`);
+
+            const tmPred = {
+                variety: getVarietyFromLabel(topPrediction.label),
+                confidence: topPrediction.percentage,
+                rawScore: topPrediction.probability,
+                label: topPrediction.label,
+                isNotLeaf: topPrediction.label === 'Not Leaf',
+                allPredictions: averagedPredictions,
+                source: 'tflite',
+                modelType: `Teachable Machine (Leaf) - ${runs} runs averaged`,
+                processingTime: totalTime,
+            };
+
+            // Show results
+            setTmPrediction(tmPred);
+            setPrediction(tmPred);
+            setIsTmComplete(true);
+            setIsAnalyzing(false);
+
+            // Fade in results
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+
+            // Run Gemini analysis if available
+            if (geminiService.isAvailable() && !tmPred.isNotLeaf) {
+                runGeminiAnalysis(tmPred);
+            }
+
+        } catch (error) {
+            console.error('❌ Dev mode analysis failed:', error);
+            setAnalysisError(error.message);
+            setIsAnalyzing(false);
+        }
+    };
 
     /**
      * Run TM analysis (Gemini leaf analysis will be added later)
@@ -318,6 +451,34 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             console.error('❌ Leaf analysis failed:', error);
             setAnalysisError(error.message);
             setIsAnalyzing(false);
+            setIsGeminiLoading(false);
+        }
+    };
+
+    /**
+     * Run Gemini analysis separately (for Dev Mode where TM is pre-computed)
+     */
+    const runGeminiAnalysis = async (tmPred) => {
+        setIsGeminiLoading(true);
+        setLoadingStage('Analyzing leaf health with AI...');
+        console.log('🤖 Running Gemini leaf analysis...');
+
+        try {
+            const geminiResult = await geminiService.analyzeLeaf(imageUri, tmPred);
+            console.log('✅ Gemini Leaf Analysis complete');
+
+            setGeminiPrediction(geminiResult);
+
+            // Update final prediction with Gemini data
+            setPrediction(prev => ({
+                ...prev,
+                geminiData: geminiResult.geminiData,
+                confidence: (prev.confidence + geminiResult.confidence) / 2,
+                validationStatus: 'validated',
+            }));
+        } catch (geminiError) {
+            console.error('❌ Gemini leaf analysis failed:', geminiError);
+        } finally {
             setIsGeminiLoading(false);
         }
     };
