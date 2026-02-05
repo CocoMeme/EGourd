@@ -51,9 +51,7 @@ export const CameraScreenTest = ({ navigation }) => {
   const [isStable, setIsStable] = useState(false); // Track if prediction is stable
 
   // Capture State
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [isProcessingCapture, setIsProcessingCapture] = useState(false); // Skeleton loading during multi-run prediction
-  const isCapturingRef = useRef(false); // Ref to prevent double-capture race condition
+  const [isCapturing, setIsCapturing] = useState(false)
 
   // Scan Mode State
   const [scanMode, setScanMode] = useState(SCAN_MODES.FLOWER);
@@ -338,9 +336,7 @@ export const CameraScreenTest = ({ navigation }) => {
     useCallback(() => {
       console.log('📱 CameraScreen.test focused - resetting state');
       setIsCapturing(false);
-      setIsProcessingCapture(false); // Reset skeleton loading state
       setIsStable(false);
-      isCapturingRef.current = false; // Reset capture lock
 
       // Hide tab bar when on camera screen
       navigation.getParent()?.setOptions({
@@ -414,115 +410,105 @@ export const CameraScreenTest = ({ navigation }) => {
   };
 
   /**
-   * DEVELOPER MODE: Run model multiple times and average results
-   * @param {string} imageUri - Image to predict
-   * @param {number} width - Image width
-   * @param {number} height - Image height
-   * @param {number} runs - Number of prediction runs (default 5)
-   * @returns {Object} Averaged prediction result
-   */
-  const runMultiplePredictions = async (imageUri, width, height, runs = 5) => {
-    console.log(`🔬 Running ${runs} predictions for accuracy...`);
-    const startTime = Date.now();
-    
-    // Collect all prediction runs
-    const allRuns = [];
-    for (let i = 0; i < runs; i++) {
-      const result = await modelService.quickPredict(imageUri, width, height);
-      allRuns.push(result);
-      console.log(`  Run ${i + 1}/${runs}: ${result.topPrediction.label} (${result.topPrediction.percentage.toFixed(1)}%)`);
-    }
-
-    // Get labels from first run (all runs have same labels)
-    const labels = allRuns[0].predictions.map(p => p.label);
-    
-    // Average the percentages for each label
-    const averagedPredictions = labels.map(label => {
-      const percentages = allRuns.map(run => {
-        const pred = run.predictions.find(p => p.label === label);
-        return pred ? pred.percentage : 0;
-      });
-      const avgPercentage = percentages.reduce((a, b) => a + b, 0) / runs;
-      
-      return {
-        label,
-        percentage: Math.round(avgPercentage * 10) / 10,
-        probability: avgPercentage / 100,
-      };
-    });
-
-    // Sort by percentage (highest first)
-    averagedPredictions.sort((a, b) => b.percentage - a.percentage);
-
-    const topPrediction = averagedPredictions[0];
-    const totalTime = Date.now() - startTime;
-
-    console.log(`✅ Multi-run complete in ${totalTime}ms`);
-    console.log(`📊 AVERAGED RESULT: ${topPrediction.label} (${topPrediction.percentage.toFixed(1)}%)`);
-
-    return {
-      predictions: averagedPredictions,
-      topPrediction: {
-        ...topPrediction,
-        confidenceLevel: topPrediction.percentage >= 80 ? 'high' : topPrediction.percentage >= 70 ? 'moderate' : 'low',
-      },
-      processingTime: totalTime,
-      runs,
-      scanMode: modelService.scanMode,
-    };
-  };
-
-  /**
-   * DEVELOPER MODE: Handle Capture
-   * - Takes FRESH photo at capture moment
-   * - Navigates immediately to prediction screen
-   * - Prediction screen handles multi-run prediction with loading animation
+   * Handle Capture - Uses the BEST STABLE frame from real-time scanning
+   * Prioritizes frames where the prediction was stable
+   * Falls back to best recent frame, then last frame
    */
   const handleCapture = async () => {
-    // Use ref to prevent double-capture (state updates are async)
-    if (isCapturingRef.current) return;
-    isCapturingRef.current = true;
+    if (isCapturing) return;
+
+    // Set capturing flag to prevent double-taps
     setIsCapturing(true);
 
     // Stop scanning FIRST
     stopScanning();
 
-    console.log('📸 [DEV MODE] Taking fresh capture...');
+    console.log('📸 Capturing image...');
 
-    try {
-      // Take a FRESH photo at the moment of capture
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-        skipProcessing: true,
-        base64: false,
-        exif: false,
-        shutterSound: false,
-      });
+    // Prefer the BEST STABLE frame, fall back to Best Recent, then Last Frame
+    let imageUri = null;
+    let imageWidth = 0;
+    let imageHeight = 0;
+    let selectionReason = '';
 
-      console.log('✅ Fresh image captured:', photo.uri.slice(-40));
-
-      // Navigate IMMEDIATELY - prediction screen will handle multi-run
-      navigation.navigate(
-        scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
-        {
-          imageUri: photo.uri,
-          width: photo.width,
-          height: photo.height,
-          isLoading: true, // Prediction screen shows loading
-          returnTo: 'CameraMain',
-          scanMode: scanMode,
-          // Flag to indicate dev mode - prediction screen will run multi-run
-          devMode: true,
-          multiRunCount: 5,
-        }
-      );
-    } catch (error) {
-      console.error('❌ Capture failed:', error);
-      Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
-      isCapturingRef.current = false;
-      setIsCapturing(false);
-      startScanning();
+    // 1. Try Best Stable Frame
+    if (bestFrame.current.uri && bestFrame.current.confidence > 50) {
+      imageUri = bestFrame.current.uri;
+      imageWidth = bestFrame.current.width;
+      imageHeight = bestFrame.current.height;
+      selectionReason = `BEST STABLE: ${bestFrame.current.label} (${bestFrame.current.confidence.toFixed(1)}%)`;
     }
+    // 2. Try Best Recent Frame (Intelligent Capture)
+    else {
+      // Mode-aware rejection label
+      const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
+      const bestRecent = recentPredictions.current
+        .filter(p => p.label !== rejectionLabel)
+        .sort((a, b) => b.confidence - a.confidence)[0];
+
+      if (bestRecent && bestRecent.confidence > 60) {
+        imageUri = bestRecent.uri;
+        imageWidth = bestRecent.width;
+        imageHeight = bestRecent.height;
+        selectionReason = `BEST RECENT: ${bestRecent.label} (${bestRecent.confidence.toFixed(1)}%)`;
+      }
+      // 3. Fallback to Last Frame
+      else if (lastFrameUri.current.uri) {
+        imageUri = lastFrameUri.current.uri;
+        imageWidth = lastFrameUri.current.width;
+        imageHeight = lastFrameUri.current.height;
+        selectionReason = 'LAST FRAME (no stable prediction found)';
+      }
+    }
+
+    if (!imageUri) {
+      // Fallback: take a new photo if no frame available
+      console.log('⚠️ No cached frame, taking new photo...');
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+          skipProcessing: true,
+          base64: false,
+          exif: false,
+          shutterSound: false,
+        });
+
+        console.log('✅ Image captured:', photo.uri);
+        navigation.navigate(
+          scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
+          {
+            imageUri: photo.uri,
+            width: photo.width,
+            height: photo.height,
+            isLoading: true,
+            returnTo: 'CameraMain',
+            scanMode: scanMode,
+          }
+        );
+      } catch (error) {
+        console.error('❌ Capture failed:', error);
+        Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
+        setIsCapturing(false);
+        startScanning();
+      }
+      return;
+    }
+
+    console.log('🟢 CAPTURE:', selectionReason);
+    console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
+
+    // Navigate IMMEDIATELY - no waiting!
+    navigation.navigate(
+      scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
+      {
+        imageUri: imageUri,
+        width: imageWidth,
+        height: imageHeight,
+        isLoading: true,
+        returnTo: 'CameraMain',
+        scanMode: scanMode,
+      }
+    );
     // Note: isCapturing will be reset by useFocusEffect when returning
   };
 
@@ -657,17 +643,6 @@ export const CameraScreenTest = ({ navigation }) => {
           animateShutter={false}
           onCameraReady={handleCameraReady}
         />
-        
-        {/* Skeleton Loading Overlay during multi-run prediction */}
-        {isProcessingCapture && (
-          <View style={styles.skeletonOverlay}>
-            <View style={styles.skeletonContent}>
-              <ActivityIndicator size="large" color="#4CAF50" />
-              <Text style={styles.skeletonText}>Analyzing...</Text>
-              <Text style={styles.skeletonSubtext}>Running 5 predictions for accuracy</Text>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* 3. Predictions (Fills remaining space) */}
@@ -736,10 +711,10 @@ export const CameraScreenTest = ({ navigation }) => {
             onPress={handleCapture}
             style={[
               styles.captureButton,
-              (!isModelReady || isCapturing || isProcessingCapture) && styles.captureButtonDisabled,
+              (!isModelReady || isCapturing) && styles.captureButtonDisabled,
               isStable && styles.captureButtonStable
             ]}
-            disabled={!isModelReady || isCapturing || isProcessingCapture}
+            disabled={!isModelReady || isCapturing}
           >
             <View style={[styles.captureInner, isStable && styles.captureInnerStable]}>
               <Ionicons name="camera" size={28} color={isStable ? "#4CAF50" : "#000"} />
@@ -996,29 +971,5 @@ const styles = StyleSheet.create({
   },
   captureInnerStable: {
     backgroundColor: 'rgba(76, 175, 80, 0.2)',
-  },
-
-  // Skeleton Loading Overlay
-  skeletonOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  skeletonContent: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  skeletonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  skeletonSubtext: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
-    marginTop: 8,
   },
 });

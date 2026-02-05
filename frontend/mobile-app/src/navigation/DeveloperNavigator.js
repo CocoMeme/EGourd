@@ -256,6 +256,16 @@ const ProfileStack = ({ onAuthChange }) => {
       >
         {(props) => <ProfileScreen {...props} onAuthChange={onAuthChange} />}
       </Stack.Screen>
+      <Stack.Screen 
+        name="FlowerResults" 
+        component={FlowerResultsScreen} 
+        options={{ title: 'Scan Results', headerShown: false }}
+      />
+      <Stack.Screen 
+        name="LeafResults" 
+        component={LeafResultsScreen} 
+        options={{ title: 'Scan Results', headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
