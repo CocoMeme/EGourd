@@ -14,10 +14,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 import { PlantCard, PlantFilter } from '../../components';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
 export const PollinationScreen = ({ navigation }) => {
+  const { isGuest } = useAuth();
   const [plants, setPlants] = useState([]);
   const [filteredPlants, setFilteredPlants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,9 +38,16 @@ export const PollinationScreen = ({ navigation }) => {
   const fetchPlants = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const response = await plantService.getPlants(filters);
-      setPlants(response.data);
-      setFilteredPlants(response.data);
+
+      if (isGuest) {
+        const response = await guestStorageService.getLocalPlants(filters);
+        setPlants(response.data);
+        setFilteredPlants(response.data);
+      } else {
+        const response = await plantService.getPlants(filters);
+        setPlants(response.data);
+        setFilteredPlants(response.data);
+      }
     } catch (error) {
       console.error('Error fetching plants:', error);
       
@@ -106,7 +116,11 @@ export const PollinationScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await plantService.deletePlant(plant._id);
+              if (isGuest) {
+                await guestStorageService.deleteLocalPlant(plant._id);
+              } else {
+                await plantService.deletePlant(plant._id);
+              }
               setPlants(prev => prev.filter(p => p._id !== plant._id));
               setFilteredPlants(prev => prev.filter(p => p._id !== plant._id));
               Alert.alert('Success', 'Plant deleted successfully.');

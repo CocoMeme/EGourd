@@ -141,13 +141,18 @@ const MainTabs = ({ onAuthChange, showWelcome, userRole }) => {
 };
 
 export const AppNavigator = () => {
-  const { isAuthenticated, userRole, isLoading, checkAuthStatus } = useAuth();
+  const { isAuthenticated, isGuest, userRole, isLoading, checkAuthStatus, loginAsGuest } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
 
-  const handleAuthChange = () => {
-    // Force re-check authentication status and show welcome alert
-    setShowWelcome(true);
-    checkAuthStatus();
+  const handleAuthChange = async (isGuestMode = false) => {
+    if (isGuestMode) {
+      // Guest mode: set flag and authenticate locally
+      await loginAsGuest();
+    } else {
+      // Real auth: re-check authentication status and show welcome alert
+      setShowWelcome(true);
+      checkAuthStatus();
+    }
   };
 
   // Show loading screen while checking auth

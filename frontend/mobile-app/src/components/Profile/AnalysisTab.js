@@ -13,12 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts';
 import { theme } from '../../styles';
-import { analyticsService, authService } from '../../services';
+import { analyticsService, authService, guestStorageService } from '../../services';
 
 const { width } = Dimensions.get('window');
 const chartWidth = width - 48; // Account for padding
 
-export const AnalysisTab = () => {
+export const AnalysisTab = ({ isGuest }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [analytics, setAnalytics] = useState(null);
@@ -32,6 +32,13 @@ export const AnalysisTab = () => {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
+
+      if (isGuest) {
+        const localData = await guestStorageService.getLocalAnalytics();
+        setAnalytics(localData);
+        return;
+      }
+
       const user = await authService.getCurrentUser();
       
       const dateRanges = analyticsService.getDateRangePresets();

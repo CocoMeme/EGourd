@@ -16,10 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button, ImageCapture } from '../../components';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
 export const PlantDetailScreen = ({ navigation, route }) => {
+  const { isGuest } = useAuth();
   const { plantId, plant: initialPlant } = route.params;
   const [plant, setPlant] = useState(initialPlant);
   const [isLoading, setIsLoading] = useState(!initialPlant);
@@ -87,10 +90,15 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const fetchPlantDetails = async (showLoader = true) => {
     try {
       if (showLoader) setIsLoading(true);
-      const response = await plantService.getPlant(plantId);
-      setPlant(response.data);
-      // Also fetch lifecycle predictions
-      fetchLifecyclePredictions();
+      if (isGuest) {
+        const response = await guestStorageService.getLocalPlant(plantId);
+        setPlant(response.data);
+      } else {
+        const response = await plantService.getPlant(plantId);
+        setPlant(response.data);
+        // Also fetch lifecycle predictions
+        fetchLifecyclePredictions();
+      }
     } catch (error) {
       console.error('Error fetching plant details:', error);
       Alert.alert('Error', 'Failed to load plant details.');
@@ -302,6 +310,25 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const handleAddPollination = async () => {
     try {
       const count = parseInt(pollinationCount) || 1;
+
+      if (isGuest) {
+        const response = await guestStorageService.addLocalPollination(
+          plantId,
+          count,
+          isHandPollinated,
+          pollinationNotes
+        );
+        Alert.alert('Success', `Pollination recorded locally! (${count} female flowers)`, [{
+          text: 'OK',
+          onPress: () => {
+            setShowPollinationModal(false);
+            setPollinationCount('1');
+            setPollinationNotes('');
+            fetchPlantDetails(false);
+          }
+        }]);
+        return;
+      }
       
       const response = await plantService.addPollination(
         plantId,
@@ -391,8 +418,13 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     try {
       // imageData might be an object with uri property or just a uri string
       const imageUri = imageData?.uri || imageData;
-      await plantService.uploadImage(plantId, imageUri, 'Plant photo');
-      Alert.alert('Success', 'Image uploaded successfully!');
+      if (isGuest) {
+        await guestStorageService.setLocalPlantImage(plantId, imageUri, 'Plant photo');
+        Alert.alert('Success', 'Image saved locally!');
+      } else {
+        await plantService.uploadImage(plantId, imageUri, 'Plant photo');
+        Alert.alert('Success', 'Image uploaded successfully!');
+      }
       setShowImageCapture(false);
       fetchPlantDetails(false);
     } catch (error) {

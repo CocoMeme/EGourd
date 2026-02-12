@@ -23,6 +23,8 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Dedicated Leaf Components
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
@@ -161,6 +163,7 @@ const ConfidenceDisplay = ({ tmPrediction, geminiPrediction, isGeminiLoading }) 
  * Main Leaf Prediction Screen Component
  */
 export const LeafPredictionScreen = ({ route, navigation }) => {
+    const { isGuest } = useAuth();
     const { imageUri, isLoading: initialLoading, width: imgWidth, height: imgHeight } = route.params;
 
     // Loading and analysis state
@@ -418,13 +421,21 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 }
             };
 
-            await scanService.saveScan(scanData, imageUri);
-
-            Alert.alert(
-                'Success! 🎉',
-                'Leaf scan saved to your history!',
-                [{ text: 'OK', onPress: () => handleBack() }]
-            );
+            if (isGuest) {
+                await guestStorageService.saveLocalScan(scanData, imageUri);
+                Alert.alert(
+                    'Saved Locally! 🎉',
+                    'Leaf scan saved on your device. Sign in to sync it to your account.',
+                    [{ text: 'OK', onPress: () => handleBack() }]
+                );
+            } else {
+                await scanService.saveScan(scanData, imageUri);
+                Alert.alert(
+                    'Success! 🎉',
+                    'Leaf scan saved to your history!',
+                    [{ text: 'OK', onPress: () => handleBack() }]
+                );
+            }
         } catch (error) {
             console.error('Save error:', error);
             Alert.alert('Save Failed', 'Failed to save scan. Please try again.');

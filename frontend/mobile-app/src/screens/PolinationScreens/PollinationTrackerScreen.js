@@ -30,6 +30,8 @@ import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { pollinationNotificationHelper } from '../../utils/pollinationNotificationHelper';
 
@@ -42,6 +44,7 @@ const DAYS_TO_RESULT = {
 };
 
 export const PollinationTrackerScreen = ({ navigation, route }) => {
+  const { isGuest } = useAuth();
   const { plantId, plant: initialPlant } = route.params;
   
   const [plant, setPlant] = useState(initialPlant);
@@ -67,10 +70,16 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
     try {
       if (showLoader) setIsLoading(true);
       
-      // Fetch plant to get updated pollinations
-      const response = await plantService.getPlant(plantId);
-      setPlant(response.data);
-      setPollinations(response.data.pollinations || []);
+      if (isGuest) {
+        const response = await guestStorageService.getLocalPlant(plantId);
+        setPlant(response.data);
+        setPollinations(response.data.pollinations || []);
+      } else {
+        // Fetch plant to get updated pollinations
+        const response = await plantService.getPlant(plantId);
+        setPlant(response.data);
+        setPollinations(response.data.pollinations || []);
+      }
     } catch (error) {
       console.error('Error fetching pollinations:', error);
       Alert.alert('Error', 'Failed to load pollinations');
@@ -155,6 +164,28 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       setIsSaving(true);
       
       const count = parseInt(femaleFlowerCount) || 1;
+
+      if (isGuest) {
+        const response = await guestStorageService.addLocalPollination(
+          plantId,
+          count,
+          isHandPollinated,
+          notes
+        );
+        if (response.success && response.data?.pollination) {
+          Alert.alert(
+            '✅ Pollination Added!',
+            `${response.data.pollination.label} recorded locally.\n\n` +
+            `📅 Check for results on: ${formatDate(response.data.pollination.expectedResultDate)}`,
+            [{ text: 'OK' }]
+          );
+        }
+        setShowAddModal(false);
+        resetForm();
+        fetchPollinations(false);
+        return;
+      }
+
       const response = await plantService.addPollination(
         plantId,
         count,
@@ -201,12 +232,22 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         status: resultStatus
       };
 
-      // If marking as success/failed/partial, record the result
       if (resultStatus === 'success' || resultStatus === 'failed' || resultStatus === 'partial') {
         updateData.actualSuccessfulCount = parseInt(successCount) || 0;
         updateData.resultRecordedDate = new Date();
-        
-        // Cancel scheduled notification if exists (no need to remind if result is already recorded)
+      }
+
+      if (isGuest) {
+        await guestStorageService.updateLocalPollination(plantId, selectedPollination._id, updateData);
+        Alert.alert('Success', `${selectedPollination.label} updated!`);
+        setShowEditModal(false);
+        resetForm();
+        fetchPollinations(false);
+        return;
+      }
+
+      // Non-guest: cancel notification if marking result
+      if (resultStatus === 'success' || resultStatus === 'failed' || resultStatus === 'partial') {
         if (selectedPollination.notificationId) {
           await pollinationNotificationHelper.cancelPollinationResultNotification(selectedPollination.notificationId);
           updateData.notificationScheduled = false;
@@ -249,6 +290,12 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             try {
+              if (isGuest) {
+                await guestStorageService.deleteLocalPollination(plantId, pollination._id);
+                fetchPollinations(false);
+                return;
+              }
+
               // Cancel notification if scheduled using the helper
               if (pollination.notificationId) {
                 await pollinationNotificationHelper.cancelPollinationResultNotification(pollination.notificationId);

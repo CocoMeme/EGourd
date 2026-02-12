@@ -14,8 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { authService } from '../../services';
 import { ProfileItem, ProfileSection } from './shared';
+import { GuestBanner } from '../../components';
 
-export const ProfileTab = ({ user, navigation, loadUserData }) => {
+export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
     const [verificationModalVisible, setVerificationModalVisible] = useState(false);
     const [verificationPin, setVerificationPin] = useState('');
     const [sendingPin, setSendingPin] = useState(false);
@@ -116,28 +117,36 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <ProfileSection title="Account Status" style={styles.statusCard}>
-                    <View style={styles.statusRow}>
-                        <View style={styles.statusIconWrap}>
-                            <Ionicons
-                                name={isVerified ? 'shield-checkmark' : 'shield-outline'}
-                                size={22}
-                                color={isVerified ? theme.colors.success : theme.colors.warning}
-                            />
+                {isGuest ? (
+                    <GuestBanner
+                        message="Sign in to access your full profile, sync data across devices, and verify your email."
+                        icon="person-circle-outline"
+                        style={{ marginHorizontal: theme.profile.card.margin, marginTop: theme.spacing.md }}
+                    />
+                ) : (
+                    <ProfileSection title="Account Status" style={styles.statusCard}>
+                        <View style={styles.statusRow}>
+                            <View style={styles.statusIconWrap}>
+                                <Ionicons
+                                    name={isVerified ? 'shield-checkmark' : 'shield-outline'}
+                                    size={22}
+                                    color={isVerified ? theme.colors.success : theme.colors.warning}
+                                />
+                            </View>
+                            <View style={styles.statusTextGroup}>
+                                <Text style={styles.statusTitle}>Verification</Text>
+                                <Text style={styles.statusDescription}>
+                                    {isVerified ? 'Your email is verified and secure.' : 'Verify your email to unlock all features.'}
+                                </Text>
+                            </View>
+                            {!isVerified && (
+                                <TouchableOpacity style={styles.statusButton} onPress={handleVerifyEmail}>
+                                    <Text style={styles.statusButtonText}>Verify now</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
-                        <View style={styles.statusTextGroup}>
-                            <Text style={styles.statusTitle}>Verification</Text>
-                            <Text style={styles.statusDescription}>
-                                {isVerified ? 'Your email is verified and secure.' : 'Verify your email to unlock all features.'}
-                            </Text>
-                        </View>
-                        {!isVerified && (
-                            <TouchableOpacity style={styles.statusButton} onPress={handleVerifyEmail}>
-                                <Text style={styles.statusButtonText}>Verify now</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </ProfileSection>
+                    </ProfileSection>
+                )}
 
                 <ProfileSection title="Profile Information">
                     {profileDetails.map((item) => (
@@ -148,16 +157,18 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                             value={item.value}
                         />
                     ))}
-                    <ProfileItem
-                        icon="shield-checkmark-outline"
-                        title="Account Security"
-                        value={isVerified ? 'Verified' : ''}
-                        badge={isVerified ? 'Verified' : 'Needs action'}
-                        badgeColor={isVerified ? theme.colors.success : theme.colors.warning}
-                        onPress={!isVerified ? handleVerifyEmail : undefined}
-                        isLast
-                        description={isVerified ? 'Everything looks good.' : 'Tap to verify your email.'}
-                    />
+                    {!isGuest && (
+                        <ProfileItem
+                            icon="shield-checkmark-outline"
+                            title="Account Security"
+                            value={isVerified ? 'Verified' : ''}
+                            badge={isVerified ? 'Verified' : 'Needs action'}
+                            badgeColor={isVerified ? theme.colors.success : theme.colors.warning}
+                            onPress={!isVerified ? handleVerifyEmail : undefined}
+                            isLast
+                            description={isVerified ? 'Everything looks good.' : 'Tap to verify your email.'}
+                        />
+                    )}
                 </ProfileSection>
 
                 <View style={styles.quickActionsContainer}>
@@ -181,7 +192,7 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                 </View>
             </ScrollView>
 
-            <Modal
+            {!isGuest && <Modal
                 visible={verificationModalVisible}
                 transparent
                 animationType="slide"
@@ -229,7 +240,7 @@ export const ProfileTab = ({ user, navigation, loadUserData }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+            </Modal>}
         </View>
     );
 };

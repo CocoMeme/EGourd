@@ -25,6 +25,8 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -555,6 +557,7 @@ const skeletonStyles = StyleSheet.create({
  * Main Results Screen Component
  */
 export const FlowerPredictionScreen = ({ route, navigation }) => {
+  const { isGuest } = useAuth();
   // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
   const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params;
   const isLeafMode = scanMode === SCAN_MODES.LEAF;
@@ -722,15 +725,22 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
           } : null,
         }
       };
-      await scanService.saveScan(scanData, imageUri);
 
-      Alert.alert(
-        'Success! 🎉',
-        'Scan saved to your history!',
-        [
-          { text: 'OK', onPress: () => handleBack() }
-        ]
-      );
+      if (isGuest) {
+        await guestStorageService.saveLocalScan(scanData, imageUri);
+        Alert.alert(
+          'Saved Locally! 🎉',
+          'Scan saved on your device. Sign in to sync it to your account.',
+          [{ text: 'OK', onPress: () => handleBack() }]
+        );
+      } else {
+        await scanService.saveScan(scanData, imageUri);
+        Alert.alert(
+          'Success! 🎉',
+          'Scan saved to your history!',
+          [{ text: 'OK', onPress: () => handleBack() }]
+        );
+      }
     } catch (error) {
       console.error('Save error:', error);
       Alert.alert('Save Failed', 'Failed to save scan. Please try again.');

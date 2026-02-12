@@ -4,9 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { forumService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CommunityScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { isGuest } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState([]);
@@ -80,8 +82,25 @@ const CommunityScreen = ({ navigation }) => {
     fetchPosts();
   };
 
+  // Helper to gate guest actions
+  const requireAccount = (action) => {
+    if (isGuest) {
+      Alert.alert(
+        'Account Required',
+        'Sign in or create an account to interact with the community.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
+        ]
+      );
+      return true;
+    }
+    return false;
+  };
+
   // Handle like post
   const handleLikePost = async (postId) => {
+    if (requireAccount()) return;
     try{
       console.log('Liking post with ID:', postId);
       if (!postId) {
@@ -107,6 +126,7 @@ const CommunityScreen = ({ navigation }) => {
   };
 
   const handleReportPost = (postId) => {
+    if (requireAccount()) return;
     Alert.alert(
       'Report Post',
       'Report this post for inappropriate content? Our moderators will review it.',
@@ -196,6 +216,7 @@ const CommunityScreen = ({ navigation }) => {
   };
 
   const handleCreatePost = () => {
+    if (requireAccount()) return;
     // Navigate to create post screen (to be implemented)
     navigation.navigate('CreatePost', {
       onPostCreated: () => {

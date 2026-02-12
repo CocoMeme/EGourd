@@ -10,3 +10,5 @@ export { default as chatbotService } from './chatbotService';
 export { scanService, ScanService } from './scanService';
 export { default as weatherService, getWeatherForDate, getSeasonFromDate, DEFAULT_SOIL_TYPE } from './weatherService';
 export { default as analyticsService } from './analyticsService';
+export { guestStorageService } from './guestStorageService';
+export { guestMigrationService } from './guestMigrationService';

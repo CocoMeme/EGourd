@@ -14,10 +14,10 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
-import { scanService } from '../../services';
-import { RecentScanCard } from '../../components';
+import { scanService, guestStorageService } from '../../services';
+import { RecentScanCard, GuestBanner } from '../../components';
 
-export const HistoryTab = ({ navigation, route }) => {
+export const HistoryTab = ({ navigation, route, isGuest }) => {
     const [scans, setScans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -48,8 +48,13 @@ export const HistoryTab = ({ navigation, route }) => {
 
     const fetchHistory = async () => {
         try {
-            const history = await scanService.getScanHistory();
-            setScans(history);
+            if (isGuest) {
+                const localScans = await guestStorageService.getLocalScans();
+                setScans(localScans);
+            } else {
+                const history = await scanService.getScanHistory();
+                setScans(history);
+            }
         } catch (error) {
             console.error('Error fetching history:', error);
         } finally {
@@ -113,7 +118,7 @@ export const HistoryTab = ({ navigation, route }) => {
             name={item.name}
             gender={item.prediction}
             onPress={() => handleScanPress(item)}
-            onDelete={() => handleDelete(item._id)}
+            onDelete={() => handleDelete(item._id || item.id)}
             style={styles.card}
         />
     );
@@ -129,9 +134,13 @@ export const HistoryTab = ({ navigation, route }) => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await scanService.deleteScan(scanId);
+                            if (isGuest) {
+                                await guestStorageService.deleteLocalScan(scanId);
+                            } else {
+                                await scanService.deleteScan(scanId);
+                            }
                             // Remove from local state
-                            setScans(prev => prev.filter(scan => scan._id !== scanId));
+                            setScans(prev => prev.filter(scan => (scan._id || scan.id) !== scanId));
                         } catch (error) {
                             console.error('Error deleting scan:', error);
                             Alert.alert('Error', 'Failed to delete scan. Please try again.');
@@ -163,6 +172,13 @@ export const HistoryTab = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
+            {isGuest && (
+                <GuestBanner
+                    message="Your scan history is stored locally on this device. Sign in to sync across devices."
+                    icon="phone-portrait-outline"
+                    style={{ marginHorizontal: theme.spacing.md, marginTop: theme.spacing.md }}
+                />
+            )}
             {/* Search Bar */}
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
@@ -259,7 +275,7 @@ export const HistoryTab = ({ navigation, route }) => {
             <FlatList
                 data={filteredScans}
                 renderItem={renderItem}
-                keyExtractor={item => item._id}
+                keyExtractor={item => item._id || item.id}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
                     <RefreshControl

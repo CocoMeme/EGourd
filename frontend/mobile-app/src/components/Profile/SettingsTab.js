@@ -16,7 +16,7 @@ import { authService } from '../../services';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { ProfileItem, ProfileSection } from './shared';
 
-export const SettingsTab = ({ navigation, onAuthChange }) => {
+export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [loading, setLoading] = useState(false);
     const [cacheSize, setCacheSize] = useState(0);
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
@@ -350,13 +350,36 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                     </TouchableOpacity>
                 </ProfileSection>
 
-                <TouchableOpacity
-                    style={[styles.logoutButton, logoutLoading && styles.logoutButtonDisabled]}
-                    onPress={handleLogout}
-                    disabled={logoutLoading}
-                >
-                    <Text style={styles.logoutText}>{logoutLoading ? 'Logging out...' : 'LOGOUT'}</Text>
-                </TouchableOpacity>
+                {isGuest ? (
+                    <View style={styles.guestAuthContainer}>
+                        <TouchableOpacity
+                            style={styles.signInButton}
+                            onPress={() => {
+                                if (onAuthChange) onAuthChange();
+                            }}
+                        >
+                            <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                            <Text style={styles.signInText}>SIGN IN</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.createAccountButton}
+                            onPress={() => {
+                                if (onAuthChange) onAuthChange();
+                            }}
+                        >
+                            <Ionicons name="person-add-outline" size={18} color={theme.colors.primary} style={{ marginRight: 8 }} />
+                            <Text style={styles.createAccountText}>CREATE ACCOUNT</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        style={[styles.logoutButton, logoutLoading && styles.logoutButtonDisabled]}
+                        onPress={handleLogout}
+                        disabled={logoutLoading}
+                    >
+                        <Text style={styles.logoutText}>{logoutLoading ? 'Logging out...' : 'LOGOUT'}</Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
         </View>
     );
@@ -384,6 +407,42 @@ const styles = StyleSheet.create({
     logoutButtonDisabled: { opacity: 0.6 },
     logoutText: {
         color: theme.colors.error,
+        fontSize: theme.profile.button.fontSize,
+        fontFamily: theme.fonts.bold,
+        letterSpacing: theme.profile.button.letterSpacing,
+    },
+    guestAuthContainer: {
+        marginHorizontal: theme.profile.card.margin,
+        marginTop: theme.spacing.lg,
+        marginBottom: theme.spacing.xl,
+        gap: theme.spacing.sm,
+    },
+    signInButton: {
+        height: theme.profile.button.height,
+        borderRadius: theme.profile.button.borderRadius,
+        backgroundColor: theme.colors.primary,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    signInText: {
+        color: '#FFFFFF',
+        fontSize: theme.profile.button.fontSize,
+        fontFamily: theme.fonts.bold,
+        letterSpacing: theme.profile.button.letterSpacing,
+    },
+    createAccountButton: {
+        height: theme.profile.button.height,
+        borderRadius: theme.profile.button.borderRadius,
+        backgroundColor: 'rgba(85, 156, 73, 0.08)',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(85, 156, 73, 0.15)',
+    },
+    createAccountText: {
+        color: theme.colors.primary,
         fontSize: theme.profile.button.fontSize,
         fontFamily: theme.fonts.bold,
         letterSpacing: theme.profile.button.letterSpacing,

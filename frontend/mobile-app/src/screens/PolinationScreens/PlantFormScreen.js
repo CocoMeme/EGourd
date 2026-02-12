@@ -10,16 +10,58 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
+import { guestStorageService } from '../../services/guestStorageService';
+import { useAuth } from '../../contexts/AuthContext';
 import { PlantForm } from '../../components';
 
 export const PlantFormScreen = ({ navigation, route }) => {
+  const { isGuest } = useAuth();
   const { plant, mode = 'create', title } = route.params || {};
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (formData) => {
     setIsLoading(true);
     try {
-      if (mode === 'create') {
+      if (isGuest) {
+        // Guest mode: save locally
+        if (mode === 'create') {
+          const { image, ...plantData } = formData;
+          const response = await guestStorageService.saveLocalPlant(plantData);
+          const newPlant = response.data;
+
+          // Store image URI locally if captured
+          if (image && newPlant?._id) {
+            try {
+              await guestStorageService.setLocalPlantImage(newPlant._id, image.uri, 'Plant photo');
+            } catch (imageError) {
+              console.warn('Local image save failed:', imageError);
+            }
+          }
+
+          Alert.alert(
+            'Saved Locally!',
+            'Plant added to your device. Sign in to sync it to your account.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        } else {
+          const { image, ...plantData } = formData;
+          await guestStorageService.updateLocalPlant(plant._id, plantData);
+
+          if (image && plant?._id) {
+            try {
+              await guestStorageService.setLocalPlantImage(plant._id, image.uri, 'Plant photo');
+            } catch (imageError) {
+              console.warn('Local image save failed:', imageError);
+            }
+          }
+
+          Alert.alert(
+            'Updated!',
+            'Plant updated successfully.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        }
+      } else if (mode === 'create') {
         // Extract image from formData before sending
         const { image, ...plantData } = formData;
         

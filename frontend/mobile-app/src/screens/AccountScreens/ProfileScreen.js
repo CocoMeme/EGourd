@@ -11,10 +11,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../styles';
 import { ProfileTab, HistoryTab, SettingsTab, AnalysisTab } from '../../components/Profile';
 
 export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
+  const { isGuest } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -33,6 +35,10 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   }, []);
 
   const loadUserData = async () => {
+    if (isGuest) {
+      setUser({ firstName: 'Guest', lastName: 'User', email: null, profilePicture: null });
+      return;
+    }
     try {
       const userData = await authService.getCurrentUser();
       setUser(userData);
@@ -44,15 +50,15 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <ProfileTab user={user} navigation={navigation} loadUserData={loadUserData} />;
+        return <ProfileTab user={user} navigation={navigation} loadUserData={loadUserData} isGuest={isGuest} onAuthChange={onAuthChange} />;
       case 'history':
-        return <HistoryTab navigation={navigation} route={route} />;
+        return <HistoryTab navigation={navigation} route={route} isGuest={isGuest} />;
       case 'analysis':
-        return <AnalysisTab />;
+        return <AnalysisTab isGuest={isGuest} />;
       case 'settings':
-        return <SettingsTab navigation={navigation} onAuthChange={onAuthChange} />;
+        return <SettingsTab navigation={navigation} onAuthChange={onAuthChange} isGuest={isGuest} />;
       default:
-        return <ProfileTab user={user} navigation={navigation} loadUserData={loadUserData} />;
+        return <ProfileTab user={user} navigation={navigation} loadUserData={loadUserData} isGuest={isGuest} onAuthChange={onAuthChange} />;
     }
   };
 
@@ -80,12 +86,19 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>
-              {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+              {isGuest ? 'Guest User' : (user ? `${user.firstName} ${user.lastName}` : 'Loading...')}
             </Text>
-            <View style={styles.emailContainer}>
-              <Ionicons name="mail-outline" size={14} color="rgba(255, 255, 255, 0.8)" />
-              <Text style={styles.userEmail}>{user?.email || ''}</Text>
-            </View>
+            {isGuest ? (
+              <View style={styles.emailContainer}>
+                <Ionicons name="person-outline" size={14} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.userEmail}>Browsing as guest</Text>
+              </View>
+            ) : (
+              <View style={styles.emailContainer}>
+                <Ionicons name="mail-outline" size={14} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.userEmail}>{user?.email || ''}</Text>
+              </View>
+            )}
           </View>
         </View>
       </LinearGradient>

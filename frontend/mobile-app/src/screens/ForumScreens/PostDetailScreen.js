@@ -17,10 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { forumService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PostDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { postId } = route.params;
+  const { isGuest } = useAuth();
   
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,23 @@ const PostDetailScreen = ({ navigation, route }) => {
     }
   };
 
+  const requireAccount = (action) => {
+    if (isGuest) {
+      Alert.alert(
+        'Account Required',
+        'Sign in or create an account to ' + action + '.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
+        ]
+      );
+      return true;
+    }
+    return false;
+  };
+
   const handleLike = async () => {
+    if (requireAccount('like posts')) return;
     try {
       const response = await forumService.toggleLike(postId);
       if (response.success) {
@@ -71,6 +89,7 @@ const PostDetailScreen = ({ navigation, route }) => {
   };
 
   const handleAddComment = async () => {
+    if (requireAccount('comment on posts')) return;
     if (!commentText.trim()) {
       Alert.alert('Empty Comment', 'Please write something');
       return;
@@ -323,7 +342,15 @@ const PostDetailScreen = ({ navigation, route }) => {
         </ScrollView>
 
         {/* Comment Input */}
-        {post?.isLocked ? (
+        {isGuest ? (
+          <TouchableOpacity
+            style={styles.guestCommentPrompt}
+            onPress={() => requireAccount('join the discussion')}
+          >
+            <Ionicons name="chatbubble-outline" size={18} color={theme.colors.text.secondary} />
+            <Text style={styles.guestCommentText}>Sign in to join the discussion</Text>
+          </TouchableOpacity>
+        ) : post?.isLocked ? (
           <View style={styles.lockedCommentContainer}>
             <Ionicons name="lock-closed" size={20} color={theme.colors.text.secondary} />
             <Text style={styles.lockedCommentText}>This post is locked. No new comments allowed.</Text>
@@ -634,6 +661,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: theme.fonts.medium,
     color: theme.colors.text.secondary,
+  },
+  guestCommentPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.background.secondary,
+    gap: theme.spacing.sm,
+  },
+  guestCommentText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.medium,
+    color: theme.colors.primary,
   },
 });
 
