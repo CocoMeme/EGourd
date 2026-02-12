@@ -6,8 +6,11 @@ import {
     TouchableOpacity,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Updates from 'expo-updates';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { authService } from '../../services';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
@@ -18,10 +21,76 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
     const [cacheSize, setCacheSize] = useState(0);
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
     const [logoutLoading, setLogoutLoading] = useState(false);
+    const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
 
     useEffect(() => {
         calculateStorageUsage();
     }, []);
+
+    // --- OTA Update helpers ---
+    const getUpdateId = () => {
+        try {
+            return Updates.updateId ? Updates.updateId.slice(0, 8) : 'embedded';
+        } catch {
+            return 'dev';
+        }
+    };
+
+    const getUpdateDate = () => {
+        try {
+            if (Updates.createdAt) {
+                return Updates.createdAt.toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                });
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    };
+
+    const handleCheckForUpdate = async () => {
+        try {
+            setUpdateStatus('checking');
+            const update = await Updates.checkForUpdateAsync();
+
+            if (!update.isAvailable) {
+                setUpdateStatus('up-to-date');
+                setTimeout(() => setUpdateStatus('idle'), 3000);
+                return;
+            }
+
+            setUpdateStatus('downloading');
+            await Updates.fetchUpdateAsync();
+            setUpdateStatus('ready');
+
+            Alert.alert(
+                'Update Ready',
+                'A new update has been downloaded. Restart the app to apply it.',
+                [
+                    { text: 'Later', style: 'cancel', onPress: () => setUpdateStatus('idle') },
+                    { text: 'Restart Now', onPress: () => Updates.reloadAsync() },
+                ]
+            );
+        } catch (error) {
+            console.error('Update check failed:', error);
+            setUpdateStatus('error');
+            Alert.alert('Update Error', error.message || 'Could not check for updates.');
+            setTimeout(() => setUpdateStatus('idle'), 3000);
+        }
+    };
+
+    const getUpdateButtonLabel = () => {
+        switch (updateStatus) {
+            case 'checking': return 'Checking...';
+            case 'downloading': return 'Downloading...';
+            case 'ready': return 'Restart to Apply';
+            case 'up-to-date': return 'Up to Date ✓';
+            case 'error': return 'Check Failed';
+            default: return 'Check for Updates';
+        }
+    };
 
     const calculateStorageUsage = async () => {
         try {
@@ -154,12 +223,20 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
         },
     ];
 
+    const updateDate = getUpdateDate();
     const aboutItems = [
         {
             id: 'version',
             icon: 'information-circle-outline',
             title: 'App Version',
             value: 'v1.12.07',
+        },
+        {
+            id: 'codeVersion',
+            icon: 'git-commit-outline',
+            title: 'Code Version',
+            value: getUpdateId(),
+            description: updateDate ? `Published ${updateDate}` : 'Embedded build (no OTA update)',
         },
         {
             id: 'support',
@@ -245,6 +322,32 @@ export const SettingsTab = ({ navigation, onAuthChange }) => {
                             isLast={index === aboutItems.length - 1}
                         />
                     ))}
+                    <TouchableOpacity
+                        style={[
+                            styles.updateButton,
+                            updateStatus === 'up-to-date' && styles.updateButtonSuccess,
+                            updateStatus === 'error' && styles.updateButtonError,
+                            (updateStatus === 'checking' || updateStatus === 'downloading') && styles.updateButtonBusy,
+                        ]}
+                        onPress={handleCheckForUpdate}
+                        disabled={updateStatus !== 'idle'}
+                    >
+                        {(updateStatus === 'checking' || updateStatus === 'downloading') ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginRight: 8 }} />
+                        ) : (
+                            <Ionicons
+                                name={updateStatus === 'up-to-date' ? 'checkmark-circle' : updateStatus === 'error' ? 'alert-circle' : 'cloud-download-outline'}
+                                size={18}
+                                color={updateStatus === 'up-to-date' ? theme.colors.success : updateStatus === 'error' ? theme.colors.error : theme.colors.primary}
+                                style={{ marginRight: 8 }}
+                            />
+                        )}
+                        <Text style={[
+                            styles.updateButtonText,
+                            updateStatus === 'up-to-date' && styles.updateButtonTextSuccess,
+                            updateStatus === 'error' && styles.updateButtonTextError,
+                        ]}>{getUpdateButtonLabel()}</Text>
+                    </TouchableOpacity>
                 </ProfileSection>
 
                 <TouchableOpacity
@@ -301,6 +404,41 @@ const styles = StyleSheet.create({
         fontFamily: theme.fonts.bold,
         letterSpacing: theme.profile.button.letterSpacing,
         textTransform: 'uppercase',
+    },
+    updateButton: {
+        height: theme.profile.button.height,
+        borderRadius: theme.profile.button.borderRadius,
+        backgroundColor: 'rgba(85, 156, 73, 0.08)',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: 'rgba(85, 156, 73, 0.15)',
+    },
+    updateButtonSuccess: {
+        backgroundColor: 'rgba(76, 175, 80, 0.08)',
+        borderColor: 'rgba(76, 175, 80, 0.2)',
+    },
+    updateButtonError: {
+        backgroundColor: 'rgba(244, 67, 54, 0.08)',
+        borderColor: 'rgba(244, 67, 54, 0.15)',
+    },
+    updateButtonBusy: {
+        opacity: 0.7,
+    },
+    updateButtonText: {
+        color: theme.colors.primary,
+        fontSize: theme.profile.button.fontSize,
+        fontFamily: theme.fonts.bold,
+        letterSpacing: theme.profile.button.letterSpacing,
+        textTransform: 'uppercase',
+    },
+    updateButtonTextSuccess: {
+        color: theme.colors.success,
+    },
+    updateButtonTextError: {
+        color: theme.colors.error,
     },
     boldValue: {
         fontFamily: theme.fonts.bold,
