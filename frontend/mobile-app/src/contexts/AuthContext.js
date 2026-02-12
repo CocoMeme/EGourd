@@ -65,11 +65,16 @@ export const AuthProvider = ({ children }) => {
             if (result.scans > 0) parts.push(`${result.scans} scan(s)`);
             if (result.plants > 0) parts.push(`${result.plants} plant(s)`);
             if (parts.length > 0) {
-              Alert.alert(
-                'Data Synced',
-                `Your guest data has been synced to your account: ${parts.join(' and ')}.`,
-                [{ text: 'OK' }]
-              );
+              const hasErrors = result.errors.length > 0;
+              setTimeout(() => {
+                Alert.alert(
+                  hasErrors ? '⚠️ Partial Sync' : '✅ Data Synced',
+                  hasErrors
+                    ? `Synced ${parts.join(' and ')} to your account.\n\n${result.errors.length} item(s) failed and will retry on next login.`
+                    : `Your guest data has been synced to your account: ${parts.join(' and ')}.`,
+                  [{ text: 'OK' }]
+                );
+              }, 1000);
             }
           }
         } catch (migrationError) {

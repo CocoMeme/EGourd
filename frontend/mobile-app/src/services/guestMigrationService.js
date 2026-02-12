@@ -22,6 +22,10 @@ class GuestMigrationService {
 
     console.log(`📦 Starting guest data migration: ${scans.length} scans, ${plants.length} plants`);
 
+    // Track successfully migrated item IDs for selective cleanup
+    const migratedScanIds = [];
+    const migratedPlantIds = [];
+
     // Migrate scans
     for (const scan of scans) {
       try {
@@ -39,6 +43,7 @@ class GuestMigrationService {
         const imageUri = scan.imageUrl;
         await scanService.saveScan(scanPayload, imageUri);
         result.scans++;
+        migratedScanIds.push(scan._id);
       } catch (error) {
         console.warn(`⚠️ Failed to migrate scan: ${scan.name}`, error.message);
         result.errors.push(`Scan "${scan.name}": ${error.message}`);
@@ -60,6 +65,7 @@ class GuestMigrationService {
         const response = await plantService.createPlant(plantPayload);
         const newPlant = response.data;
         result.plants++;
+        migratedPlantIds.push(plant._id);
 
         // Upload image if available
         if (plant.image?.url && newPlant?._id) {
@@ -93,14 +99,16 @@ class GuestMigrationService {
       }
     }
 
-    // Clear local data after migration
+    // Smart cleanup: only clear items that were successfully migrated
     if (result.errors.length === 0) {
+      // All migrated — clear everything
       await guestStorageService.clearAllGuestData();
-      console.log('✅ Guest data migration complete — local data cleared');
+      console.log('✅ Guest data migration complete — all local data cleared');
     } else {
-      // Partial success: still clear migrated data, keep errors logged
-      await guestStorageService.clearAllGuestData();
-      console.log(`⚠️ Guest data migration partial: ${result.errors.length} errors`);
+      // Partial success — only remove migrated items, keep failed ones for retry
+      await guestStorageService.removeLocalScansByIds(migratedScanIds);
+      await guestStorageService.removeLocalPlantsByIds(migratedPlantIds);
+      console.log(`⚠️ Partial migration: ${migratedScanIds.length} scans + ${migratedPlantIds.length} plants cleared. ${result.errors.length} item(s) kept for retry.`);
     }
 
     return result;

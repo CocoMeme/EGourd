@@ -392,6 +392,36 @@ class GuestStorageService {
     await AsyncStorage.multiRemove([GUEST_FLAG_KEY, GUEST_SCANS_KEY, GUEST_PLANTS_KEY]);
   }
 
+  /**
+   * Remove specific scans by their IDs (used after partial migration)
+   */
+  async removeLocalScansByIds(ids) {
+    try {
+      if (!ids || ids.length === 0) return;
+      const scans = await this._getScans();
+      const remaining = scans.filter(s => !ids.includes(s._id));
+      await AsyncStorage.setItem(GUEST_SCANS_KEY, JSON.stringify(remaining));
+      console.log(`🗑️ Removed ${ids.length} migrated scans, ${remaining.length} remaining`);
+    } catch (error) {
+      console.error('Failed to remove migrated scans:', error);
+    }
+  }
+
+  /**
+   * Remove specific plants by their IDs (used after partial migration)
+   */
+  async removeLocalPlantsByIds(ids) {
+    try {
+      if (!ids || ids.length === 0) return;
+      const plants = await this._getPlants();
+      const remaining = plants.filter(p => !ids.includes(p._id));
+      await AsyncStorage.setItem(GUEST_PLANTS_KEY, JSON.stringify(remaining));
+      console.log(`🗑️ Removed ${ids.length} migrated plants, ${remaining.length} remaining`);
+    } catch (error) {
+      console.error('Failed to remove migrated plants:', error);
+    }
+  }
+
   // ─── Local Analytics (for AnalysisTab in guest mode) ────────
 
   /**
