@@ -13,12 +13,14 @@ import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { authService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { ProfileItem, ProfileSection } from './shared';
 
 export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [loading, setLoading] = useState(false);
     const [cacheSize, setCacheSize] = useState(0);
+    const { logout } = useAuth();
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
@@ -354,18 +356,14 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                     <View style={styles.guestAuthContainer}>
                         <TouchableOpacity
                             style={styles.signInButton}
-                            onPress={() => {
-                                if (onAuthChange) onAuthChange();
-                            }}
+                            onPress={() => logout()}
                         >
                             <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
                             <Text style={styles.signInText}>SIGN IN</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.createAccountButton}
-                            onPress={() => {
-                                if (onAuthChange) onAuthChange();
-                            }}
+                            onPress={() => logout()}
                         >
                             <Ionicons name="person-add-outline" size={18} color={theme.colors.primary} style={{ marginRight: 8 }} />
                             <Text style={styles.createAccountText}>CREATE ACCOUNT</Text>
