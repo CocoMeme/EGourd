@@ -148,6 +148,7 @@ export const HomeScreen = ({ navigation, route }) => {
       }
       // Only fetch if we have a user, or try to fetch anyway (service handles token)
       const statsData = await pollinationService.getDashboardStats();
+      console.log('📊 Dashboard stats response:', JSON.stringify(statsData));
       if (statsData.success) {
         const { counts, statusBreakdown } = statsData.data;
 
@@ -155,6 +156,7 @@ export const HomeScreen = ({ navigation, route }) => {
         // statusBreakdown is array of { _id: 'status', count: number }
         const pollinatedCount = statusBreakdown.find(s => s._id === 'pollinated')?.count || 0;
 
+        console.log('📊 Setting stats - totalPlants:', counts?.total, 'pollinationsCount:', pollinatedCount);
         setStats(prev => ({
           ...prev,
           totalPlants: counts?.total || 0,

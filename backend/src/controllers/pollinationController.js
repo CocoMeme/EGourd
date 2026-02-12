@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { Pollination, FlowerPrediction, YieldPrediction } = require('../models');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
@@ -17,11 +18,11 @@ const getPollinations = async (req, res) => {
 
     // Build query
     const query = { user: req.user.id };
-    
+
     if (status) {
       query.status = status;
     }
-    
+
     if (name) {
       query.name = name;
     }
@@ -127,7 +128,7 @@ const createPollination = async (req, res) => {
 
     // Get display names for the plant
     const displayNames = Pollination.getDisplayNames();
-    
+
     console.log('Creating pollination with:', {
       name,
       displayName: displayNames[name],
@@ -135,7 +136,7 @@ const createPollination = async (req, res) => {
       gender: gender || 'undetermined',
       userId: req.user.id
     });
-    
+
     // Create new pollination record
     const pollination = new Pollination({
       name,
@@ -271,7 +272,7 @@ const addImage = async (req, res) => {
     console.log('📸 req.file keys:', req.file ? Object.keys(req.file) : 'N/A');
     console.log('📸 req.file.buffer exists:', req.file ? !!req.file.buffer : false);
     console.log('📸 req.file.buffer length:', req.file ? req.file.buffer?.length : 'N/A');
-    
+
     const pollination = await Pollination.findOne({
       _id: req.params.id,
       user: req.user.id
@@ -302,7 +303,7 @@ const addImage = async (req, res) => {
     }
 
     console.log('📤 Uploading to Cloudinary...');
-    
+
     // Create a stream upload to Cloudinary (like uploadController)
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
@@ -598,23 +599,24 @@ const getPlantTypes = async (req, res) => {
 const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
     // Get basic counts
     const totalPlants = await Pollination.countDocuments({ user: userId });
-    const activePlants = await Pollination.countDocuments({ 
-      user: userId, 
+    const activePlants = await Pollination.countDocuments({
+      user: userId,
       status: { $in: ['planted', 'flowering', 'pollinated', 'fruiting'] }
     });
-    
+
     // Get status breakdown
     const statusCounts = await Pollination.aggregate([
-      { $match: { user: userId } },
+      { $match: { user: userObjectId } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 
     // Get plant type breakdown
     const plantTypeCounts = await Pollination.aggregate([
-      { $match: { user: userId } },
+      { $match: { user: userObjectId } },
       { $group: { _id: '$name', count: { $sum: 1 } } }
     ]);
 
@@ -624,7 +626,7 @@ const getDashboardStats = async (req, res) => {
     // Get recent activity (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const recentActivity = await Pollination.find({
       user: userId,
       $or: [
@@ -705,7 +707,7 @@ const updatePollinationStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: status === 'Successful' 
+      message: status === 'Successful'
         ? '🌸 Pollination successful! Plant advancing to fruiting stage.'
         : '❌ Pollination failed. This flower cannot be re-pollinated.',
       data: pollination
@@ -944,11 +946,11 @@ const getFlowerPredictions = async (req, res) => {
 
     // Build query
     const query = { user: req.user.id };
-    
+
     if (plantType) {
       query.plantType = plantType;
     }
-    
+
     if (pollinationId) {
       query.pollination = pollinationId;
     }
@@ -1219,7 +1221,7 @@ const predictYield = async (req, res) => {
 
       // Format data from pollination record
       inputData = MLYieldPredictionService.formatPollinationDataForPrediction(pollination);
-      
+
       // Override with any manually provided values
       if (plantAgeDays !== undefined) inputData.plant_age_days = plantAgeDays;
       if (vineLengthCm !== undefined) inputData.vine_length_cm = vineLengthCm;
