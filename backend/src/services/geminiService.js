@@ -1,5 +1,4 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { compressForGemini } = require('../utils/imageProcessor');
 const { logMemoryUsage, forceGC } = require('../utils/memoryUtils');
 
 // Get API keys from environment - supports multiple keys for fallback
@@ -17,11 +16,14 @@ const MODEL_FALLBACK_CHAIN = [
   'gemini-2.0-flash-lite',   // Fallback - stable and reliable (free)
 ];
 
-// Delay between retries (in milliseconds)
-// Note: Free tier = 2 RPM (requests per minute) = need 30s between requests
-// Paid tier = 15 RPM = need 4s between requests
-const RATE_LIMIT_DELAY = 5000;  // 5s delay before trying next key on 429 (conservative for free tier)
-const SERVER_RETRY_DELAY = 3000; // 3s delay between 503 retries
+// Retry configuration with exponential backoff
+const RETRY_CONFIG = {
+  initialDelay: 2000,      // 2s initial backoff
+  maxDelay: 15000,          // 15s max backoff
+  backoffMultiplier: 2,     // Double each retry
+  timeBudget: 25000,        // 25s total budget (fits within 35s frontend timeout)
+  maxServerRetries: 3,      // Max 503 retries per model
+};
 
 const GEMINI_CONFIG = {
   temperature: 0.3,
@@ -30,70 +32,34 @@ const GEMINI_CONFIG = {
   maxOutputTokens: 2048,
 };
 
-// Initialize Gemini AI
-let genAI;
-let model;
-let currentKeyIndex = 0;
-let currentModelIndex = 0;
-
 /**
- * Initialize Gemini with current key and model
+ * Concurrency queue — limits parallel Gemini API calls.
+ * With 4 free-tier keys at 2 RPM each, max 2 concurrent is safe.
  */
-function initializeGemini(keyIndex = currentKeyIndex, modelIndex = currentModelIndex) {
-  if (GEMINI_API_KEYS.length === 0) return;
-
-  if (keyIndex >= GEMINI_API_KEYS.length) {
-    keyIndex = 0; // Rotate back to start if exhausted
-  }
-  if (modelIndex >= MODEL_FALLBACK_CHAIN.length) {
-    modelIndex = 0; // Rotate back to primary model
+class RequestQueue {
+  constructor(concurrency = 2) {
+    this.concurrency = concurrency;
+    this.running = 0;
+    this.queue = [];
   }
 
-  currentKeyIndex = keyIndex;
-  currentModelIndex = modelIndex;
-  const apiKey = GEMINI_API_KEYS[currentKeyIndex];
-  const modelName = MODEL_FALLBACK_CHAIN[currentModelIndex];
-
-  console.log(`🤖 Initializing Gemini AI with key ${currentKeyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`);
-  genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: GEMINI_CONFIG
-  });
+  async enqueue(fn) {
+    if (this.running >= this.concurrency) {
+      await new Promise(resolve => this.queue.push(resolve));
+    }
+    this.running++;
+    try {
+      return await fn();
+    } finally {
+      this.running--;
+      if (this.queue.length > 0) {
+        this.queue.shift()();
+      }
+    }
+  }
 }
 
-// Initial setup
-initializeGemini();
-
-/**
- * Switch to next available API key
- * @returns {boolean} true if switched successfully, false if no more keys available
- */
-function switchToNextKey() {
-  if (currentKeyIndex + 1 < GEMINI_API_KEYS.length) {
-    console.log(`🔄 Switching to API key ${currentKeyIndex + 2}/${GEMINI_API_KEYS.length}...`);
-    initializeGemini(currentKeyIndex + 1, currentModelIndex);
-    return true;
-  }
-  console.warn('⚠️ All API keys exhausted for current model');
-  return false;
-}
-
-/**
- * Switch to next available model in fallback chain
- * Resets key index to 0 so all keys can be tried with new model
- * @returns {boolean} true if switched successfully, false if no more models available
- */
-function switchToNextModel() {
-  if (currentModelIndex + 1 < MODEL_FALLBACK_CHAIN.length) {
-    const nextModel = MODEL_FALLBACK_CHAIN[currentModelIndex + 1];
-    console.log(`🔄 Model overloaded, switching to fallback model: ${nextModel}`);
-    initializeGemini(0, currentModelIndex + 1); // Reset to first key with new model
-    return true;
-  }
-  console.warn('⚠️ All models in fallback chain exhausted');
-  return false;
-}
+const requestQueue = new RequestQueue(2);
 
 // System context for gourd farming expertise
 const SYSTEM_CONTEXT = `You are an expert agricultural assistant specializing in gourd farming, particularly bottle gourds (Lagenaria siceraria). 
@@ -110,110 +76,100 @@ You provide helpful, accurate advice on:
 Always provide practical, actionable advice. Keep responses concise but informative (2-4 paragraphs max unless asked for more detail). Use simple language suitable for farmers of all experience levels.`;
 
 /**
- * Helper: Execute a Gemini API call with automatic retry, key rotation, and model fallback
+ * Execute a Gemini API call with per-call model instantiation,
+ * automatic retry, key rotation, model fallback, and exponential backoff.
+ * No shared mutable state — safe for concurrent requests.
  * @param {Function} operation - Async function that takes the current model and returns a result
+ * @param {Object} meta - Optional object to receive metadata (e.g., meta.modelUsed)
  */
-async function executeWithRetry(operation) {
+async function executeWithRetry(operation, meta = {}) {
   if (GEMINI_API_KEYS.length === 0) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  // Ensure model is initialized
-  if (!model) initializeGemini();
-
-  let modelFallbackCount = 0;
-  let keyRotationCount = 0;
-  let serverRetryCount = 0;
-  const maxModelFallbacks = MODEL_FALLBACK_CHAIN.length;
-  const maxKeyRotations = GEMINI_API_KEYS.length;
-  const maxServerRetries = 3; // Retry up to 3 times for server overload
+  const startTime = Date.now();
   let lastError;
+  let delay = RETRY_CONFIG.initialDelay;
 
-  while (modelFallbackCount < maxModelFallbacks) {
-    keyRotationCount = 0; // Reset key rotation for each model
+  for (let modelIndex = 0; modelIndex < MODEL_FALLBACK_CHAIN.length; modelIndex++) {
+    const modelName = MODEL_FALLBACK_CHAIN[modelIndex];
+    let serverRetries = 0;
 
-    while (keyRotationCount < maxKeyRotations) {
+    for (let keyIndex = 0; keyIndex < GEMINI_API_KEYS.length; keyIndex++) {
+      // Check time budget
+      const elapsed = Date.now() - startTime;
+      if (elapsed > RETRY_CONFIG.timeBudget) {
+        throw new Error(`Time budget exhausted (${Math.round(elapsed / 1000)}s). Last error: ${lastError?.message}`);
+      }
+
+      // Create fresh instances per attempt — no shared state between requests
+      const apiKey = GEMINI_API_KEYS[keyIndex];
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const activeModel = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: GEMINI_CONFIG,
+      });
+
       try {
-        return await operation(model);
+        console.log(`🤖 Gemini: key ${keyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`);
+        const result = await requestQueue.enqueue(() => operation(activeModel));
+        meta.modelUsed = modelName;
+        return result;
       } catch (error) {
         lastError = error;
         const errorMessage = error.message || '';
         const statusCode = error.status || (errorMessage.match(/\[(\d{3})/)?.[1]);
 
-        // Check for server overload (503) - retry with delay, don't rotate keys
-        const isServerOverload = statusCode === 503 ||
-          statusCode === '503' ||
-          errorMessage.includes('503') ||
-          errorMessage.includes('overloaded') ||
+        // 503 Server overload → retry same key with backoff, then next model
+        const isServerOverload = statusCode === 503 || statusCode === '503' ||
+          errorMessage.includes('503') || errorMessage.includes('overloaded') ||
           errorMessage.includes('Service Unavailable');
 
         if (isServerOverload) {
-          if (serverRetryCount < maxServerRetries) {
-            serverRetryCount++;
-            console.log(`⚠️ Server overloaded (503), waiting ${SERVER_RETRY_DELAY / 1000}s before retry ${serverRetryCount}/${maxServerRetries}...`);
-            await new Promise(resolve => setTimeout(resolve, SERVER_RETRY_DELAY));
-            continue; // Retry with same key after delay
+          if (serverRetries < RETRY_CONFIG.maxServerRetries) {
+            serverRetries++;
+            console.log(`⚠️ Server overloaded (503), backoff ${delay}ms (retry ${serverRetries}/${RETRY_CONFIG.maxServerRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
+            keyIndex--; // Retry same key
+            continue;
           }
-
-          // 503 retries exhausted - try next model (not next key)
-          console.log(`⚠️ Model ${MODEL_FALLBACK_CHAIN[currentModelIndex]} still overloaded after ${maxServerRetries} retries`);
-          break; // Exit inner loop to try next model
+          console.log(`⚠️ Model ${modelName} still overloaded after ${RETRY_CONFIG.maxServerRetries} retries`);
+          break; // Try next model
         }
 
-        // Check for forbidden/leaked key (403) - skip to next key immediately
-        const isForbiddenError = statusCode === 403 ||
-          statusCode === '403' ||
-          errorMessage.includes('403') ||
-          errorMessage.includes('Forbidden') ||
-          errorMessage.includes('leaked') ||
-          errorMessage.includes('API key not valid');
+        // 403 Forbidden / invalid key → skip to next key immediately
+        const isForbiddenError = statusCode === 403 || statusCode === '403' ||
+          errorMessage.includes('403') || errorMessage.includes('Forbidden') ||
+          errorMessage.includes('leaked') || errorMessage.includes('API key not valid');
 
         if (isForbiddenError) {
-          console.log(`⚠️ API key ${currentKeyIndex + 1} is invalid/leaked (403), skipping to next key...`);
-          if (switchToNextKey()) {
-            keyRotationCount++;
-            serverRetryCount = 0;
-            continue; // Retry with new key
-          }
-          // All keys exhausted for this model - try next model
-          break;
+          console.log(`⚠️ API key ${keyIndex + 1} invalid (403), trying next...`);
+          serverRetries = 0;
+          continue;
         }
 
-        // Check for rate limit (429) - rotate to next key (more specific patterns)
-        const isRateLimitError = statusCode === 429 ||
-          statusCode === '429' ||
-          errorMessage.includes('429') ||
-          errorMessage.includes('quota exceeded') ||
-          errorMessage.includes('rate limit') ||
-          errorMessage.includes('RESOURCE_EXHAUSTED') ||
+        // 429 Rate limit → backoff then next key
+        const isRateLimitError = statusCode === 429 || statusCode === '429' ||
+          errorMessage.includes('429') || errorMessage.includes('quota exceeded') ||
+          errorMessage.includes('rate limit') || errorMessage.includes('RESOURCE_EXHAUSTED') ||
           errorMessage.includes('RATE_LIMIT_EXCEEDED');
 
         if (isRateLimitError) {
-          console.log(`⚠️ API rate limit hit (429), waiting ${RATE_LIMIT_DELAY / 1000}s before trying next key...`);
-          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
-          if (switchToNextKey()) {
-            keyRotationCount++;
-            serverRetryCount = 0; // Reset server retry count for new key
-            continue; // Retry with new key
-          }
-          // All keys exhausted for this model - try next model
-          break; // Exit inner loop to try next model
+          console.log(`⚠️ Rate limit (429) on key ${keyIndex + 1}, backoff ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
+          serverRetries = 0;
+          continue;
         }
 
-        // Unknown error - throw immediately
+        // Unknown error → throw immediately
         throw error;
       }
     }
 
-    // Try switching to next model
-    if (switchToNextModel()) {
-      modelFallbackCount++;
-      serverRetryCount = 0; // Reset server retry count for new model
-      continue; // Retry with new model
-    }
-
-    // No more models available
-    break;
+    // All keys exhausted for this model
+    console.log(`⚠️ All keys exhausted for ${modelName}, trying next model...`);
   }
 
   throw new Error(`All Gemini models and API keys exhausted. Last error: ${lastError?.message}`);
@@ -224,6 +180,7 @@ async function executeWithRetry(operation) {
  */
 async function generateMessage(prompt, conversationHistory = []) {
   try {
+    const meta = {};
     const result = await executeWithRetry(async (activeModel) => {
       // Build conversation history for context
       const history = [];
@@ -262,7 +219,7 @@ async function generateMessage(prompt, conversationHistory = []) {
       // Send message and get response
       const result = await chat.sendMessage(prompt);
       return result;
-    });
+    }, meta);
 
     const response = await result.response;
     const text = response.text();
@@ -270,7 +227,7 @@ async function generateMessage(prompt, conversationHistory = []) {
     return {
       success: true,
       message: text,
-      model: MODEL_FALLBACK_CHAIN[currentModelIndex],
+      model: meta.modelUsed || MODEL_FALLBACK_CHAIN[0],
       timestamp: new Date().toISOString()
     };
 
@@ -378,8 +335,8 @@ async function analyzeImage(base64Image, tmPrediction = null) {
     // Memory optimization: Log before processing
     logMemoryUsage('Before Gemini image analysis');
 
-    // Compress image before sending to Gemini (saves memory and bandwidth)
-    const compressedBase64 = await compressForGemini(base64Image);
+    // Frontend already compresses images; just clean the data URI prefix
+    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
     // Prepare context string if prediction is available
     let contextString = '';
@@ -447,9 +404,6 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
   }
 }`;
 
-    // Use compressed image (already cleaned of data URI prefix)
-    const cleanBase64 = compressedBase64.replace(/^data:image\/\w+;base64,/, '');
-
     const result = await executeWithRetry(async (activeModel) => {
       return await activeModel.generateContent([
         prompt,
@@ -502,8 +456,8 @@ async function analyzeLeaf(base64Image, tmPrediction = null) {
     // Memory optimization: Log before processing
     logMemoryUsage('Before Gemini leaf analysis');
 
-    // Compress image before sending to Gemini
-    const compressedBase64 = await compressForGemini(base64Image);
+    // Frontend already compresses images; just clean the data URI prefix
+    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
     // Prepare context string if prediction is available
     let contextString = '';
@@ -546,9 +500,6 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
     "recommendations": ["recommendation1"]
   }
 }`;
-
-    // Use compressed image (already cleaned of data URI prefix)
-    const cleanBase64 = compressedBase64.replace(/^data:image\/\w+;base64,/, '');
 
     const result = await executeWithRetry(async (activeModel) => {
       return await activeModel.generateContent([

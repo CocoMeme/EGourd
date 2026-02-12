@@ -1,33 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const scanController = require('../controllers/scanController');
+const { authenticate } = require('../middleware/auth');
 
-// Route to analyze image (Gemini)
-router.post('/analyze', scanController.analyzeImage);
+// Route to analyze image (Gemini) - requires auth
+router.post('/analyze', authenticate, scanController.analyzeImage);
 
-// Route to analyze leaf image (Gemini)
-router.post('/analyze-leaf', scanController.analyzeLeaf);
+// Route to analyze leaf image (Gemini) - requires auth
+router.post('/analyze-leaf', authenticate, scanController.analyzeLeaf);
 
-// Route to get harvest prediction
-router.post('/predict-harvest', scanController.getHarvestPrediction);
+// Route to get harvest prediction - requires auth
+router.post('/predict-harvest', authenticate, scanController.getHarvestPrediction);
 
-// Route to get analytics data for a user
-router.get('/analytics/:userId', scanController.getAnalytics);
+// Route to get analytics data for a user - requires auth
+router.get('/analytics/:userId', authenticate, scanController.getAnalytics);
 
 
-// Route to save a new scan
-router.post('/save', scanController.saveScan);
+// Route to save a new scan - requires auth
+router.post('/save', authenticate, scanController.saveScan);
 
-// Route to get scan history for a user
-router.get('/history/:userId', scanController.getScanHistory);
+// Route to get scan history for a user - requires auth
+router.get('/history/:userId', authenticate, scanController.getScanHistory);
 
-// Route to get a single scan by ID
-router.get('/:id', scanController.getScanById);
+// Route to get a single scan by ID - requires auth
+router.get('/:id', authenticate, scanController.getScanById);
 
-// Route to update a scan (name, notes, etc.)
-router.put('/:id', scanController.updateScan);
+// Route to update a scan (name, notes, etc.) - requires auth
+router.put('/:id', authenticate, scanController.updateScan);
 
-// Route to delete a scan
-router.delete('/:id', scanController.deleteScan);
+// Route to delete a scan - requires auth
+router.delete('/:id', authenticate, scanController.deleteScan);
 
 module.exports = router;
