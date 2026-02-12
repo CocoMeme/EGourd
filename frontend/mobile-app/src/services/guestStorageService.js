@@ -396,9 +396,23 @@ class GuestStorageService {
 
   /**
    * Compute basic analytics from local scans
+   * @param {number|null} daysBack - Number of days to look back (null = all time)
+   * @param {string|null} scanType - Filter by scan type ('flower' or 'leaf', null = all)
    */
-  async getLocalAnalytics() {
-    const scans = await this._getScans();
+  async getLocalAnalytics(daysBack = null, scanType = null) {
+    let scans = await this._getScans();
+
+    // Filter by date range
+    if (daysBack) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - daysBack);
+      scans = scans.filter(s => new Date(s.date || s.createdAt) >= cutoff);
+    }
+
+    // Filter by scan type
+    if (scanType) {
+      scans = scans.filter(s => s.scanType === scanType);
+    }
 
     if (scans.length === 0) {
       return {

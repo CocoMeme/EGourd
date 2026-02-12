@@ -22,7 +22,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const PostDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { postId } = route.params;
-  const { isGuest } = useAuth();
+  const { isGuest, logout } = useAuth();
   
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ const PostDetailScreen = ({ navigation, route }) => {
         'Sign in or create an account to ' + action + '.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
+          { text: 'Sign In', onPress: () => logout() },
         ]
       );
       return true;

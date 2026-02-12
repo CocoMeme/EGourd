@@ -13,10 +13,12 @@ import {
 } from '../../components';
 import { theme } from '../../styles';
 import { getAllNews, getPopupNews, markNewsAsRead } from '../../services/newsService';
-import { authService, connectionService, scanService, pollinationService } from '../../services';
+import { authService, connectionService, scanService, pollinationService, guestStorageService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const HomeScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { isGuest } = useAuth();
   // Top Banner
   // Mock data - replace with real data from API/storage
   const [userName] = useState('Coco Meme');
@@ -36,6 +38,10 @@ export const HomeScreen = ({ navigation, route }) => {
 
   const loadUserData = async () => {
     try {
+      if (isGuest) {
+        setUser({ firstName: 'Guest', lastName: '' });
+        return;
+      }
       const userData = await authService.getCurrentUser();
       setUser(userData);
     } catch (error) {
@@ -130,6 +136,18 @@ export const HomeScreen = ({ navigation, route }) => {
 
   const fetchPollinationStats = async () => {
     try {
+      if (isGuest) {
+        const response = await guestStorageService.getLocalPlants();
+        const plants = response.data || [];
+        let pollinatedCount = 0;
+        let fruitingCount = 0;
+        plants.forEach(p => {
+          pollinatedCount += (p.pollinations?.length || 0);
+          if (p.status === 'fruiting') fruitingCount++;
+        });
+        setStats(prev => ({ ...prev, readyGourds: fruitingCount, pollinationsCount: pollinatedCount }));
+        return;
+      }
       // Only fetch if we have a user, or try to fetch anyway (service handles token)
       const statsData = await pollinationService.getDashboardStats();
       if (statsData.success) {
@@ -154,7 +172,13 @@ export const HomeScreen = ({ navigation, route }) => {
   const fetchRecentScans = async () => {
     try {
       setLoadingScans(true);
-      const history = await scanService.getScanHistory();
+
+      let history;
+      if (isGuest) {
+        history = await guestStorageService.getLocalScans();
+      } else {
+        history = await scanService.getScanHistory();
+      }
 
       // Update total scans count
       setStats(prev => ({
@@ -181,8 +205,8 @@ export const HomeScreen = ({ navigation, route }) => {
         setNews(newsResponse.data);
       }
 
-      // Fetch popup news if user is logged in
-      if (user) {
+      // Fetch popup news if user is logged in (not guest)
+      if (user && !isGuest) {
         try {
           const popupResponse = await getPopupNews();
           if (popupResponse.success && popupResponse.data.length > 0) {
@@ -344,11 +368,15 @@ export const HomeScreen = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await scanService.deleteScan(scanId);
+              if (isGuest) {
+                await guestStorageService.deleteLocalScan(scanId);
+              } else {
+                await scanService.deleteScan(scanId);
+              }
               // Remove from local state
-              setRecentScans(prev => prev.filter(scan => scan._id !== scanId));
+              setRecentScans(prev => prev.filter(scan => (scan._id || scan.id) !== scanId));
               // Refresh stats
-              fetchStats();
+              fetchRecentScans();
             } catch (error) {
               console.error('Error deleting scan:', error);
               Alert.alert('Error', 'Failed to delete scan. Please try again.');

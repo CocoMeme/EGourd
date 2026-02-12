@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const CommunityScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { isGuest } = useAuth();
+  const { isGuest, logout } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState([]);
@@ -90,7 +90,7 @@ const CommunityScreen = ({ navigation }) => {
         'Sign in or create an account to interact with the community.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
+          { text: 'Sign In', onPress: () => logout() },
         ]
       );
       return true;

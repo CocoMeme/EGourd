@@ -34,7 +34,10 @@ export const AnalysisTab = ({ isGuest }) => {
       setLoading(true);
 
       if (isGuest) {
-        const localData = await guestStorageService.getLocalAnalytics();
+        // Pass date range and scan type filter to local analytics
+        const dateRanges = { '7days': 7, '30days': 30, '90days': 90, 'all': null };
+        const days = dateRanges[selectedRange];
+        const localData = await guestStorageService.getLocalAnalytics(days, selectedFilter !== 'all' ? selectedFilter : null);
         setAnalytics(localData);
         return;
       }
