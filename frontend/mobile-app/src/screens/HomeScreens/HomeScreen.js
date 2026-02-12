@@ -24,7 +24,7 @@ export const HomeScreen = ({ navigation, route }) => {
   const [userName] = useState('Coco Meme');
   const [stats, setStats] = useState({
     totalScans: 0,
-    readyGourds: 0,
+    totalPlants: 0,
     pollinationsCount: 0,
   });
 
@@ -80,8 +80,8 @@ export const HomeScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const summaryStats = [
-    { id: 'total', label: 'Total scans', value: stats.totalScans || 0 },
-    { id: 'ready', label: 'Ready', value: stats.readyGourds || 0 },
+    { id: 'total', label: 'Total Scans', value: stats.totalScans || 0 },
+    { id: 'plants', label: 'Total Plants', value: stats.totalPlants || 0 },
     { id: 'pollinations', label: 'Pollinations', value: stats.pollinationsCount || 0 },
   ];
 
@@ -140,27 +140,24 @@ export const HomeScreen = ({ navigation, route }) => {
         const response = await guestStorageService.getLocalPlants();
         const plants = response.data || [];
         let pollinatedCount = 0;
-        let fruitingCount = 0;
         plants.forEach(p => {
           pollinatedCount += (p.pollinations?.length || 0);
-          if (p.status === 'fruiting') fruitingCount++;
         });
-        setStats(prev => ({ ...prev, readyGourds: fruitingCount, pollinationsCount: pollinatedCount }));
+        setStats(prev => ({ ...prev, totalPlants: plants.length, pollinationsCount: pollinatedCount }));
         return;
       }
       // Only fetch if we have a user, or try to fetch anyway (service handles token)
       const statsData = await pollinationService.getDashboardStats();
       if (statsData.success) {
-        const { statusBreakdown } = statsData.data;
+        const { counts, statusBreakdown } = statsData.data;
 
         // Calculate specific counts from breakdown
         // statusBreakdown is array of { _id: 'status', count: number }
         const pollinatedCount = statusBreakdown.find(s => s._id === 'pollinated')?.count || 0;
-        const fruitingCount = statusBreakdown.find(s => s._id === 'fruiting')?.count || 0;
 
         setStats(prev => ({
           ...prev,
-          readyGourds: fruitingCount,
+          totalPlants: counts?.total || 0,
           pollinationsCount: pollinatedCount
         }));
       }
@@ -353,8 +350,13 @@ export const HomeScreen = ({ navigation, route }) => {
   };
 
   const handleStatsPress = (type) => {
-    // Navigate to filtered history
-    navigation.navigate('History', { filter: type });
+    if (type === 'total') {
+      // Navigate to scan history
+      navigation.navigate('Profile', { initialTab: 'history' });
+    } else if (type === 'plants' || type === 'pollinations') {
+      // Navigate to Pollination tab
+      navigation.navigate('Pollination');
+    }
   };
 
   const handleDeleteScan = async (scanId) => {
