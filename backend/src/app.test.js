@@ -7,7 +7,7 @@ describe('API Health Check', () => {
   beforeAll(async () => {
     const appInstance = new App();
     // We don't necessarily need to call initialize() if it connects to a real DB,
-    // as it might slow down or fail tests. 
+    // as it might slow down or fail tests.
     // For a simple health check test, getApp() might be enough if the route is defined in constructor.
     app = appInstance.getApp();
   });
