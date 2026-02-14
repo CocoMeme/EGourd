@@ -11,15 +11,7 @@ const filter = require('leo-profanity');
 // Get all forum posts with filters
 exports.getAllPosts = async (req, res) => {
   try {
-    const { 
-      category, 
-      search, 
-      tags, 
-      sortBy = 'recent', 
-      page = 1, 
-      limit = 10,
-      isPinned
-    } = req.query;
+    const { category, search, tags, sortBy = 'recent', page = 1, limit = 10, isPinned } = req.query;
 
     // Build query
     const query = { status: 'active' };
@@ -48,7 +40,7 @@ exports.getAllPosts = async (req, res) => {
 
     // Build sort - always show pinned posts first
     let sort = { isPinned: -1 }; // Pinned posts first
-    
+
     switch (sortBy) {
       case 'recent':
         sort.createdAt = -1;
@@ -83,11 +75,16 @@ exports.getAllPosts = async (req, res) => {
     const total = await ForumPost.countDocuments(query);
 
     // Format posts
-    const formattedPosts = posts.map(post => ({
+    const formattedPosts = posts.map((post) => ({
       _id: post._id,
       ...post,
       author: {
-        username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
+        username:
+          post.author?.username ||
+          (post.author?.firstName && post.author?.lastName
+            ? `${post.author.firstName} ${post.author.lastName}`
+            : post.author?.email?.split('@')[0]) ||
+          'Anonymous',
         verified: post.author?.emailVerified || false,
         profilePicture: post.author?.profilePicture || null,
       },
@@ -124,7 +121,10 @@ exports.getPostById = async (req, res) => {
     const post = await ForumPost.findById(id)
       .populate('author', 'username firstName lastName email emailVerified profilePicture')
       .populate('comments.user', 'username firstName lastName email emailVerified profilePicture')
-      .populate('comments.replies.user', 'username firstName lastName email emailVerified profilePicture')
+      .populate(
+        'comments.replies.user',
+        'username firstName lastName email emailVerified profilePicture'
+      )
       .populate('likes.user', 'username firstName lastName profilePicture');
 
     if (!post) {
@@ -142,30 +142,47 @@ exports.getPostById = async (req, res) => {
     const formattedPost = {
       ...post.toObject(),
       author: {
-        username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
+        username:
+          post.author?.username ||
+          (post.author?.firstName && post.author?.lastName
+            ? `${post.author.firstName} ${post.author.lastName}`
+            : post.author?.email?.split('@')[0]) ||
+          'Anonymous',
         verified: post.author?.emailVerified || false,
         profilePicture: post.author?.profilePicture || null,
       },
       likes: post.likes?.length || 0,
-      comments: post.comments?.map(comment => ({
-        ...comment.toObject(),
-        user: {
-          username: comment.user?.username || (comment.user?.firstName && comment.user?.lastName ? `${comment.user.firstName} ${comment.user.lastName}` : comment.user?.email?.split('@')[0]) || 'Anonymous',
-          verified: comment.user?.emailVerified || false,
-          profilePicture: comment.user?.profilePicture || null,
-        },
-        likes: comment.likes?.length || 0,
-        timestamp: getRelativeTime(comment.createdAt),
-        replies: comment.replies?.map(reply => ({
-          ...reply.toObject(),
+      comments:
+        post.comments?.map((comment) => ({
+          ...comment.toObject(),
           user: {
-            username: reply.user?.username || (reply.user?.firstName && reply.user?.lastName ? `${reply.user.firstName} ${reply.user.lastName}` : reply.user?.email?.split('@')[0]) || 'Anonymous',
-            verified: reply.user?.emailVerified || false,
-            profilePicture: reply.user?.profilePicture || null,
+            username:
+              comment.user?.username ||
+              (comment.user?.firstName && comment.user?.lastName
+                ? `${comment.user.firstName} ${comment.user.lastName}`
+                : comment.user?.email?.split('@')[0]) ||
+              'Anonymous',
+            verified: comment.user?.emailVerified || false,
+            profilePicture: comment.user?.profilePicture || null,
           },
-          timestamp: getRelativeTime(reply.createdAt),
+          likes: comment.likes?.length || 0,
+          timestamp: getRelativeTime(comment.createdAt),
+          replies:
+            comment.replies?.map((reply) => ({
+              ...reply.toObject(),
+              user: {
+                username:
+                  reply.user?.username ||
+                  (reply.user?.firstName && reply.user?.lastName
+                    ? `${reply.user.firstName} ${reply.user.lastName}`
+                    : reply.user?.email?.split('@')[0]) ||
+                  'Anonymous',
+                verified: reply.user?.emailVerified || false,
+                profilePicture: reply.user?.profilePicture || null,
+              },
+              timestamp: getRelativeTime(reply.createdAt),
+            })) || [],
         })) || [],
-      })) || [],
       timestamp: getRelativeTime(post.createdAt),
     };
 
@@ -219,26 +236,26 @@ exports.createPost = async (req, res) => {
       try {
         // Limit to 5 images
         const imagesToUpload = images.slice(0, 5);
-        
+
         // Upload all images to Cloudinary
-        const uploadPromises = imagesToUpload.map(img => {
+        const uploadPromises = imagesToUpload.map((img) => {
           if (img.base64) {
             return cloudinary.uploader.upload(img.base64, {
               folder: 'forum-posts',
               transformation: [
                 { width: 1200, height: 800, crop: 'limit', quality: 'auto' },
-                { format: 'jpg' }
-              ]
+                { format: 'jpg' },
+              ],
             });
           }
           return null;
         });
 
         const uploadResults = await Promise.all(uploadPromises);
-        
+
         uploadedImages = uploadResults
-          .filter(result => result !== null)
-          .map(result => ({
+          .filter((result) => result !== null)
+          .map((result) => ({
             url: result.secure_url,
             publicId: result.public_id,
           }));
@@ -273,7 +290,12 @@ exports.createPost = async (req, res) => {
     const formattedPost = {
       ...post.toObject(),
       author: {
-        username: post.author?.username || (post.author?.firstName && post.author?.lastName ? `${post.author.firstName} ${post.author.lastName}` : post.author?.email?.split('@')[0]) || 'Anonymous',
+        username:
+          post.author?.username ||
+          (post.author?.firstName && post.author?.lastName
+            ? `${post.author.firstName} ${post.author.lastName}`
+            : post.author?.email?.split('@')[0]) ||
+          'Anonymous',
         verified: post.author?.emailVerified || false,
         profilePicture: post.author?.profilePicture || null,
       },
@@ -402,9 +424,7 @@ exports.toggleLike = async (req, res) => {
     }
 
     // Check if user already liked
-    const likeIndex = post.likes.findIndex(
-      like => like.user.toString() === userId.toString()
-    );
+    const likeIndex = post.likes.findIndex((like) => like.user.toString() === userId.toString());
 
     if (likeIndex > -1) {
       // Unlike
@@ -484,7 +504,12 @@ exports.addComment = async (req, res) => {
       data: {
         ...newComment.toObject(),
         user: {
-          username: newComment.user?.username || (newComment.user?.firstName && newComment.user?.lastName ? `${newComment.user.firstName} ${newComment.user.lastName}` : newComment.user?.email?.split('@')[0]) || 'Anonymous',
+          username:
+            newComment.user?.username ||
+            (newComment.user?.firstName && newComment.user?.lastName
+              ? `${newComment.user.firstName} ${newComment.user.lastName}`
+              : newComment.user?.email?.split('@')[0]) ||
+            'Anonymous',
           avatar: newComment.user?.photoURL || null,
           verified: newComment.user?.emailVerified || false,
         },
@@ -515,7 +540,7 @@ exports.getPopularTopics = async (req, res) => {
       { $limit: parseInt(limit) },
     ]);
 
-    const formattedTopics = topics.map(topic => ({
+    const formattedTopics = topics.map((topic) => ({
       name: topic._id,
       count: topic.count,
     }));
@@ -578,7 +603,7 @@ exports.getMyPosts = async (req, res) => {
     const total = await ForumPost.countDocuments(query);
 
     // Format posts
-    const formattedPosts = posts.map(post => ({
+    const formattedPosts = posts.map((post) => ({
       _id: post._id,
       title: post.title,
       content: post.content,
@@ -626,7 +651,7 @@ exports.reportPost = async (req, res) => {
 
     // Find the post
     const post = await ForumPost.findById(id);
-    
+
     if (!post) {
       return res.status(404).json({
         success: false,
@@ -692,7 +717,7 @@ exports.addReply = async (req, res) => {
 
     // Find the comment
     const comment = post.comments.id(commentId);
-    
+
     if (!comment) {
       return res.status(404).json({
         success: false,
@@ -710,9 +735,12 @@ exports.addReply = async (req, res) => {
     });
 
     await post.save();
-    
+
     // Populate the reply user info
-    await post.populate('comments.replies.user', 'username firstName lastName email emailVerified profilePicture');
+    await post.populate(
+      'comments.replies.user',
+      'username firstName lastName email emailVerified profilePicture'
+    );
 
     const newReply = comment.replies[comment.replies.length - 1];
 
@@ -722,7 +750,12 @@ exports.addReply = async (req, res) => {
       data: {
         ...newReply.toObject(),
         user: {
-          username: newReply.user?.username || (newReply.user?.firstName && newReply.user?.lastName ? `${newReply.user.firstName} ${newReply.user.lastName}` : newReply.user?.email?.split('@')[0]) || 'Anonymous',
+          username:
+            newReply.user?.username ||
+            (newReply.user?.firstName && newReply.user?.lastName
+              ? `${newReply.user.firstName} ${newReply.user.lastName}`
+              : newReply.user?.email?.split('@')[0]) ||
+            'Anonymous',
           profilePicture: newReply.user?.profilePicture || null,
           verified: newReply.user?.emailVerified || false,
         },
@@ -738,4 +771,3 @@ exports.addReply = async (req, res) => {
     });
   }
 };
-

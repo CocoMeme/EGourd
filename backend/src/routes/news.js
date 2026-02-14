@@ -3,6 +3,16 @@ const router = express.Router();
 const newsController = require('../controllers/newsController');
 const { authenticate } = require('../middleware/auth');
 
+/**
+ * @swagger
+ * /api/news:
+ *   get:
+ *     summary: Retrieve all news items
+ *     tags: [News]
+ *     responses:
+ *       200:
+ *         description: A list of news items.
+ */
 // Public routes
 router.get('/', newsController.getAllNews);
 router.get('/category/:category', newsController.getNewsByCategory);

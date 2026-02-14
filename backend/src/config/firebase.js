@@ -19,7 +19,7 @@ class FirebaseConfig {
       // Option 1: Using service account key file (recommended for development)
       if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-        
+
         this.admin = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           projectId: process.env.FIREBASE_PROJECT_ID,
@@ -28,17 +28,18 @@ class FirebaseConfig {
       // Option 2: Using service account key file path
       else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
         const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
-        
+
         this.admin = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           projectId: process.env.FIREBASE_PROJECT_ID,
         });
       }
       // Option 3: Using environment variables (recommended for production)
-      else if (process.env.FIREBASE_PROJECT_ID && 
-               process.env.FIREBASE_CLIENT_EMAIL && 
-               process.env.FIREBASE_PRIVATE_KEY) {
-        
+      else if (
+        process.env.FIREBASE_PROJECT_ID &&
+        process.env.FIREBASE_CLIENT_EMAIL &&
+        process.env.FIREBASE_PRIVATE_KEY
+      ) {
         const serviceAccount = {
           type: 'service_account',
           project_id: process.env.FIREBASE_PROJECT_ID,
@@ -66,7 +67,7 @@ class FirebaseConfig {
 
       this.initialized = true;
       console.log('Firebase Admin SDK initialized successfully');
-      
+
       return this.admin;
     } catch (error) {
       console.error('Failed to initialize Firebase Admin SDK:', error);

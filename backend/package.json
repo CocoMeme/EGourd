@@ -7,8 +7,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "dev:watch": "nodemon --watch src --ext js,json src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "echo \"Linting not configured yet\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.js\"",
     "build": "echo \"Build step not required for Node.js\"",
     "seed": "node src/utils/seedData.js",
     "seed:news": "node seed-first-news.js"
@@ -38,10 +42,20 @@
     "nodemailer": "^7.0.7",
     "sequelize": "^6.37.7",
     "sharp": "^0.34.5",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "concurrently": "^9.2.1",
-    "nodemon": "^3.1.10"
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.3.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.8.1",
+    "supertest": "^7.2.2"
   }
 }

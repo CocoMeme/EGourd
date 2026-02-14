@@ -1,7 +1,7 @@
 /**
  * Plant Routes - Revised Pollination Management
  * ==============================================
- * 
+ *
  * API routes for complete plant lifecycle management with ML predictions.
  */
 
@@ -16,15 +16,15 @@ const {
   createPlant,
   updatePlant,
   deletePlant,
-  
+
   // Image
   updateImage,
-  
+
   // Flowering
   predictFlowering,
   recordFlowering,
   updateFlowerCounts,
-  
+
   // Pollination
   predictPollinationSuccess,
   addPollination,
@@ -32,16 +32,16 @@ const {
   deletePollination,
   getPollinations,
   recordPollinationResult,
-  
+
   // Fruit & Harvest
   predictFruitMaturity,
   recordHarvest,
-  
+
   // Dashboard
   getDashboardStats,
   getPlantsNeedingAttention,
   getGourdTypes,
-  getLifecyclePrediction
+  getLifecyclePrediction,
 } = require('../controllers/plantController');
 
 // Import middleware
@@ -62,14 +62,9 @@ router.get('/dashboard/stats', getDashboardStats);
 router.get('/attention/needed', getPlantsNeedingAttention);
 
 // Main CRUD routes
-router.route('/')
-  .get(getPlants)
-  .post(createPlant);
+router.route('/').get(getPlants).post(createPlant);
 
-router.route('/:id')
-  .get(getPlant)
-  .put(updatePlant)
-  .delete(deletePlant);
+router.route('/:id').get(getPlant).put(updatePlant).delete(deletePlant);
 
 // Image management
 router.post('/:id/image', upload.single('image'), updateImage);

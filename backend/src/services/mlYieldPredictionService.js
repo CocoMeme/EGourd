@@ -13,14 +13,11 @@ class MLYieldPredictionService {
    */
   static async predictYield(plantData) {
     return new Promise((resolve, reject) => {
-      const scriptPath = path.join(
-        __dirname,
-        '../../ml-models/scripts/predict_yield.py'
-      );
+      const scriptPath = path.join(__dirname, '../../ml-models/scripts/predict_yield.py');
 
       // Determine Python command based on platform
       const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-      
+
       // Spawn Python process
       const pythonProcess = spawn(pythonCmd, [scriptPath]);
 
@@ -46,7 +43,7 @@ class MLYieldPredictionService {
 
         try {
           const result = JSON.parse(outputData);
-          
+
           if (!result.success) {
             return reject(new Error(result.error || 'Prediction failed'));
           }
@@ -90,11 +87,11 @@ class MLYieldPredictionService {
       'male_flower_count',
       'female_flower_count',
       'temperature_celsius',
-      'soil_moisture_percent'
+      'soil_moisture_percent',
     ];
 
     // Check for missing fields
-    requiredFields.forEach(field => {
+    requiredFields.forEach((field) => {
       if (data[field] === undefined || data[field] === null || data[field] === '') {
         errors.push(`${field} is required`);
       }
@@ -114,12 +111,12 @@ class MLYieldPredictionService {
       male_flower_count: { min: 0, max: 100, label: 'Male flower count' },
       female_flower_count: { min: 0, max: 100, label: 'Female flower count' },
       temperature_celsius: { min: 10, max: 45, label: 'Temperature' },
-      soil_moisture_percent: { min: 0, max: 100, label: 'Soil moisture' }
+      soil_moisture_percent: { min: 0, max: 100, label: 'Soil moisture' },
     };
 
     Object.entries(numericValidations).forEach(([field, { min, max, label }]) => {
       const value = parseFloat(data[field]);
-      
+
       if (data[field] !== undefined && data[field] !== null && data[field] !== '') {
         if (isNaN(value)) {
           errors.push(`${label} must be a valid number`);
@@ -131,7 +128,7 @@ class MLYieldPredictionService {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -149,7 +146,7 @@ class MLYieldPredictionService {
       male_flower_count: pollination.maleFlowerCount || pollination.male_flower_count || 20,
       female_flower_count: pollination.femaleFlowerCount || pollination.female_flower_count || 10,
       temperature_celsius: pollination.temperature || pollination.temperature_celsius || 27,
-      soil_moisture_percent: pollination.soilMoisture || pollination.soil_moisture_percent || 70
+      soil_moisture_percent: pollination.soilMoisture || pollination.soil_moisture_percent || 70,
     };
   }
 
@@ -163,7 +160,7 @@ class MLYieldPredictionService {
       ampalaya_bilog: { min: 1.0, max: 5.0, average: 2.5 },
       upo_smooth: { min: 2.0, max: 8.0, average: 4.5 },
       patola: { min: 0.8, max: 4.0, average: 2.0 },
-      cucumber: { min: 1.5, max: 6.0, average: 3.0 }
+      cucumber: { min: 1.5, max: 6.0, average: 3.0 },
     };
 
     return yieldRanges[plantType] || { min: 0, max: 10, average: 3.0 };

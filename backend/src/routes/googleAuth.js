@@ -1,11 +1,6 @@
 const express = require('express');
-const {
-  googleOAuth,
-  getCurrentUser
-} = require('../controllers/googleAuthController');
-const {
-  authenticateToken
-} = require('../middleware/googleAuth');
+const { googleOAuth, getCurrentUser } = require('../controllers/googleAuthController');
+const { authenticateToken } = require('../middleware/googleAuth');
 
 const router = express.Router();
 

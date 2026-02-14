@@ -19,7 +19,7 @@ class NotificationScheduler {
       kalabasa: { startHour: 6, endHour: 9, label: 'Morning (6:00 AM - 9:00 AM)' },
       kundol: { startHour: 6, endHour: 8, label: 'Morning (6:00 AM - 8:00 AM)' },
       patola: { startHour: 17, endHour: 20, label: 'Evening (5:00 PM - 8:00 PM)' },
-      upo: { startHour: 17, endHour: 20, label: 'Evening (5:00 PM - 8:00 PM)' }
+      upo: { startHour: 17, endHour: 20, label: 'Evening (5:00 PM - 8:00 PM)' },
     };
 
     return timingMap[plantName] || null;
@@ -35,7 +35,7 @@ class NotificationScheduler {
       const plants = await Pollination.find({
         user: userId,
         status: 'pollinated',
-        'pollinationTiming.scheduledDate': { $exists: true }
+        'pollinationTiming.scheduledDate': { $exists: true },
       });
 
       const now = new Date();
@@ -45,7 +45,7 @@ class NotificationScheduler {
         if (!plant.pollinationTiming) continue;
 
         const { startHour, scheduledDate, notificationScheduled } = plant.pollinationTiming;
-        
+
         if (!scheduledDate) continue;
 
         // Create dates for notification times
@@ -69,12 +69,16 @@ class NotificationScheduler {
             type: 'oneHourBefore',
             scheduledTime: oneHourBefore,
             message: `🌸 Pollination starts in 1 hour! ${plant.displayName?.english || plant.name} is ready at ${startHour}:00`,
-            pollintationWindow: `${startHour}:00 - ${plant.pollinationTiming.endHour}:00`
+            pollintationWindow: `${startHour}:00 - ${plant.pollinationTiming.endHour}:00`,
           });
         }
 
         // Check if we should send 30 mins before notification
-        if (!notificationScheduled.thirtyMinsBefore && now >= thirtyMinsBefore && now < oneHourBefore) {
+        if (
+          !notificationScheduled.thirtyMinsBefore &&
+          now >= thirtyMinsBefore &&
+          now < oneHourBefore
+        ) {
           notifications.push({
             plantId: plant._id,
             plantName: plant.displayName?.english || plant.name,
@@ -82,7 +86,7 @@ class NotificationScheduler {
             type: 'thirtyMinsBefore',
             scheduledTime: thirtyMinsBefore,
             message: `🌸 Pollination in 30 minutes! Get your tools ready!`,
-            pollintationWindow: `${startHour}:00 - ${plant.pollinationTiming.endHour}:00`
+            pollintationWindow: `${startHour}:00 - ${plant.pollinationTiming.endHour}:00`,
           });
         }
       }
@@ -138,7 +142,7 @@ class NotificationScheduler {
       startHour: timing.startHour,
       endHour: timing.endHour,
       oneHourNotif: `${this.formatTime(timing.startHour - 1)}`,
-      thirtyMinsNotif: `${this.formatTime(timing.startHour - 1)} (+ 30 mins)`
+      thirtyMinsNotif: `${this.formatTime(timing.startHour - 1)} (+ 30 mins)`,
     };
   }
 }

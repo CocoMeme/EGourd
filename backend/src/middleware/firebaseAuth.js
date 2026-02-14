@@ -8,7 +8,7 @@ const verifyFirebaseToken = async (req, res, next) => {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
@@ -99,7 +99,7 @@ const requireLocalUser = async (req, res, next) => {
 const optionalFirebaseAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       // No token provided, continue without authentication
       return next();
@@ -155,8 +155,8 @@ const requireRole = (requiredRoles) => {
       const userRoles = customClaims.roles || [];
 
       // Check if user has any of the required roles
-      const hasRequiredRole = requiredRoles.some(role => 
-        userRoles.includes(role) || req.user.role === role
+      const hasRequiredRole = requiredRoles.some(
+        (role) => userRoles.includes(role) || req.user.role === role
       );
 
       if (!hasRequiredRole) {
@@ -184,7 +184,7 @@ const requireRole = (requiredRoles) => {
  */
 const validateTokenFormat = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader) {
     return res.status(401).json({
       success: false,
@@ -200,7 +200,7 @@ const validateTokenFormat = (req, res, next) => {
   }
 
   const token = authHeader.split('Bearer ')[1];
-  
+
   if (!token || token.trim() === '') {
     return res.status(401).json({
       success: false,

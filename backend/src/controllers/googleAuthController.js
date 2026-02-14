@@ -32,10 +32,7 @@ const googleOAuth = async (req, res) => {
 
     // 2. Find or Create User
     let user = await User.findOne({
-      $or: [
-        { googleId: googleUser.googleId },
-        { email: googleUser.email.toLowerCase() }
-      ]
+      $or: [{ googleId: googleUser.googleId }, { email: googleUser.email.toLowerCase() }],
     });
 
     if (!user) {
@@ -52,7 +49,7 @@ const googleOAuth = async (req, res) => {
         isActive: true,
         lastLogin: new Date(),
         createdAt: new Date(),
-        role: 'user'
+        role: 'user',
       });
       await user.save();
       console.log(`🆕 New Google user created: ${user.email}`);
@@ -62,7 +59,7 @@ const googleOAuth = async (req, res) => {
         return res.status(403).json({
           success: false,
           message: 'Account deactivated',
-          accountDeactivated: true
+          accountDeactivated: true,
         });
       }
 
@@ -83,7 +80,7 @@ const googleOAuth = async (req, res) => {
       {
         userId: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
@@ -101,15 +98,14 @@ const googleOAuth = async (req, res) => {
         lastName: user.lastName,
         profilePicture: user.profilePicture,
         isEmailVerified: user.isEmailVerified,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-
   } catch (error) {
     console.error('Google OAuth Controller Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error during authentication'
+      message: 'Internal server error during authentication',
     });
   }
 };
@@ -132,5 +128,5 @@ const getCurrentUser = async (req, res) => {
 
 module.exports = {
   googleOAuth,
-  getCurrentUser
+  getCurrentUser,
 };

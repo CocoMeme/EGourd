@@ -11,11 +11,11 @@ const {
   deleteAccount,
 } = require('../controllers/localAuthController');
 const { authenticateToken } = require('../middleware/googleAuth'); // We can reuse the JWT auth middleware
-const { 
+const {
   validateUserRegistration,
   validateUserLogin,
   validateProfileUpdate,
-  validatePasswordChange 
+  validatePasswordChange,
 } = require('../middleware/validation');
 
 const router = express.Router();
@@ -31,7 +31,7 @@ router.post(
     // Simple validation for required fields
     (req, res, next) => {
       const { email, password, firstName, lastName } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({
           success: false,
@@ -64,7 +64,7 @@ router.post(
       }
 
       next();
-    }
+    },
   ],
   register
 );
@@ -80,7 +80,7 @@ router.post(
     // Simple validation for required fields
     (req, res, next) => {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({
           success: false,
@@ -89,7 +89,7 @@ router.post(
       }
 
       next();
-    }
+    },
   ],
   login
 );
@@ -127,7 +127,7 @@ router.put(
     // Simple validation for password change
     (req, res, next) => {
       const { currentPassword, newPassword } = req.body;
-      
+
       if (!currentPassword || !newPassword) {
         return res.status(400).json({
           success: false,
@@ -143,7 +143,7 @@ router.put(
       }
 
       next();
-    }
+    },
   ],
   changePassword
 );
@@ -165,7 +165,7 @@ router.post(
   [
     (req, res, next) => {
       const { username, password, firstName, lastName } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({
           success: false,
@@ -205,7 +205,7 @@ router.post(
       }
 
       next();
-    }
+    },
   ],
   registerWithUsername
 );
@@ -220,7 +220,7 @@ router.post(
   [
     (req, res, next) => {
       const { username, password } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({
           success: false,
@@ -229,7 +229,7 @@ router.post(
       }
 
       next();
-    }
+    },
   ],
   loginWithUsername
 );

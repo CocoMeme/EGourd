@@ -5,23 +5,23 @@ const { body, param, query, validationResult } = require('express-validator');
  */
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map(error => ({
+    const formattedErrors = errors.array().map((error) => ({
       field: error.path || error.param,
       message: error.msg,
       value: error.value,
-      location: error.location
+      location: error.location,
     }));
 
     return res.status(400).json({
       status: 'error',
       message: 'Validation failed',
       errors: formattedErrors,
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   }
-  
+
   next();
 };
 
@@ -47,7 +47,9 @@ const validateUserRegistration = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+    .withMessage(
+      'Password must contain at least one lowercase letter, one uppercase letter, and one number'
+    ),
 
   body('profile.firstName')
     .optional()
@@ -61,7 +63,7 @@ const validateUserRegistration = [
     .withMessage('Last name cannot exceed 50 characters')
     .trim(),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -81,7 +83,7 @@ const validateUserLogin = [
     .isLength({ min: 1 })
     .withMessage('Password cannot be empty'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -122,32 +124,31 @@ const validateProfileUpdate = [
     .withMessage('Bio cannot exceed 500 characters')
     .trim(),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * Password change validation
  */
 const validatePasswordChange = [
-  body('currentPassword')
-    .notEmpty()
-    .withMessage('Current password is required'),
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
 
   body('newPassword')
     .isLength({ min: 6 })
     .withMessage('New password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('New password must contain at least one lowercase letter, one uppercase letter, and one number'),
+    .withMessage(
+      'New password must contain at least one lowercase letter, one uppercase letter, and one number'
+    ),
 
-  body('confirmPassword')
-    .custom((value, { req }) => {
-      if (value !== req.body.newPassword) {
-        throw new Error('Password confirmation does not match new password');
-      }
-      return true;
-    }),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error('Password confirmation does not match new password');
+    }
+    return true;
+  }),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -174,10 +175,7 @@ const validateScanMetadata = [
     .isIn(['iOS', 'Android', 'Web'])
     .withMessage('Platform must be iOS, Android, or Web'),
 
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array'),
+  body('tags').optional().isArray().withMessage('Tags must be an array'),
 
   body('tags.*')
     .optional()
@@ -186,7 +184,7 @@ const validateScanMetadata = [
     .withMessage('Each tag must be a string between 1 and 50 characters')
     .trim(),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -198,10 +196,7 @@ const validateUserFeedback = [
     .isInt({ min: 1, max: 5 })
     .withMessage('Rating must be an integer between 1 and 5'),
 
-  body('corrections')
-    .optional()
-    .isArray()
-    .withMessage('Corrections must be an array'),
+  body('corrections').optional().isArray().withMessage('Corrections must be an array'),
 
   body('corrections.*.gourdIndex')
     .optional()
@@ -219,12 +214,9 @@ const validateUserFeedback = [
     .withMessage('Notes cannot exceed 1000 characters')
     .trim(),
 
-  body('useForTraining')
-    .optional()
-    .isBoolean()
-    .withMessage('useForTraining must be a boolean'),
+  body('useForTraining').optional().isBoolean().withMessage('useForTraining must be a boolean'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -245,7 +237,17 @@ const validateGourdData = [
     .trim(),
 
   body('category')
-    .isIn(['bottle', 'dipper', 'ornamental', 'birdhouse', 'canteen', 'snake', 'spoon', 'bowl', 'other'])
+    .isIn([
+      'bottle',
+      'dipper',
+      'ornamental',
+      'birdhouse',
+      'canteen',
+      'snake',
+      'spoon',
+      'bowl',
+      'other',
+    ])
     .withMessage('Category must be a valid gourd type'),
 
   body('characteristics.size.minLength')
@@ -258,10 +260,7 @@ const validateGourdData = [
     .isFloat({ min: 0 })
     .withMessage('Maximum length must be a positive number'),
 
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array'),
+  body('tags').optional().isArray().withMessage('Tags must be an array'),
 
   body('tags.*')
     .optional()
@@ -270,29 +269,23 @@ const validateGourdData = [
     .withMessage('Each tag must be a string between 1 and 30 characters')
     .trim(),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * MongoDB ObjectId validation
  */
 const validateObjectId = (paramName = 'id') => [
-  param(paramName)
-    .isMongoId()
-    .withMessage(`${paramName} must be a valid MongoDB ObjectId`),
+  param(paramName).isMongoId().withMessage(`${paramName} must be a valid MongoDB ObjectId`),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * Pagination validation
  */
 const validatePagination = [
-  query('page')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer')
-    .toInt(),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer').toInt(),
 
   query('limit')
     .optional()
@@ -311,7 +304,7 @@ const validatePagination = [
     .isIn(['asc', 'desc', '1', '-1'])
     .withMessage('Sort order must be asc, desc, 1, or -1'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -326,10 +319,20 @@ const validateSearch = [
 
   query('category')
     .optional()
-    .isIn(['bottle', 'dipper', 'ornamental', 'birdhouse', 'canteen', 'snake', 'spoon', 'bowl', 'other'])
+    .isIn([
+      'bottle',
+      'dipper',
+      'ornamental',
+      'birdhouse',
+      'canteen',
+      'snake',
+      'spoon',
+      'bowl',
+      'other',
+    ])
     .withMessage('Category must be a valid gourd type'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -340,29 +343,31 @@ const validateFileUpload = (req, res, next) => {
     return res.status(400).json({
       status: 'error',
       message: 'No file uploaded',
-      code: 'NO_FILE'
+      code: 'NO_FILE',
     });
   }
 
   const file = req.file || (req.files && req.files[0]);
-  
+
   // Check file size (5MB limit)
   const maxSize = parseInt(process.env.MAX_FILE_SIZE) || 5242880; // 5MB
   if (file.size > maxSize) {
     return res.status(400).json({
       status: 'error',
       message: `File size too large. Maximum size is ${maxSize / 1024 / 1024}MB`,
-      code: 'FILE_TOO_LARGE'
+      code: 'FILE_TOO_LARGE',
     });
   }
 
   // Check file type
-  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg').split(',');
+  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg').split(
+    ','
+  );
   if (!allowedTypes.includes(file.mimetype)) {
     return res.status(400).json({
       status: 'error',
       message: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
-      code: 'INVALID_FILE_TYPE'
+      code: 'INVALID_FILE_TYPE',
     });
   }
 
@@ -426,7 +431,7 @@ const validatePollination = [
     .withMessage('Notes cannot exceed 500 characters')
     .trim(),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -445,7 +450,7 @@ const validateNote = [
     .isIn(['observation', 'care', 'problem', 'milestone'])
     .withMessage('Note type must be one of: observation, care, problem, milestone'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -473,7 +478,7 @@ const validateFlowering = [
       return true;
     }),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -495,7 +500,7 @@ const validatePollinationDate = [
       return true;
     }),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
@@ -504,7 +509,7 @@ const validatePollinationDate = [
 const validateRequestBody = (requiredFields) => {
   return (req, res, next) => {
     const missingFields = [];
-    
+
     for (const field of requiredFields) {
       if (!req.body[field]) {
         missingFields.push(field);
@@ -516,7 +521,7 @@ const validateRequestBody = (requiredFields) => {
         status: 'error',
         message: 'Missing required fields',
         missingFields: missingFields,
-        code: 'MISSING_FIELDS'
+        code: 'MISSING_FIELDS',
       });
     }
 
@@ -561,30 +566,20 @@ const validateUserUpdate = [
     .isIn(['user', 'admin', 'researcher'])
     .withMessage('Role must be one of: user, admin, researcher'),
 
-  body('isActive')
-    .optional()
-    .isBoolean()
-    .withMessage('isActive must be a boolean'),
+  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
 
-  body('isEmailVerified')
-    .optional()
-    .isBoolean()
-    .withMessage('isEmailVerified must be a boolean'),
+  body('isEmailVerified').optional().isBoolean().withMessage('isEmailVerified must be a boolean'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 /**
  * Bulk user update validation
  */
 const validateBulkUpdate = [
-  body('userIds')
-    .isArray({ min: 1 })
-    .withMessage('User IDs must be a non-empty array'),
+  body('userIds').isArray({ min: 1 }).withMessage('User IDs must be a non-empty array'),
 
-  body('userIds.*')
-    .isMongoId()
-    .withMessage('Each user ID must be a valid MongoDB ObjectId'),
+  body('userIds.*').isMongoId().withMessage('Each user ID must be a valid MongoDB ObjectId'),
 
   body('action')
     .notEmpty()
@@ -599,7 +594,7 @@ const validateBulkUpdate = [
     .isIn(['user', 'admin', 'researcher'])
     .withMessage('Role value must be one of: user, admin, researcher'),
 
-  handleValidationErrors
+  handleValidationErrors,
 ];
 
 module.exports = {
@@ -621,5 +616,5 @@ module.exports = {
   validateFileUpload,
   validateRequestBody,
   validateUserUpdate,
-  validateBulkUpdate
+  validateBulkUpdate,
 };

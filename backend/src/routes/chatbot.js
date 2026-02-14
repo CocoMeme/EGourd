@@ -23,7 +23,7 @@ router.post(
     body('conversationHistory')
       .optional()
       .isArray()
-      .withMessage('Conversation history must be an array')
+      .withMessage('Conversation history must be an array'),
   ],
   handleValidationErrors,
   postMessage

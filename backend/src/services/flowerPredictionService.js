@@ -1,10 +1,10 @@
 /**
  * Flower Production Prediction Service
- * 
+ *
  * This service provides rule-based predictions for male and female flower production
  * in cucurbit plants (gourds, melons, squashes) based on environmental factors,
  * plant care, and growth metrics.
- * 
+ *
  * The predictions are based on:
  * - Horticultural research on cucurbit flowering patterns
  * - Environmental stress factors affecting flower sex ratio
@@ -12,7 +12,6 @@
  */
 
 class FlowerPredictionService {
-  
   /**
    * Base flower production data for each plant type
    * Based on typical production under optimal conditions
@@ -23,29 +22,29 @@ class FlowerPredictionService {
       maleFlowers: { min: 15, max: 30, optimal: 22 },
       femaleFlowers: { min: 8, max: 15, optimal: 11 },
       optimalAge: { min: 40, max: 60 }, // Days from planting
-      maleToFemaleRatio: 2.0 // Typically 2:1 male to female
+      maleToFemaleRatio: 2.0, // Typically 2:1 male to female
     },
     upo_smooth: {
       // Bottle gourd (smooth variety) - monoecious
       maleFlowers: { min: 20, max: 40, optimal: 30 },
       femaleFlowers: { min: 10, max: 20, optimal: 15 },
       optimalAge: { min: 50, max: 70 },
-      maleToFemaleRatio: 2.0
+      maleToFemaleRatio: 2.0,
     },
     patola: {
       // Sponge gourd - monoecious
       maleFlowers: { min: 12, max: 25, optimal: 18 },
       femaleFlowers: { min: 6, max: 12, optimal: 9 },
       optimalAge: { min: 45, max: 65 },
-      maleToFemaleRatio: 2.0
+      maleToFemaleRatio: 2.0,
     },
     cucumber: {
       // Cucumber - monoecious
       maleFlowers: { min: 18, max: 35, optimal: 25 },
       femaleFlowers: { min: 10, max: 18, optimal: 14 },
       optimalAge: { min: 35, max: 55 },
-      maleToFemaleRatio: 1.8 // Slightly lower male to female ratio
-    }
+      maleToFemaleRatio: 1.8, // Slightly lower male to female ratio
+    },
   };
 
   /**
@@ -54,13 +53,7 @@ class FlowerPredictionService {
    * @returns {Object} Prediction results with confidence and recommendations
    */
   static predictFlowerProduction(inputData) {
-    const {
-      plantType,
-      plantAge,
-      environmental,
-      care,
-      growth
-    } = inputData;
+    const { plantType, plantAge, environmental, care, growth } = inputData;
 
     // Get base data for plant type
     const baseData = this.baseFlowerData[plantType];
@@ -75,12 +68,11 @@ class FlowerPredictionService {
     const healthAdjustment = this.calculateHealthAdjustment(growth.healthRating);
 
     // Combined adjustment factor (0.4 to 1.5 range)
-    const totalAdjustment = (
+    const totalAdjustment =
       ageAdjustment.factor * 0.25 +
       environmentalAdjustment.factor * 0.35 +
       careAdjustment.factor * 0.25 +
-      healthAdjustment.factor * 0.15
-    );
+      healthAdjustment.factor * 0.15;
 
     // Apply stress-based sex ratio modification
     // Environmental stress tends to increase male flowers
@@ -102,7 +94,7 @@ class FlowerPredictionService {
       ageAdjustment,
       environmentalAdjustment,
       careAdjustment,
-      healthAdjustment
+      healthAdjustment,
     ]);
 
     // Gather influencing factors
@@ -111,7 +103,7 @@ class FlowerPredictionService {
       ...environmentalAdjustment.factors,
       ...careAdjustment.factors,
       ...healthAdjustment.factors,
-      ...sexRatioModifier.factors
+      ...sexRatioModifier.factors,
     ];
 
     // Generate recommendations
@@ -128,7 +120,7 @@ class FlowerPredictionService {
       femaleFlowers,
       confidence: Math.round(confidence),
       influencingFactors,
-      recommendations
+      recommendations,
     };
   }
 
@@ -146,7 +138,7 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Plant Age',
         impact: 'negative',
-        description: `Plant is ${daysUnder} days younger than optimal flowering age`
+        description: `Plant is ${daysUnder} days younger than optimal flowering age`,
       });
     } else if (plantAge >= optimalAge.min && plantAge <= optimalAge.max) {
       // Optimal age - full production
@@ -154,7 +146,7 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Plant Age',
         impact: 'positive',
-        description: 'Plant is at optimal age for flowering'
+        description: 'Plant is at optimal age for flowering',
       });
     } else {
       // Older plant - slightly reduced but still producing
@@ -164,13 +156,13 @@ class FlowerPredictionService {
         factors.push({
           factor: 'Plant Age',
           impact: 'negative',
-          description: 'Plant is past optimal flowering age, production may decline'
+          description: 'Plant is past optimal flowering age, production may decline',
         });
       } else {
         factors.push({
           factor: 'Plant Age',
           impact: 'positive',
-          description: 'Plant is mature and still producing well'
+          description: 'Plant is mature and still producing well',
         });
       }
     }
@@ -192,14 +184,14 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Temperature',
         impact: 'negative',
-        description: `Temperature (${temp}°C) is outside optimal range (25-30°C)`
+        description: `Temperature (${temp}°C) is outside optimal range (25-30°C)`,
       });
     } else if (temp >= 25 && temp <= 30) {
       factor *= 1.1;
       factors.push({
         factor: 'Temperature',
         impact: 'positive',
-        description: 'Temperature is in optimal range for flowering'
+        description: 'Temperature is in optimal range for flowering',
       });
     }
 
@@ -210,14 +202,14 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Humidity',
         impact: 'negative',
-        description: `Humidity (${humidity}%) is outside optimal range (60-80%)`
+        description: `Humidity (${humidity}%) is outside optimal range (60-80%)`,
       });
     } else if (humidity >= 60 && humidity <= 80) {
       factor *= 1.05;
       factors.push({
         factor: 'Humidity',
         impact: 'positive',
-        description: 'Humidity level is optimal for flowering'
+        description: 'Humidity level is optimal for flowering',
       });
     }
 
@@ -228,21 +220,21 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Sunlight',
         impact: 'negative',
-        description: `Low sunlight (${sunlight}hrs) significantly reduces flowering`
+        description: `Low sunlight (${sunlight}hrs) significantly reduces flowering`,
       });
     } else if (sunlight >= 6 && sunlight <= 8) {
       factor *= 1.1;
       factors.push({
         factor: 'Sunlight',
         impact: 'positive',
-        description: 'Sunlight exposure is optimal'
+        description: 'Sunlight exposure is optimal',
       });
     } else if (sunlight > 10) {
       factor *= 0.9;
       factors.push({
         factor: 'Sunlight',
         impact: 'neutral',
-        description: 'Very high sunlight may stress plant during hot periods'
+        description: 'Very high sunlight may stress plant during hot periods',
       });
     }
 
@@ -254,14 +246,14 @@ class FlowerPredictionService {
         factors.push({
           factor: 'Soil pH',
           impact: 'negative',
-          description: `Soil pH (${pH}) is outside optimal range (6.0-6.8)`
+          description: `Soil pH (${pH}) is outside optimal range (6.0-6.8)`,
         });
       } else if (pH >= 6.0 && pH <= 6.8) {
         factor *= 1.05;
         factors.push({
           factor: 'Soil pH',
           impact: 'positive',
-          description: 'Soil pH is in optimal range'
+          description: 'Soil pH is in optimal range',
         });
       }
     }
@@ -283,21 +275,21 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Watering',
         impact: 'negative',
-        description: 'Insufficient watering reduces flowering significantly'
+        description: 'Insufficient watering reduces flowering significantly',
       });
     } else if (watering >= 3 && watering <= 5) {
       factor *= 1.1;
       factors.push({
         factor: 'Watering',
         impact: 'positive',
-        description: 'Watering frequency is optimal'
+        description: 'Watering frequency is optimal',
       });
     } else if (watering > 7) {
       factor *= 0.85;
       factors.push({
         factor: 'Watering',
         impact: 'negative',
-        description: 'Overwatering may stress plant and reduce flowering'
+        description: 'Overwatering may stress plant and reduce flowering',
       });
     }
 
@@ -307,21 +299,21 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Fertilization',
         impact: 'negative',
-        description: 'No fertilizer use limits nutrient availability for flowering'
+        description: 'No fertilizer use limits nutrient availability for flowering',
       });
     } else if (care.fertilizerType === 'organic' || care.fertilizerType === 'mixed') {
       factor *= 1.15;
       factors.push({
         factor: 'Fertilization',
         impact: 'positive',
-        description: 'Good fertilization promotes healthy flowering'
+        description: 'Good fertilization promotes healthy flowering',
       });
     } else if (care.fertilizerType === 'chemical') {
       factor *= 1.05;
       factors.push({
         factor: 'Fertilization',
         impact: 'positive',
-        description: 'Chemical fertilizer provides nutrients for flowering'
+        description: 'Chemical fertilizer provides nutrients for flowering',
       });
     }
 
@@ -331,14 +323,14 @@ class FlowerPredictionService {
       factors.push({
         factor: 'Pest Control',
         impact: 'negative',
-        description: 'Lack of pest control may affect plant health and flowering'
+        description: 'Lack of pest control may affect plant health and flowering',
       });
     } else if (care.pestControl === 'regular') {
       factor *= 1.05;
       factors.push({
         factor: 'Pest Control',
         impact: 'positive',
-        description: 'Regular pest control maintains plant health'
+        description: 'Regular pest control maintains plant health',
       });
     }
 
@@ -350,22 +342,22 @@ class FlowerPredictionService {
    */
   static calculateHealthAdjustment(healthRating) {
     const factors = [];
-    
+
     // Health rating: 1-5 scale
     const healthMultipliers = {
       1: { factor: 0.4, desc: 'Poor plant health severely limits flowering' },
       2: { factor: 0.65, desc: 'Below average health reduces flowering capacity' },
       3: { factor: 0.9, desc: 'Average plant health supports moderate flowering' },
       4: { factor: 1.1, desc: 'Good plant health promotes strong flowering' },
-      5: { factor: 1.2, desc: 'Excellent plant health maximizes flowering potential' }
+      5: { factor: 1.2, desc: 'Excellent plant health maximizes flowering potential' },
     };
 
     const healthData = healthMultipliers[healthRating] || healthMultipliers[3];
-    
+
     factors.push({
       factor: 'Plant Health',
       impact: healthRating >= 4 ? 'positive' : healthRating === 3 ? 'neutral' : 'negative',
-      description: healthData.desc
+      description: healthData.desc,
     });
 
     return { factor: healthData.factor, factors };
@@ -399,20 +391,20 @@ class FlowerPredictionService {
     stressLevel = Math.min(1.0, stressLevel); // Cap at 1.0
 
     // Higher stress = more male flowers, fewer female flowers
-    const maleMultiplier = 1.0 + (stressLevel * 0.3); // Up to 30% more males
-    const femaleMultiplier = 1.0 - (stressLevel * 0.25); // Up to 25% fewer females
+    const maleMultiplier = 1.0 + stressLevel * 0.3; // Up to 30% more males
+    const femaleMultiplier = 1.0 - stressLevel * 0.25; // Up to 25% fewer females
 
     if (stressLevel > 0.5) {
       factors.push({
         factor: 'Environmental Stress',
         impact: 'neutral',
-        description: 'Stress conditions favor male flower production over female flowers'
+        description: 'Stress conditions favor male flower production over female flowers',
       });
     } else if (stressLevel < 0.2) {
       factors.push({
         factor: 'Growing Conditions',
         impact: 'positive',
-        description: 'Optimal conditions support balanced flower production'
+        description: 'Optimal conditions support balanced flower production',
       });
     }
 
@@ -438,7 +430,7 @@ class FlowerPredictionService {
     let totalScore = 0;
     let count = 0;
 
-    adjustments.forEach(adj => {
+    adjustments.forEach((adj) => {
       // Convert factor to confidence contribution (0.4-1.5 -> 40-100)
       const normalizedScore = Math.min(100, Math.max(40, adj.factor * 70));
       totalScore += normalizedScore;
@@ -458,62 +450,68 @@ class FlowerPredictionService {
     if (ageAdj.factor < 0.8) {
       recommendations.push({
         category: 'general',
-        suggestion: 'Wait for plant to reach optimal flowering age before expecting full production',
-        priority: 'medium'
+        suggestion:
+          'Wait for plant to reach optimal flowering age before expecting full production',
+        priority: 'medium',
       });
     }
 
     // Environmental recommendations
-    envAdj.factors.forEach(factor => {
+    envAdj.factors.forEach((factor) => {
       if (factor.impact === 'negative') {
         if (factor.factor === 'Temperature') {
           recommendations.push({
             category: 'temperature',
-            suggestion: 'Consider shade cloth during hot periods or row covers during cool weather to maintain optimal temperature',
-            priority: 'high'
+            suggestion:
+              'Consider shade cloth during hot periods or row covers during cool weather to maintain optimal temperature',
+            priority: 'high',
           });
         } else if (factor.factor === 'Humidity') {
           recommendations.push({
             category: 'general',
             suggestion: 'Adjust watering schedule and mulching to manage humidity levels',
-            priority: 'medium'
+            priority: 'medium',
           });
         } else if (factor.factor === 'Sunlight') {
           recommendations.push({
             category: 'sunlight',
-            suggestion: 'Relocate plant to area with 6-8 hours of sunlight daily, or prune competing vegetation',
-            priority: 'high'
+            suggestion:
+              'Relocate plant to area with 6-8 hours of sunlight daily, or prune competing vegetation',
+            priority: 'high',
           });
         } else if (factor.factor === 'Soil pH') {
           recommendations.push({
             category: 'soil',
             suggestion: 'Amend soil pH to 6.0-6.8 range using lime (to raise) or sulfur (to lower)',
-            priority: 'high'
+            priority: 'high',
           });
         }
       }
     });
 
     // Care recommendations
-    careAdj.factors.forEach(factor => {
+    careAdj.factors.forEach((factor) => {
       if (factor.impact === 'negative') {
         if (factor.factor === 'Watering') {
           recommendations.push({
             category: 'watering',
-            suggestion: 'Adjust to water 3-5 times per week, ensuring soil stays consistently moist but not waterlogged',
-            priority: 'high'
+            suggestion:
+              'Adjust to water 3-5 times per week, ensuring soil stays consistently moist but not waterlogged',
+            priority: 'high',
           });
         } else if (factor.factor === 'Fertilization') {
           recommendations.push({
             category: 'fertilizer',
-            suggestion: 'Apply balanced fertilizer (NPK 10-10-10) or compost monthly to support flowering',
-            priority: 'high'
+            suggestion:
+              'Apply balanced fertilizer (NPK 10-10-10) or compost monthly to support flowering',
+            priority: 'high',
           });
         } else if (factor.factor === 'Pest Control') {
           recommendations.push({
             category: 'pest-control',
-            suggestion: 'Implement regular pest monitoring and organic control methods to protect plant health',
-            priority: 'medium'
+            suggestion:
+              'Implement regular pest monitoring and organic control methods to protect plant health',
+            priority: 'medium',
           });
         }
       }
@@ -523,8 +521,9 @@ class FlowerPredictionService {
     if (healthAdj.factor < 0.8) {
       recommendations.push({
         category: 'general',
-        suggestion: 'Focus on improving overall plant health through proper nutrition, watering, and pest management',
-        priority: 'high'
+        suggestion:
+          'Focus on improving overall plant health through proper nutrition, watering, and pest management',
+        priority: 'high',
       });
     }
 
@@ -532,7 +531,7 @@ class FlowerPredictionService {
     recommendations.push({
       category: 'general',
       suggestion: `For ${plantType}, ensure consistent moisture during flowering period to maximize both male and female flower production`,
-      priority: 'medium'
+      priority: 'medium',
     });
 
     return recommendations;

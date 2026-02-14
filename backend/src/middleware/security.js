@@ -10,11 +10,11 @@ const generalLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many requests from this IP. Please try again later.',
-    code: 'RATE_LIMIT_EXCEEDED'
+    code: 'RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -27,11 +27,11 @@ const authLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many authentication attempts. Please try again in 15 minutes.',
-    code: 'AUTH_RATE_LIMIT_EXCEEDED'
+    code: 'AUTH_RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -43,11 +43,11 @@ const passwordResetLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many password reset attempts. Please try again in an hour.',
-    code: 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED'
+    code: 'PASSWORD_RESET_RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -59,11 +59,11 @@ const uploadLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many file uploads. Please try again later.',
-    code: 'UPLOAD_RATE_LIMIT_EXCEEDED'
+    code: 'UPLOAD_RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -75,11 +75,11 @@ const mlPredictionLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many prediction requests. Please try again later.',
-    code: 'PREDICTION_RATE_LIMIT_EXCEEDED'
+    code: 'PREDICTION_RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -91,11 +91,11 @@ const searchLimiter = rateLimit({
   message: {
     status: 'error',
     message: 'Too many search requests. Please try again in a few minutes.',
-    code: 'SEARCH_RATE_LIMIT_EXCEEDED'
+    code: 'SEARCH_RATE_LIMIT_EXCEEDED',
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitErrorHandler
+  handler: rateLimitErrorHandler,
 });
 
 /**
@@ -124,11 +124,11 @@ const createDynamicRateLimiter = (options = {}) => {
     message: {
       status: 'error',
       message: 'Rate limit exceeded for your user tier.',
-      code: 'USER_RATE_LIMIT_EXCEEDED'
+      code: 'USER_RATE_LIMIT_EXCEEDED',
     },
     standardHeaders: true,
     legacyHeaders: false,
-    handler: rateLimitErrorHandler
+    handler: rateLimitErrorHandler,
   });
 };
 
@@ -142,10 +142,10 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  
+
   // Remove powered by header
   res.removeHeader('X-Powered-By');
-  
+
   next();
 };
 
@@ -157,17 +157,17 @@ const sanitizeRequest = (req, res, next) => {
   if (req.body && typeof req.body === 'object') {
     sanitizeObject(req.body);
   }
-  
+
   // Sanitize query parameters
   if (req.query && typeof req.query === 'object') {
     sanitizeObject(req.query);
   }
-  
+
   // Sanitize URL parameters
   if (req.params && typeof req.params === 'object') {
     sanitizeObject(req.params);
   }
-  
+
   next();
 };
 
@@ -195,26 +195,26 @@ const sanitizeObject = (obj) => {
  */
 const validateApiKey = (req, res, next) => {
   const apiKey = req.header('X-API-Key');
-  
+
   if (!apiKey) {
     return res.status(401).json({
       status: 'error',
       message: 'API key is required',
-      code: 'API_KEY_REQUIRED'
+      code: 'API_KEY_REQUIRED',
     });
   }
-  
+
   // In production, validate against database or environment variable
   const validApiKeys = (process.env.VALID_API_KEYS || '').split(',');
-  
+
   if (!validApiKeys.includes(apiKey)) {
     return res.status(401).json({
       status: 'error',
       message: 'Invalid API key',
-      code: 'INVALID_API_KEY'
+      code: 'INVALID_API_KEY',
     });
   }
-  
+
   next();
 };
 
@@ -224,24 +224,24 @@ const validateApiKey = (req, res, next) => {
 const ipWhitelist = (allowedIPs = []) => {
   return (req, res, next) => {
     const clientIP = req.ip || req.connection.remoteAddress;
-    
+
     // In development, allow all IPs
     if (process.env.NODE_ENV === 'development') {
       return next();
     }
-    
+
     // Add default allowed IPs
     const defaultAllowedIPs = (process.env.ADMIN_ALLOWED_IPS || '').split(',');
     const allAllowedIPs = [...allowedIPs, ...defaultAllowedIPs];
-    
+
     if (allAllowedIPs.length === 0 || allAllowedIPs.includes(clientIP)) {
       return next();
     }
-    
+
     res.status(403).json({
       status: 'error',
       message: 'Access denied from this IP address',
-      code: 'IP_NOT_ALLOWED'
+      code: 'IP_NOT_ALLOWED',
     });
   };
 };
@@ -257,27 +257,26 @@ const securityLogger = (req, res, next) => {
     ip: req.ip,
     userAgent: req.get('User-Agent'),
     userId: req.user?.id,
-    contentLength: req.get('Content-Length')
+    contentLength: req.get('Content-Length'),
   };
-  
+
   // Log suspicious patterns
   const suspiciousPatterns = [
-    /\.\./,  // Path traversal
-    /<script/i,  // XSS attempts
-    /union.*select/i,  // SQL injection
-    /javascript:/i,  // XSS
-    /%3c.*%3e/i  // Encoded HTML
+    /\.\./, // Path traversal
+    /<script/i, // XSS attempts
+    /union.*select/i, // SQL injection
+    /javascript:/i, // XSS
+    /%3c.*%3e/i, // Encoded HTML
   ];
-  
-  const isSuspicious = suspiciousPatterns.some(pattern => 
-    pattern.test(req.originalUrl) || 
-    pattern.test(JSON.stringify(req.body || ''))
+
+  const isSuspicious = suspiciousPatterns.some(
+    (pattern) => pattern.test(req.originalUrl) || pattern.test(JSON.stringify(req.body || ''))
   );
-  
+
   if (isSuspicious) {
     console.warn('🚨 Suspicious request detected:', logData);
   }
-  
+
   next();
 };
 
@@ -293,5 +292,5 @@ module.exports = {
   sanitizeRequest,
   validateApiKey,
   ipWhitelist,
-  securityLogger
+  securityLogger,
 };

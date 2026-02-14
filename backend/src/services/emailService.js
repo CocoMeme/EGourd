@@ -34,14 +34,14 @@ class EmailService {
         secure: false, // Use STARTTLS
         auth: {
           user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
+          pass: process.env.EMAIL_PASS,
         },
         tls: {
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
         },
         connectionTimeout: 10000, // 10 second timeout
         greetingTimeout: 10000,
-        socketTimeout: 15000
+        socketTimeout: 15000,
       });
 
       this.initialized = true;
@@ -60,25 +60,27 @@ class EmailService {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
-        'api-key': this.brevoApiKey
+        'api-key': this.brevoApiKey,
       },
       body: JSON.stringify({
         sender: {
           name: process.env.EMAIL_FROM_NAME || 'eGourd',
-          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@egourd.com'
+          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@egourd.com',
         },
         to: [{ email: mailOptions.to }],
         subject: mailOptions.subject,
         htmlContent: mailOptions.html,
-        textContent: mailOptions.text
-      })
+        textContent: mailOptions.text,
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+      throw new Error(
+        `Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`
+      );
     }
 
     const data = await response.json();
@@ -135,7 +137,9 @@ class EmailService {
    */
   async sendVerificationPin(email, pin, userName = 'User') {
     if (!this.initialized) {
-      throw new Error('Email service not initialized. Check BREVO_API_KEY or EMAIL_USER/EMAIL_PASS in .env');
+      throw new Error(
+        'Email service not initialized. Check BREVO_API_KEY or EMAIL_USER/EMAIL_PASS in .env'
+      );
     }
 
     const mailOptions = {
@@ -143,17 +147,19 @@ class EmailService {
       to: email,
       subject: 'Verify Your Email - eGourd',
       html: this.getVerificationEmailTemplate(pin, userName),
-      text: this.getVerificationEmailText(pin, userName)
+      text: this.getVerificationEmailText(pin, userName),
     };
 
     try {
-      console.log(`[EmailService] Attempting to send verification email to: ${email} (using ${this.useHttpApi ? 'HTTP API' : 'SMTP'})`);
+      console.log(
+        `[EmailService] Attempting to send verification email to: ${email} (using ${this.useHttpApi ? 'HTTP API' : 'SMTP'})`
+      );
       const info = await this.sendMail(mailOptions);
       console.log(`✅ [EmailService] Success! MessageID: ${info.messageId}`);
 
       return {
         success: true,
-        messageId: info.messageId
+        messageId: info.messageId,
       };
     } catch (error) {
       console.error('❌ [EmailService] FAILED to send email:', error);
@@ -186,7 +192,7 @@ class EmailService {
       to: email,
       subject: 'Password Reset Request - EGourd',
       html: this.getPasswordResetEmailTemplate(resetUrl, userName),
-      text: this.getPasswordResetEmailText(resetUrl, userName)
+      text: this.getPasswordResetEmailText(resetUrl, userName),
     };
 
     try {
@@ -194,7 +200,7 @@ class EmailService {
       console.log(`✅ Password reset email sent to ${email}:`, info.messageId);
       return {
         success: true,
-        messageId: info.messageId
+        messageId: info.messageId,
       };
     } catch (error) {
       console.error('❌ Failed to send password reset email:', error.message);
@@ -217,7 +223,7 @@ class EmailService {
       to: email,
       subject: 'Welcome to EGourd!',
       html: this.getWelcomeEmailTemplate(userName),
-      text: this.getWelcomeEmailText(userName)
+      text: this.getWelcomeEmailText(userName),
     };
 
     try {
@@ -225,14 +231,14 @@ class EmailService {
       console.log(`✅ Welcome email sent to ${email}:`, info.messageId);
       return {
         success: true,
-        messageId: info.messageId
+        messageId: info.messageId,
       };
     } catch (error) {
       console.error('❌ Failed to send welcome email:', error.message);
       // Don't throw error for welcome email - it's not critical
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }

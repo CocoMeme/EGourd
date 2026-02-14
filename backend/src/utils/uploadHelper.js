@@ -27,14 +27,15 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const fileExtension = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, fileExtension)
+    const baseName = path
+      .basename(file.originalname, fileExtension)
       .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
       .substring(0, 20); // Limit length
 
     cb(null, `${baseName}_${uniqueSuffix}${fileExtension}`);
-  }
+  },
 });
 
 // Memory storage for direct cloud uploads (alternative approach)
@@ -43,12 +44,20 @@ const memoryStorage = multer.memoryStorage();
 // File filter function
 const fileFilter = (req, file, cb) => {
   // Check file type
-  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg').split(',');
+  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg').split(
+    ','
+  );
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`, 400, 'INVALID_FILE_TYPE'));
+    cb(
+      new AppError(
+        `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
+        400,
+        'INVALID_FILE_TYPE'
+      )
+    );
   }
 };
 
@@ -58,8 +67,8 @@ const uploadToDisk = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 3 * 1024 * 1024, // 3MB for free tier memory
-    files: 5 // Maximum 5 files
-  }
+    files: 5, // Maximum 5 files
+  },
 });
 
 // Multer configuration for memory storage (for direct cloud upload)
@@ -68,8 +77,8 @@ const uploadToMemory = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 3 * 1024 * 1024, // 3MB for free tier memory
-    files: 5
-  }
+    files: 5,
+  },
 });
 
 /**
@@ -84,9 +93,9 @@ const uploadToCloudinary = async (file, options = {}) => {
       folder: 'gourd-classification',
       transformation: [
         { width: 1024, height: 1024, crop: 'limit', quality: 'auto' },
-        { format: 'jpg' }
+        { format: 'jpg' },
       ],
-      ...options
+      ...options,
     };
 
     let uploadResult;
@@ -104,13 +113,12 @@ const uploadToCloudinary = async (file, options = {}) => {
     } else if (file.buffer) {
       // Upload from memory buffer
       uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-          defaultOptions,
-          (error, result) => {
+        cloudinary.uploader
+          .upload_stream(defaultOptions, (error, result) => {
             if (error) reject(error);
             else resolve(result);
-          }
-        ).end(file.buffer);
+          })
+          .end(file.buffer);
       });
     } else {
       throw new AppError('Invalid file object', 400, 'INVALID_FILE_OBJECT');
@@ -124,12 +132,11 @@ const uploadToCloudinary = async (file, options = {}) => {
       mimetype: file.mimetype,
       dimensions: {
         width: uploadResult.width,
-        height: uploadResult.height
+        height: uploadResult.height,
       },
       format: uploadResult.format,
-      bytes: uploadResult.bytes
+      bytes: uploadResult.bytes,
     };
-
   } catch (error) {
     // Clean up local file if upload failed
     if (file.path) {
@@ -155,14 +162,18 @@ const uploadMultipleToCloudinary = async (files, options = {}) => {
     const uploadPromises = files.map((file, index) => {
       const fileOptions = {
         ...options,
-        public_id: options.public_id ? `${options.public_id}_${index}` : undefined
+        public_id: options.public_id ? `${options.public_id}_${index}` : undefined,
       };
       return uploadToCloudinary(file, fileOptions);
     });
 
     return await Promise.all(uploadPromises);
   } catch (error) {
-    throw new AppError(`Multiple image upload failed: ${error.message}`, 500, 'MULTIPLE_UPLOAD_ERROR');
+    throw new AppError(
+      `Multiple image upload failed: ${error.message}`,
+      500,
+      'MULTIPLE_UPLOAD_ERROR'
+    );
   }
 };
 
@@ -189,7 +200,7 @@ const deleteFromCloudinary = async (cloudinaryId) => {
 const getTransformedUrl = (cloudinaryId, transformations = {}) => {
   return cloudinary.url(cloudinaryId, {
     secure: true,
-    ...transformations
+    ...transformations,
   });
 };
 
@@ -207,7 +218,7 @@ const getThumbnailUrl = (cloudinaryId, width = 200, height = 200) => {
     crop: 'fill',
     gravity: 'auto',
     quality: 'auto',
-    format: 'jpg'
+    format: 'jpg',
   });
 };
 
@@ -248,13 +259,12 @@ const uploadSingleImage = (fieldName = 'image') => {
           // Upload to Cloudinary
           const uploadResult = await uploadToCloudinary(req.file, {
             folder: `gourd-classification/${req.user?.id || 'anonymous'}`,
-            public_id: `scan_${Date.now()}`
+            public_id: `scan_${Date.now()}`,
           });
 
           // Add upload result to request
           req.uploadedImage = uploadResult;
           next();
-
         } catch (uploadError) {
           next(uploadError);
         }
@@ -300,13 +310,12 @@ const uploadMultipleImages = (fieldName = 'images', maxCount = 5) => {
         try {
           // Upload all files to Cloudinary
           const uploadResults = await uploadMultipleToCloudinary(req.files, {
-            folder: `gourd-classification/${req.user?.id || 'anonymous'}`
+            folder: `gourd-classification/${req.user?.id || 'anonymous'}`,
           });
 
           // Add upload results to request
           req.uploadedImages = uploadResults;
           next();
-
         } catch (uploadError) {
           next(uploadError);
         }
@@ -326,5 +335,5 @@ module.exports = {
   getTransformedUrl,
   getThumbnailUrl,
   uploadSingleImage,
-  uploadMultipleImages
+  uploadMultipleImages,
 };

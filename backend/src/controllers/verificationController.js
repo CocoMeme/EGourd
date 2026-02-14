@@ -21,7 +21,7 @@ exports.sendVerificationPin = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'Email is required',
       });
     }
 
@@ -35,13 +35,16 @@ exports.sendVerificationPin = async (req, res) => {
 
     // Debug: List all users to compare
     const allUsers = await User.find({}).select('email');
-    console.log('[SendPin] All users in DB:', allUsers.map(u => u.email));
+    console.log(
+      '[SendPin] All users in DB:',
+      allUsers.map((u) => u.email)
+    );
 
     if (!user) {
       console.log('[SendPin] Returning 404 - user not found');
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -49,7 +52,7 @@ exports.sendVerificationPin = async (req, res) => {
     if (user.isEmailVerified) {
       return res.status(400).json({
         success: false,
-        message: 'Email is already verified'
+        message: 'Email is already verified',
       });
     }
 
@@ -63,7 +66,7 @@ exports.sendVerificationPin = async (req, res) => {
     user.emailVerification = {
       pin: pin,
       expires: pinExpires,
-      attempts: 0
+      attempts: 0,
     };
     await user.save();
 
@@ -74,15 +77,14 @@ exports.sendVerificationPin = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Verification PIN sent to your email',
-      expiresIn: 600 // seconds
+      expiresIn: 600, // seconds
     });
-
   } catch (error) {
     console.error('Error sending verification PIN:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send verification PIN',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -98,17 +100,19 @@ exports.verifyEmailWithPin = async (req, res) => {
     if (!email || !pin) {
       return res.status(400).json({
         success: false,
-        message: 'Email and PIN are required'
+        message: 'Email and PIN are required',
       });
     }
 
     // Find user with PIN (explicitly select PIN field)
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+emailVerification.pin');
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      '+emailVerification.pin'
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -116,7 +120,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     if (user.isEmailVerified) {
       return res.status(400).json({
         success: false,
-        message: 'Email is already verified'
+        message: 'Email is already verified',
       });
     }
 
@@ -124,7 +128,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     if (!user.emailVerification || !user.emailVerification.pin) {
       return res.status(400).json({
         success: false,
-        message: 'No verification PIN found. Please request a new PIN.'
+        message: 'No verification PIN found. Please request a new PIN.',
       });
     }
 
@@ -132,7 +136,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     if (user.emailVerification.expires < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Verification PIN has expired. Please request a new PIN.'
+        message: 'Verification PIN has expired. Please request a new PIN.',
       });
     }
 
@@ -140,7 +144,7 @@ exports.verifyEmailWithPin = async (req, res) => {
     if (user.emailVerification.attempts >= 5) {
       return res.status(429).json({
         success: false,
-        message: 'Too many attempts. Please request a new PIN.'
+        message: 'Too many attempts. Please request a new PIN.',
       });
     }
 
@@ -153,7 +157,7 @@ exports.verifyEmailWithPin = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Invalid PIN',
-        attemptsRemaining: 5 - user.emailVerification.attempts
+        attemptsRemaining: 5 - user.emailVerification.attempts,
       });
     }
 
@@ -164,13 +168,13 @@ exports.verifyEmailWithPin = async (req, res) => {
     user.emailVerification = {
       pin: undefined,
       expires: undefined,
-      attempts: 0
+      attempts: 0,
     };
     await user.save();
 
     // Send welcome email (non-blocking)
     const userName = user.firstName || user.username || 'User';
-    emailService.sendWelcomeEmail(email, userName).catch(err => {
+    emailService.sendWelcomeEmail(email, userName).catch((err) => {
       console.error('Failed to send welcome email:', err);
     });
 
@@ -180,16 +184,15 @@ exports.verifyEmailWithPin = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        isEmailVerified: user.isEmailVerified
-      }
+        isEmailVerified: user.isEmailVerified,
+      },
     });
-
   } catch (error) {
     console.error('Error verifying email:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify email',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -205,7 +208,7 @@ exports.resendVerificationPin = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'Email is required',
       });
     }
 
@@ -215,7 +218,7 @@ exports.resendVerificationPin = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -223,15 +226,19 @@ exports.resendVerificationPin = async (req, res) => {
     if (user.isEmailVerified) {
       return res.status(400).json({
         success: false,
-        message: 'Email is already verified'
+        message: 'Email is already verified',
       });
     }
 
     // Check if last PIN was sent recently (prevent spam - 1 minute cooldown)
-    if (user.emailVerification && user.emailVerification.expires && user.emailVerification.expires > new Date(Date.now() + 9 * 60 * 1000)) {
+    if (
+      user.emailVerification &&
+      user.emailVerification.expires &&
+      user.emailVerification.expires > new Date(Date.now() + 9 * 60 * 1000)
+    ) {
       return res.status(429).json({
         success: false,
-        message: 'Please wait before requesting a new PIN'
+        message: 'Please wait before requesting a new PIN',
       });
     }
 
@@ -243,7 +250,7 @@ exports.resendVerificationPin = async (req, res) => {
     user.emailVerification = {
       pin: pin,
       expires: pinExpires,
-      attempts: 0
+      attempts: 0,
     };
     await user.save();
 
@@ -254,15 +261,14 @@ exports.resendVerificationPin = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'New verification PIN sent to your email',
-      expiresIn: 600
+      expiresIn: 600,
     });
-
   } catch (error) {
     console.error('Error resending verification PIN:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to resend verification PIN',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -278,7 +284,7 @@ exports.checkVerificationStatus = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'Email is required',
       });
     }
 
@@ -287,22 +293,21 @@ exports.checkVerificationStatus = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       isVerified: user.isEmailVerified,
-      email: user.email
+      email: user.email,
     });
-
   } catch (error) {
     console.error('Error checking verification status:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check verification status',
-      error: error.message
+      error: error.message,
     });
   }
 };

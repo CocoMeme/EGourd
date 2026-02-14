@@ -6,23 +6,17 @@ const { News } = require('../models');
  */
 exports.getAllNews = async (req, res) => {
   try {
-    const { 
-      category, 
-      status,
-      limit = 10, 
-      skip = 0,
-      search 
-    } = req.query;
+    const { category, status, limit = 10, skip = 0, search } = req.query;
 
     let news;
-    
+
     if (search) {
       news = await News.searchNews(search, parseInt(limit));
     } else {
       const filters = {};
       if (category) filters.category = category;
       if (status) filters.status = status;
-      
+
       // If user is authenticated (admin view), allow viewing all statuses
       // Otherwise, use getPublishedNews for public view
       if (req.user) {
@@ -32,25 +26,21 @@ exports.getAllNews = async (req, res) => {
           .skip(parseInt(skip))
           .populate('author', 'username email');
       } else {
-        news = await News.getPublishedNews(
-          filters, 
-          parseInt(limit), 
-          parseInt(skip)
-        );
+        news = await News.getPublishedNews(filters, parseInt(limit), parseInt(skip));
       }
     }
 
     res.status(200).json({
       success: true,
       count: news.length,
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error fetching news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -67,7 +57,7 @@ exports.getNewsById = async (req, res) => {
     if (!news) {
       return res.status(404).json({
         success: false,
-        message: 'News not found'
+        message: 'News not found',
       });
     }
 
@@ -76,14 +66,14 @@ exports.getNewsById = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error fetching news by ID:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -100,14 +90,14 @@ exports.getPopupNews = async (req, res) => {
     res.status(200).json({
       success: true,
       count: news.length,
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error fetching popup news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch popup news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -126,14 +116,14 @@ exports.getNewsByCategory = async (req, res) => {
     res.status(200).json({
       success: true,
       count: news.length,
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error fetching news by category:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch news by category',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -152,7 +142,7 @@ exports.markAsRead = async (req, res) => {
     if (!news) {
       return res.status(404).json({
         success: false,
-        message: 'News not found'
+        message: 'News not found',
       });
     }
 
@@ -161,14 +151,14 @@ exports.markAsRead = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'News marked as read',
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error marking news as read:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to mark news as read',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -185,7 +175,7 @@ exports.likeNews = async (req, res) => {
     if (!news) {
       return res.status(404).json({
         success: false,
-        message: 'News not found'
+        message: 'News not found',
       });
     }
 
@@ -195,15 +185,15 @@ exports.likeNews = async (req, res) => {
       success: true,
       message: 'News liked',
       data: {
-        likes: news.engagement.likes
-      }
+        likes: news.engagement.likes,
+      },
     });
   } catch (error) {
     console.error('Error liking news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to like news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -216,7 +206,7 @@ exports.createNews = async (req, res) => {
   try {
     const newsData = {
       ...req.body,
-      author: req.user._id
+      author: req.user._id,
     };
 
     const news = await News.create(newsData);
@@ -224,14 +214,14 @@ exports.createNews = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'News created successfully',
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error creating news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -243,30 +233,26 @@ exports.createNews = async (req, res) => {
 exports.updateNews = async (req, res) => {
   try {
     const { id } = req.params;
-    const news = await News.findByIdAndUpdate(
-      id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const news = await News.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
 
     if (!news) {
       return res.status(404).json({
         success: false,
-        message: 'News not found'
+        message: 'News not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'News updated successfully',
-      data: news
+      data: news,
     });
   } catch (error) {
     console.error('Error updating news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update news',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -283,20 +269,20 @@ exports.deleteNews = async (req, res) => {
     if (!news) {
       return res.status(404).json({
         success: false,
-        message: 'News not found'
+        message: 'News not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'News deleted successfully'
+      message: 'News deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting news:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete news',
-      error: error.message
+      error: error.message,
     });
   }
 };

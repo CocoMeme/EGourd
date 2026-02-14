@@ -1,170 +1,181 @@
 const mongoose = require('mongoose');
 
-const scanSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  imageUrl: {
-    type: String,
-    required: true
-  },
-
-  // ===== CORE PREDICTION DATA (backward compatible) =====
-  prediction: {
-    type: String,
-    required: true  // 'male' or 'female'
-  },
-  confidence: {
-    type: Number,
-    required: true  // Main confidence score (0-100)
-  },
-
-  // ===== SCAN TYPE =====
-  scanType: {
-    type: String,
-    enum: ['flower', 'leaf'],
-    default: 'flower',
-    description: 'Type of scan: flower or leaf'
-  },
-
-  // ===== MULTI-CLASS SUPPORT =====
-  variety: {
-    type: String,
-    enum: [
-      // Flower varieties
-      'Ampalaya Bilog', 'Patola', 'Upo (Smooth)', 'Cucumber',
-      // Leaf varieties
-      'Ampalaya', 'Patola', 'Upo', 'Kalabasa', 'Pipino',
-      null
-    ],
-    default: null,
-    description: 'Gourd variety detected (flower or leaf)'
-  },
-
-  // ===== USER-EDITABLE NAME =====
-  name: {
-    type: String,
-    default: '',
-    description: 'User-editable name for the scan'
-  },
-
-  // ===== VALIDATION TRACKING =====
-  validationStatus: {
-    type: String,
-    enum: ['tflite_only', 'validated', 'manual_override', 'conflict', null],
-    default: 'tflite_only',
-    description: 'How the prediction was validated (tflite_only: on-device only, validated: both models agree, manual_override: user chose between conflicting predictions, conflict: models disagreed but not yet resolved)'
-  },
-
-  // ===== AI PREDICTION METADATA =====
-  aiPrediction: {
-    // Which model's prediction was ultimately used
-    finalSource: {
+const scanSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    imageUrl: {
       type: String,
-      enum: ['tflite', 'gemini', 'manual', null],
-      default: 'tflite',
-      description: 'Source of final prediction'
+      required: true,
     },
 
-    // TFLite model prediction data
-    tflite: {
-      variety: String,
-      gender: String,
-      confidence: Number,        // Raw confidence (0-100)
-      modelVersion: String,      // e.g., '3.0.0-multiclass'
-      processingTime: Number,    // Milliseconds
-      modelType: String          // e.g., 'MobileNetV2 (Multi-Class)'
+    // ===== CORE PREDICTION DATA (backward compatible) =====
+    prediction: {
+      type: String,
+      required: true, // 'male' or 'female'
+    },
+    confidence: {
+      type: Number,
+      required: true, // Main confidence score (0-100)
     },
 
-    // Gemini AI prediction data (if available)
-    gemini: {
-      variety: String,
-      gender: String,
-      confidence: Number,        // Raw confidence (0-100)
-      reasoning: String,         // AI's explanation of classification
-      keyFeatures: [String],     // Features identified by Gemini
-      processingTime: Number,    // Milliseconds
-      modelVersion: String,      // e.g., 'gemini-2.5-flash'
+    // ===== SCAN TYPE =====
+    scanType: {
+      type: String,
+      enum: ['flower', 'leaf'],
+      default: 'flower',
+      description: 'Type of scan: flower or leaf',
+    },
 
-      // Extended Gemini analysis data
-      flowerQuality: {
-        overallScore: Number,
-        petalCondition: String,
-        sizeAssessment: String,
-        healthIndicators: [String]
+    // ===== MULTI-CLASS SUPPORT =====
+    variety: {
+      type: String,
+      enum: [
+        // Flower varieties
+        'Ampalaya Bilog',
+        'Patola',
+        'Upo (Smooth)',
+        'Cucumber',
+        // Leaf varieties
+        'Ampalaya',
+        'Patola',
+        'Upo',
+        'Kalabasa',
+        'Pipino',
+        null,
+      ],
+      default: null,
+      description: 'Gourd variety detected (flower or leaf)',
+    },
+
+    // ===== USER-EDITABLE NAME =====
+    name: {
+      type: String,
+      default: '',
+      description: 'User-editable name for the scan',
+    },
+
+    // ===== VALIDATION TRACKING =====
+    validationStatus: {
+      type: String,
+      enum: ['tflite_only', 'validated', 'manual_override', 'conflict', null],
+      default: 'tflite_only',
+      description:
+        'How the prediction was validated (tflite_only: on-device only, validated: both models agree, manual_override: user chose between conflicting predictions, conflict: models disagreed but not yet resolved)',
+    },
+
+    // ===== AI PREDICTION METADATA =====
+    aiPrediction: {
+      // Which model's prediction was ultimately used
+      finalSource: {
+        type: String,
+        enum: ['tflite', 'gemini', 'manual', null],
+        default: 'tflite',
+        description: 'Source of final prediction',
       },
+
+      // TFLite model prediction data
+      tflite: {
+        variety: String,
+        gender: String,
+        confidence: Number, // Raw confidence (0-100)
+        modelVersion: String, // e.g., '3.0.0-multiclass'
+        processingTime: Number, // Milliseconds
+        modelType: String, // e.g., 'MobileNetV2 (Multi-Class)'
+      },
+
+      // Gemini AI prediction data (if available)
+      gemini: {
+        variety: String,
+        gender: String,
+        confidence: Number, // Raw confidence (0-100)
+        reasoning: String, // AI's explanation of classification
+        keyFeatures: [String], // Features identified by Gemini
+        processingTime: Number, // Milliseconds
+        modelVersion: String, // e.g., 'gemini-2.5-flash'
+
+        // Extended Gemini analysis data
+        flowerQuality: {
+          overallScore: Number,
+          petalCondition: String,
+          sizeAssessment: String,
+          healthIndicators: [String],
+        },
+        harvestPrediction: {
+          daysToHarvest: Number,
+          currentStage: String,
+          pollinationReady: Boolean,
+          optimalHarvestWindow: String,
+          bestPollinationTime: String,
+        },
+        qualityMetrics: {
+          petalQuality: Number,
+          colorScore: Number,
+          developmentScore: Number,
+          healthScore: Number,
+          pollinationPotential: Number,
+        },
+        observations: {
+          strengths: [String],
+          concerns: [String],
+          recommendations: [String],
+        },
+      },
+
+      // Comparison result when both models ran
+      comparison: {
+        modelsAgree: Boolean, // Did both models give same result?
+        varietyMatch: Boolean, // Did varieties match?
+        genderMatch: Boolean, // Did genders match?
+        confidenceGap: Number, // Absolute difference in confidence
+        recommendation: String, // Which model was recommended ('tflite', 'gemini', or 'manual')
+      },
+
+      // Refined harvest prediction from backend (if available)
       harvestPrediction: {
         daysToHarvest: Number,
         currentStage: String,
-        pollinationReady: Boolean,
-        optimalHarvestWindow: String,
-        bestPollinationTime: String
+        confidence: Number,
+        estimatedHarvestDate: String,
+        rationale: String,
+        recommendations: [String],
       },
-      qualityMetrics: {
-        petalQuality: Number,
-        colorScore: Number,
-        developmentScore: Number,
+
+      // Leaf-specific AI analysis data
+      leaf: {
         healthScore: Number,
-        pollinationPotential: Number
+        chlorophyllLevel: String, // 'healthy', 'yellowing', 'deficient'
+        visibleIssues: [String], // e.g., ['pest damage', 'disease spots']
+        maturityStage: String, // 'young', 'mature', 'aging'
+        nutrientDeficiencies: [String], // e.g., ['nitrogen', 'potassium']
       },
-      observations: {
-        strengths: [String],
-        concerns: [String],
-        recommendations: [String]
-      }
     },
 
-    // Comparison result when both models ran
-    comparison: {
-      modelsAgree: Boolean,      // Did both models give same result?
-      varietyMatch: Boolean,     // Did varieties match?
-      genderMatch: Boolean,      // Did genders match?
-      confidenceGap: Number,     // Absolute difference in confidence
-      recommendation: String     // Which model was recommended ('tflite', 'gemini', or 'manual')
+    // ===== EXISTING FIELDS (unchanged) =====
+    diseaseInfo: {
+      type: Object,
+      default: {},
     },
-
-    // Refined harvest prediction from backend (if available)
-    harvestPrediction: {
-      daysToHarvest: Number,
-      currentStage: String,
-      confidence: Number,
-      estimatedHarvestDate: String,
-      rationale: String,
-      recommendations: [String]
+    location: {
+      latitude: Number,
+      longitude: Number,
     },
-
-    // Leaf-specific AI analysis data
-    leaf: {
-      healthScore: Number,
-      chlorophyllLevel: String,        // 'healthy', 'yellowing', 'deficient'
-      visibleIssues: [String],         // e.g., ['pest damage', 'disease spots']
-      maturityStage: String,           // 'young', 'mature', 'aging'
-      nutrientDeficiencies: [String],  // e.g., ['nitrogen', 'potassium']
-    }
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+    notes: {
+      type: String,
+      default: '',
+    },
   },
-
-  // ===== EXISTING FIELDS (unchanged) =====
-  diseaseInfo: {
-    type: Object,
-    default: {}
-  },
-  location: {
-    latitude: Number,
-    longitude: Number
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  notes: {
-    type: String,
-    default: ''
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
 // Pre-save hook to generate default name if not provided
 scanSchema.pre('save', function (next) {
@@ -172,7 +183,11 @@ scanSchema.pre('save', function (next) {
     const variety = this.variety || 'Unknown';
     const gender = this.prediction || 'unknown';
     const date = new Date(this.date || Date.now());
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateStr = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
     this.name = `${variety} ${gender} ${dateStr}`;
   }
   next();

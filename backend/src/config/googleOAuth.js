@@ -22,18 +22,16 @@ class GoogleOAuthConfig {
 
     try {
       if (!this.clientId || !this.clientSecret) {
-        throw new Error('Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your environment variables.');
+        throw new Error(
+          'Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your environment variables.'
+        );
       }
 
-      this.client = new OAuth2Client(
-        this.clientId,
-        this.clientSecret,
-        this.redirectUri
-      );
+      this.client = new OAuth2Client(this.clientId, this.clientSecret, this.redirectUri);
 
       this.initialized = true;
       console.log('Google OAuth client initialized successfully');
-      
+
       return this.client;
     } catch (error) {
       console.error('Failed to initialize Google OAuth client:', error);
@@ -57,7 +55,7 @@ class GoogleOAuthConfig {
   async verifyIdToken(idToken) {
     try {
       const client = this.getClient();
-      
+
       const ticket = await client.verifyIdToken({
         idToken: idToken,
         audience: this.clientId,
@@ -138,7 +136,7 @@ class GoogleOAuthConfig {
   generateAuthUrl(state = null) {
     try {
       const client = this.getClient();
-      
+
       const scopes = [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
@@ -170,9 +168,9 @@ class GoogleOAuthConfig {
   async exchangeCodeForTokens(code) {
     try {
       const client = this.getClient();
-      
+
       const { tokens } = await client.getToken(code);
-      
+
       return {
         success: true,
         tokens: {
@@ -198,9 +196,9 @@ class GoogleOAuthConfig {
     try {
       const client = this.getClient();
       client.setCredentials({ refresh_token: refreshToken });
-      
+
       const { credentials } = await client.refreshAccessToken();
-      
+
       return {
         success: true,
         tokens: {
@@ -226,7 +224,7 @@ class GoogleOAuthConfig {
     try {
       const client = this.getClient();
       await client.revokeToken(token);
-      
+
       return {
         success: true,
         message: 'Token revoked successfully',

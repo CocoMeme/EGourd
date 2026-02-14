@@ -3,7 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 
 // Import configurations
 const database = require('./config/database');
@@ -19,9 +20,20 @@ class App {
 
   configureMiddleware() {
     // Security middleware
-    this.app.use(helmet({
-      crossOriginResourcePolicy: { policy: "cross-origin" }
-    }));
+    this.app.use(
+      helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
+            connectSrc: ["'self'", "https://egourd.onrender.com", "http://localhost:5000"],
+          },
+        },
+      })
+    );
 
     // CORS configuration
     const corsOptions = {
@@ -34,26 +46,28 @@ class App {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       credentials: true,
-      optionsSuccessStatus: 200
+      optionsSuccessStatus: 200,
     };
-    
+
     // For development, allow all origins from React Native
     if (process.env.NODE_ENV === 'development') {
       corsOptions.origin = true; // Allow all origins in development
     }
-    
+
     this.app.use(cors(corsOptions));
 
     // Logging middleware - Custom format with more details
     const customFormat = ':method :url :status :response-time ms - :res[content-length]';
-    this.app.use(morgan(customFormat, {
-      stream: {
-        write: (message) => {
-          console.log(`📡 ${message.trim()}`);
-        }
-      }
-    }));
-    
+    this.app.use(
+      morgan(customFormat, {
+        stream: {
+          write: (message) => {
+            console.log(`📡 ${message.trim()}`);
+          },
+        },
+      })
+    );
+
     // Detailed request/response logging in development
     if (process.env.NODE_ENV === 'development') {
       this.app.use((req, res, next) => {
@@ -65,33 +79,39 @@ class App {
           if (safeBody.password) safeBody.password = '***';
           console.log('   📦 Body:', JSON.stringify(safeBody));
         }
-        
+
         // Capture response
         const originalSend = res.send;
-        res.send = function(body) {
+        res.send = function (body) {
           const duration = Date.now() - start;
           try {
             const parsed = typeof body === 'string' ? JSON.parse(body) : body;
-            console.log(`   ✅ Response [${res.statusCode}] (${duration}ms):`, 
-              parsed.success !== undefined ? `success: ${parsed.success}` : 'sent');
+            console.log(
+              `   ✅ Response [${res.statusCode}] (${duration}ms):`,
+              parsed.success !== undefined ? `success: ${parsed.success}` : 'sent'
+            );
           } catch (e) {
             console.log(`   ✅ Response [${res.statusCode}] (${duration}ms)`);
           }
           return originalSend.call(this, body);
         };
-        
+
         next();
       });
     }
 
     // Body parsing middleware
-    this.app.use(express.json({ 
-      limit: process.env.MAX_FILE_SIZE || '50mb' 
-    }));
-    this.app.use(express.urlencoded({ 
-      extended: true, 
-      limit: process.env.MAX_FILE_SIZE || '50mb' 
-    }));
+    this.app.use(
+      express.json({
+        limit: process.env.MAX_FILE_SIZE || '50mb',
+      })
+    );
+    this.app.use(
+      express.urlencoded({
+        extended: true,
+        limit: process.env.MAX_FILE_SIZE || '50mb',
+      })
+    );
 
     // Serve static files
     this.app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -119,15 +139,15 @@ class App {
           database: dbHealth,
           uptime: process.uptime(),
           memory: process.memoryUsage(),
-          version: process.version
+          version: process.version,
         };
-        
+
         res.status(200).json(health);
       } catch (error) {
         res.status(500).json({
           status: 'unhealthy',
           timestamp: new Date().toISOString(),
-          error: error.message
+          error: error.message,
         });
       }
     });
@@ -140,19 +160,21 @@ class App {
           success: true,
           message: 'Database connection is healthy',
           data: dbHealth,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (error) {
         res.status(503).json({
           success: false,
           message: 'Database connection is unhealthy',
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     });
 
     // API documentation endpoint
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
     this.app.get('/api', (req, res) => {
       res.json({
         name: 'Gourd Classification API',
@@ -169,9 +191,9 @@ class App {
           pollination: '/api/pollination',
           forum: '/api/forum',
           chatbot: '/api/chatbot',
-          admin: '/api/admin'
+          admin: '/api/admin',
         },
-        documentation: '/api/docs'
+        documentation: '/api/docs',
       });
     });
 
@@ -195,7 +217,7 @@ class App {
       res.status(404).json({
         status: 'error',
         message: `Route ${req.originalUrl} not found`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -226,7 +248,9 @@ class App {
 
       // Mongoose validation error
       if (err.name === 'ValidationError') {
-        const message = Object.values(err.errors).map(val => val.message).join(', ');
+        const message = Object.values(err.errors)
+          .map((val) => val.message)
+          .join(', ');
         error = { message, statusCode: 400 };
       }
 
@@ -246,7 +270,7 @@ class App {
         status: 'error',
         message: error.message || 'Internal server error',
         ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -257,7 +281,7 @@ class App {
     try {
       // Connect to database
       await database.connect();
-      
+
       // Configure Cloudinary
       configureCloudinary();
 

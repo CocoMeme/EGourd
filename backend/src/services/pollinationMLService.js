@@ -1,12 +1,12 @@
 /**
  * Pollination ML Prediction Service
  * ===================================
- * 
+ *
  * Comprehensive service for all pollination management ML predictions:
  * 1. Flowering Prediction - When will the plant start flowering?
  * 2. Pollination Success - What's the likely success rate?
  * 3. Fruit Maturity - When will fruits be ready for harvest?
- * 
+ *
  * Communicates with Python ML models via child process.
  */
 
@@ -34,13 +34,11 @@ class PollinationMLService {
       'pollination_success_scaler.joblib',
       'fruit_maturity_model.joblib',
       'fruit_maturity_encoders.joblib',
-      'fruit_maturity_scaler.joblib'
+      'fruit_maturity_scaler.joblib',
     ];
 
     try {
-      return requiredModels.every(model => 
-        fs.existsSync(path.join(this.modelsDir, model))
-      );
+      return requiredModels.every((model) => fs.existsSync(path.join(this.modelsDir, model)));
     } catch (error) {
       console.error('Error checking models:', error);
       return false;
@@ -56,38 +54,38 @@ class PollinationMLService {
     return new Promise((resolve, reject) => {
       // Log input for debugging
       console.log('🔮 ML Prediction input:', JSON.stringify(inputData, null, 2));
-      
+
       const pythonProcess = spawn(this.pythonCmd, [this.scriptPath]);
-      
+
       let outputData = '';
       let errorData = '';
-      
+
       pythonProcess.stdout.on('data', (data) => {
         outputData += data.toString();
       });
-      
+
       pythonProcess.stderr.on('data', (data) => {
         errorData += data.toString();
       });
-      
+
       pythonProcess.on('close', (code) => {
         console.log('🔮 Python exit code:', code);
         console.log('🔮 Python stdout:', outputData);
         if (errorData) console.log('🔮 Python stderr:', errorData);
-        
+
         if (code !== 0) {
           console.error('Python prediction error:', errorData);
           return reject(new Error(`Prediction failed: ${errorData || 'Unknown error'}`));
         }
-        
+
         try {
           const result = JSON.parse(outputData);
-          
+
           if (!result.success) {
             console.error('🔮 Prediction failed:', result.error || result.message);
             return reject(new Error(result.error || result.message || 'Prediction failed'));
           }
-          
+
           console.log('🔮 Prediction success:', result.prediction_type);
           resolve(result);
         } catch (parseError) {
@@ -95,12 +93,12 @@ class PollinationMLService {
           reject(new Error('Failed to parse prediction result'));
         }
       });
-      
+
       pythonProcess.on('error', (error) => {
         console.error('Failed to start Python process:', error);
         reject(new Error(`Failed to start prediction service: ${error.message}`));
       });
-      
+
       // Send input data to Python script
       pythonProcess.stdin.write(JSON.stringify(inputData));
       pythonProcess.stdin.end();
@@ -135,7 +133,10 @@ class PollinationMLService {
     const inputData = {
       prediction_type: 'flowering',
       gourd_type: plantData.gourdType || plantData.gourd_type,
-      variety_name: plantData.variety || plantData.variety_name || this._getDefaultVariety(plantData.gourdType || plantData.gourd_type),
+      variety_name:
+        plantData.variety ||
+        plantData.variety_name ||
+        this._getDefaultVariety(plantData.gourdType || plantData.gourd_type),
       season: plantData.season || this._getCurrentSeason(),
       region_climate: plantData.region || plantData.region_climate || 'tropical_lowland',
       avg_temperature: plantData.avgTemperature || plantData.avg_temperature || 28,
@@ -144,22 +145,23 @@ class PollinationMLService {
       sunlight_hours: plantData.sunlightHours || plantData.sunlight_hours || 7,
       soil_ph: plantData.soilPh || plantData.soil_ph || 6.5,
       soil_moisture: plantData.soilMoisture || plantData.soil_moisture || 65,
-      soil_type: plantData.soilType || plantData.soil_type || 'silty',  // Philippine standard
+      soil_type: plantData.soilType || plantData.soil_type || 'silty', // Philippine standard
       fertilizer_type: plantData.fertilizerType || plantData.fertilizer_type || 'organic',
-      fertilizer_frequency: plantData.fertilizerFrequency || plantData.fertilizer_frequency || 'weekly',
+      fertilizer_frequency:
+        plantData.fertilizerFrequency || plantData.fertilizer_frequency || 'weekly',
       watering_frequency: plantData.wateringFrequency || plantData.watering_frequency || 'daily',
       plant_health_score: plantData.plantHealth || plantData.plant_health_score || 4,
-      planting_date: getDateOnly(plantData.datePlanted || plantData.planting_date)
+      planting_date: getDateOnly(plantData.datePlanted || plantData.planting_date),
     };
 
     const result = await this._runPrediction(inputData);
-    
+
     return {
       predictedDaysToFlower: result.predicted_days_to_flower,
       expectedDate: result.expected_date,
       range: result.range,
       confidence: result.confidence,
-      recommendations: result.recommendations
+      recommendations: result.recommendations,
     };
   }
 
@@ -176,24 +178,33 @@ class PollinationMLService {
     const inputData = {
       prediction_type: 'pollination_success',
       gourd_type: pollinationData.gourdType || pollinationData.gourd_type,
-      variety_name: pollinationData.variety || pollinationData.variety_name || this._getDefaultVariety(pollinationData.gourdType || pollinationData.gourd_type),
+      variety_name:
+        pollinationData.variety ||
+        pollinationData.variety_name ||
+        this._getDefaultVariety(pollinationData.gourdType || pollinationData.gourd_type),
       season: pollinationData.season || this._getCurrentSeason(),
       avg_temperature: pollinationData.avgTemperature || pollinationData.avg_temperature || 28,
       avg_humidity: pollinationData.avgHumidity || pollinationData.avg_humidity || 70,
       sunlight_hours: pollinationData.sunlightHours || pollinationData.sunlight_hours || 7,
       soil_moisture: pollinationData.soilMoisture || pollinationData.soil_moisture || 65,
-      fertilizer_type: pollinationData.fertilizerType || pollinationData.fertilizer_type || 'organic',
+      fertilizer_type:
+        pollinationData.fertilizerType || pollinationData.fertilizer_type || 'organic',
       plant_health_score: pollinationData.plantHealth || pollinationData.plant_health_score || 4,
       vine_length_cm: pollinationData.vineLength || pollinationData.vine_length_cm || 200,
       leaf_count: pollinationData.leafCount || pollinationData.leaf_count || 40,
       male_flower_count: pollinationData.maleFlowerCount || pollinationData.male_flower_count || 10,
-      female_flower_count: pollinationData.femaleFlowerCount || pollinationData.female_flower_count || 5,
-      is_hand_pollinated: pollinationData.isHandPollinated !== undefined ? 
-        (pollinationData.isHandPollinated ? 1 : 0) : 1
+      female_flower_count:
+        pollinationData.femaleFlowerCount || pollinationData.female_flower_count || 5,
+      is_hand_pollinated:
+        pollinationData.isHandPollinated !== undefined
+          ? pollinationData.isHandPollinated
+            ? 1
+            : 0
+          : 1,
     };
 
     const result = await this._runPrediction(inputData);
-    
+
     return {
       successRate: result.success_rate,
       successRatePercentage: result.success_rate_percentage,
@@ -201,7 +212,7 @@ class PollinationMLService {
       expectedSuccessfulPollinations: result.expected_successful_pollinations,
       daysUntilResultVisible: result.days_until_result_visible,
       confidence: result.confidence,
-      recommendations: result.recommendations
+      recommendations: result.recommendations,
     };
   }
 
@@ -218,21 +229,29 @@ class PollinationMLService {
     const inputData = {
       prediction_type: 'fruit_maturity',
       gourd_type: maturityData.gourdType || maturityData.gourd_type,
-      variety_name: maturityData.variety || maturityData.variety_name || this._getDefaultVariety(maturityData.gourdType || maturityData.gourd_type),
+      variety_name:
+        maturityData.variety ||
+        maturityData.variety_name ||
+        this._getDefaultVariety(maturityData.gourdType || maturityData.gourd_type),
       season: maturityData.season || this._getCurrentSeason(),
       avg_temperature: maturityData.avgTemperature || maturityData.avg_temperature || 28,
       avg_humidity: maturityData.avgHumidity || maturityData.avg_humidity || 70,
       avg_rainfall_mm: maturityData.avgRainfall || maturityData.avg_rainfall_mm || 10,
       soil_moisture: maturityData.soilMoisture || maturityData.soil_moisture || 65,
       fertilizer_type: maturityData.fertilizerType || maturityData.fertilizer_type || 'organic',
-      fertilizer_frequency: maturityData.fertilizerFrequency || maturityData.fertilizer_frequency || 'weekly',
+      fertilizer_frequency:
+        maturityData.fertilizerFrequency || maturityData.fertilizer_frequency || 'weekly',
       plant_health_score: maturityData.plantHealth || maturityData.plant_health_score || 4,
-      successful_pollinations: maturityData.successfulPollinations || maturityData.successful_pollinations || 1,
-      pollination_date: maturityData.pollinationDate || maturityData.pollination_date || new Date().toISOString().split('T')[0]
+      successful_pollinations:
+        maturityData.successfulPollinations || maturityData.successful_pollinations || 1,
+      pollination_date:
+        maturityData.pollinationDate ||
+        maturityData.pollination_date ||
+        new Date().toISOString().split('T')[0],
     };
 
     const result = await this._runPrediction(inputData);
-    
+
     return {
       daysToMaturity: result.days_to_maturity,
       expectedHarvestDate: result.expected_harvest_date,
@@ -241,7 +260,7 @@ class PollinationMLService {
       expectedYieldKg: result.expected_yield_kg,
       avgFruitWeightKg: result.avg_fruit_weight_kg,
       confidence: result.confidence,
-      recommendations: result.recommendations
+      recommendations: result.recommendations,
     };
   }
 
@@ -254,24 +273,24 @@ class PollinationMLService {
     // Prepare pollination data early
     const pollinationData = {
       ...plantData,
-      maleFlowerCount: 15,  // Average expected
+      maleFlowerCount: 15, // Average expected
       femaleFlowerCount: 6,
-      isHandPollinated: true
+      isHandPollinated: true,
     };
 
     // Run independent predictions in parallel to save time
     const [floweringPrediction, pollinationPrediction] = await Promise.all([
       this.predictFlowering(plantData),
-      this.predictPollinationSuccess(pollinationData)
+      this.predictPollinationSuccess(pollinationData),
     ]);
-    
+
     // Estimate fruit maturity (depends on pollination success)
     const maturityData = {
       ...plantData,
-      successfulPollinations: pollinationPrediction.expectedSuccessfulPollinations
+      successfulPollinations: pollinationPrediction.expectedSuccessfulPollinations,
     };
     const maturityPrediction = await this.predictFruitMaturity(maturityData);
-    
+
     return {
       flowering: floweringPrediction,
       pollination: pollinationPrediction,
@@ -280,9 +299,10 @@ class PollinationMLService {
         plantingToFlowering: floweringPrediction.predictedDaysToFlower,
         expectedPollinationSuccess: pollinationPrediction.successRatePercentage,
         floweringToHarvest: maturityPrediction.daysToMaturity,
-        totalDaysToHarvest: floweringPrediction.predictedDaysToFlower + maturityPrediction.daysToMaturity,
-        expectedYieldKg: maturityPrediction.expectedYieldKg
-      }
+        totalDaysToHarvest:
+          floweringPrediction.predictedDaysToFlower + maturityPrediction.daysToMaturity,
+        expectedYieldKg: maturityPrediction.expectedYieldKg,
+      },
     };
   }
 
@@ -291,7 +311,7 @@ class PollinationMLService {
    */
   _getCurrentSeason() {
     const month = new Date().getMonth() + 1;
-    return (month >= 6 && month <= 11) ? 'wet' : 'dry';
+    return month >= 6 && month <= 11 ? 'wet' : 'dry';
   }
 
   /**
@@ -299,10 +319,10 @@ class PollinationMLService {
    */
   _getDefaultVariety(gourdType) {
     const varieties = {
-      'bitter_gourd': 'ampalaya_bilog',
-      'bottle_gourd': 'upo_smooth',
-      'sponge_gourd': 'patola',
-      'cucumber': 'pipino'
+      bitter_gourd: 'ampalaya_bilog',
+      bottle_gourd: 'upo_smooth',
+      sponge_gourd: 'patola',
+      cucumber: 'pipino',
     };
     return varieties[gourdType] || gourdType;
   }

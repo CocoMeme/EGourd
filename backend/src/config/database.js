@@ -7,14 +7,15 @@ class Database {
 
   async connect() {
     try {
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gourd_classification_db';
-      
+      const mongoUri =
+        process.env.MONGODB_URI || 'mongodb://localhost:27017/gourd_classification_db';
+
       // MongoDB connection options
       const options = {
         maxPoolSize: 10, // Maintain up to 10 socket connections
         serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
         socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-        family: 4 // Use IPv4, skip trying IPv6
+        family: 4, // Use IPv4, skip trying IPv6
       };
 
       this.connection = await mongoose.connect(mongoUri, options);
@@ -65,7 +66,7 @@ class Database {
       0: 'disconnected',
       1: 'connected',
       2: 'connecting',
-      3: 'disconnecting'
+      3: 'disconnecting',
     };
     return states[mongoose.connection.readyState];
   }
@@ -83,18 +84,18 @@ class Database {
           state: state,
           database: mongoose.connection.name,
           host: mongoose.connection.host,
-          port: mongoose.connection.port
+          port: mongoose.connection.port,
         };
       } else {
         return {
           status: 'unhealthy',
-          state: state
+          state: state,
         };
       }
     } catch (error) {
       return {
         status: 'error',
-        error: error.message
+        error: error.message,
       };
     }
   }

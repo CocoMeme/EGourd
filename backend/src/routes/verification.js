@@ -15,7 +15,7 @@ router.post(
     body('email')
       .isEmail()
       .normalizeEmail({ gmail_remove_dots: false })
-      .withMessage('Please provide a valid email address')
+      .withMessage('Please provide a valid email address'),
   ],
   handleValidationErrors,
   verificationController.sendVerificationPin
@@ -36,7 +36,7 @@ router.post(
     body('pin')
       .isLength({ min: 6, max: 6 })
       .isNumeric()
-      .withMessage('PIN must be a 6-digit number')
+      .withMessage('PIN must be a 6-digit number'),
   ],
   handleValidationErrors,
   verificationController.verifyEmailWithPin
@@ -53,7 +53,7 @@ router.post(
     body('email')
       .isEmail()
       .normalizeEmail({ gmail_remove_dots: false })
-      .withMessage('Please provide a valid email address')
+      .withMessage('Please provide a valid email address'),
   ],
   handleValidationErrors,
   verificationController.resendVerificationPin
@@ -70,7 +70,7 @@ router.get(
     query('email')
       .isEmail()
       .normalizeEmail({ gmail_remove_dots: false })
-      .withMessage('Please provide a valid email address')
+      .withMessage('Please provide a valid email address'),
   ],
   handleValidationErrors,
   verificationController.checkVerificationStatus

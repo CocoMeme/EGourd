@@ -8,14 +8,16 @@
  * @param {string} label - Context label for the log
  */
 function logMemoryUsage(label = '') {
-    const used = process.memoryUsage();
-    const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
-    const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
-    const rssMB = Math.round(used.rss / 1024 / 1024);
+  const used = process.memoryUsage();
+  const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
+  const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
+  const rssMB = Math.round(used.rss / 1024 / 1024);
 
-    console.log(`📊 Memory${label ? ` [${label}]` : ''}: Heap ${heapUsedMB}/${heapTotalMB}MB, RSS ${rssMB}MB`);
+  console.log(
+    `📊 Memory${label ? ` [${label}]` : ''}: Heap ${heapUsedMB}/${heapTotalMB}MB, RSS ${rssMB}MB`
+  );
 
-    return { heapUsedMB, heapTotalMB, rssMB };
+  return { heapUsedMB, heapTotalMB, rssMB };
 }
 
 /**
@@ -23,15 +25,15 @@ function logMemoryUsage(label = '') {
  * Safe to call even if GC is not exposed
  */
 function forceGC() {
-    if (global.gc) {
-        try {
-            global.gc();
-            console.log('🗑️ Garbage collection triggered');
-        } catch (e) {
-            console.warn('⚠️ GC hint failed:', e.message);
-        }
+  if (global.gc) {
+    try {
+      global.gc();
+      console.log('🗑️ Garbage collection triggered');
+    } catch (e) {
+      console.warn('⚠️ GC hint failed:', e.message);
     }
-    // If gc not available, just return silently - this is expected in production
+  }
+  // If gc not available, just return silently - this is expected in production
 }
 
 /**
@@ -40,20 +42,20 @@ function forceGC() {
  * @returns {NodeJS.Timer} Interval ID for cleanup
  */
 function startMemoryMonitor(intervalMs = 60000) {
-    console.log(`📈 Memory monitoring started (every ${intervalMs / 1000}s)`);
+  console.log(`📈 Memory monitoring started (every ${intervalMs / 1000}s)`);
 
-    // Log immediately on start
-    logMemoryUsage('Monitor Start');
+  // Log immediately on start
+  logMemoryUsage('Monitor Start');
 
-    return setInterval(() => {
-        const { heapUsedMB, rssMB } = logMemoryUsage('Periodic');
+  return setInterval(() => {
+    const { heapUsedMB, rssMB } = logMemoryUsage('Periodic');
 
-        // Warn if approaching limit (512MB on Render free tier)
-        if (rssMB > 400) {
-            console.warn(`⚠️ HIGH MEMORY WARNING: RSS at ${rssMB}MB (limit: 512MB)`);
-            forceGC();
-        }
-    }, intervalMs);
+    // Warn if approaching limit (512MB on Render free tier)
+    if (rssMB > 400) {
+      console.warn(`⚠️ HIGH MEMORY WARNING: RSS at ${rssMB}MB (limit: 512MB)`);
+      forceGC();
+    }
+  }, intervalMs);
 }
 
 /**
@@ -62,14 +64,14 @@ function startMemoryMonitor(intervalMs = 60000) {
  * @returns {boolean} True if above threshold
  */
 function checkMemoryThreshold(thresholdMB = 400) {
-    const used = process.memoryUsage();
-    const rssMB = Math.round(used.rss / 1024 / 1024);
+  const used = process.memoryUsage();
+  const rssMB = Math.round(used.rss / 1024 / 1024);
 
-    if (rssMB > thresholdMB) {
-        console.warn(`⚠️ Memory threshold exceeded: ${rssMB}MB > ${thresholdMB}MB`);
-        return true;
-    }
-    return false;
+  if (rssMB > thresholdMB) {
+    console.warn(`⚠️ Memory threshold exceeded: ${rssMB}MB > ${thresholdMB}MB`);
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -78,15 +80,15 @@ function checkMemoryThreshold(thresholdMB = 400) {
  * @param {...any} objects - Objects to nullify
  */
 function cleanupObjects(...objects) {
-    for (let i = 0; i < objects.length; i++) {
-        objects[i] = null;
-    }
+  for (let i = 0; i < objects.length; i++) {
+    objects[i] = null;
+  }
 }
 
 module.exports = {
-    logMemoryUsage,
-    forceGC,
-    startMemoryMonitor,
-    checkMemoryThreshold,
-    cleanupObjects
+  logMemoryUsage,
+  forceGC,
+  startMemoryMonitor,
+  checkMemoryThreshold,
+  cleanupObjects,
 };

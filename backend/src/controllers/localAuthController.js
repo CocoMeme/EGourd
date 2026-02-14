@@ -11,7 +11,7 @@ const register = async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      email: email.toLowerCase().trim()
+      email: email.toLowerCase().trim(),
     });
 
     if (existingUser) {
@@ -64,7 +64,6 @@ const register = async (req, res) => {
       user: userResponse,
       token: jwtToken,
     });
-
   } catch (error) {
     console.error('Registration error:', error);
 
@@ -77,7 +76,7 @@ const register = async (req, res) => {
     }
 
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -99,7 +98,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     console.log(`🔐 Login attempt for: ${email}`);
 
     if (!email || !password) {
@@ -112,7 +111,7 @@ const login = async (req, res) => {
 
     // Find user by email (don't filter by isActive yet)
     const user = await User.findOne({
-      email: email.toLowerCase().trim()
+      email: email.toLowerCase().trim(),
     }).select('+password'); // Include password field for comparison
 
     if (!user) {
@@ -122,7 +121,7 @@ const login = async (req, res) => {
         message: 'Invalid email or password',
       });
     }
-    
+
     console.log(`👤 User found: ${user.email} | Role: ${user.role} | Active: ${user.isActive}`);
 
     // Check if account is deactivated
@@ -146,7 +145,7 @@ const login = async (req, res) => {
         message: 'Invalid email or password',
       });
     }
-    
+
     console.log(`✅ Login successful: ${email} | Role: ${user.role}`);
 
     // Update last login
@@ -183,7 +182,6 @@ const login = async (req, res) => {
       user: userResponse,
       token: jwtToken,
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -330,7 +328,6 @@ const changePassword = async (req, res) => {
       success: true,
       message: 'Password changed successfully',
     });
-
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({
@@ -349,10 +346,7 @@ const logout = async (req, res) => {
 
     if (userId) {
       // Update last active timestamp
-      await User.updateOne(
-        { _id: userId },
-        { lastActive: new Date() }
-      );
+      await User.updateOne({ _id: userId }, { lastActive: new Date() });
     }
 
     res.status(200).json({
@@ -407,7 +401,7 @@ const registerWithUsername = async (req, res) => {
 
     // Check if username already exists
     const existingUser = await User.findOne({
-      username: username.toLowerCase().trim()
+      username: username.toLowerCase().trim(),
     });
 
     if (existingUser) {
@@ -462,7 +456,6 @@ const registerWithUsername = async (req, res) => {
       user: userResponse,
       token: jwtToken,
     });
-
   } catch (error) {
     console.error('Username registration error:', error);
 
@@ -474,7 +467,7 @@ const registerWithUsername = async (req, res) => {
     }
 
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -496,7 +489,7 @@ const registerWithUsername = async (req, res) => {
 const loginWithUsername = async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     console.log(`🔐 Username login attempt for: ${username}`);
 
     if (!username || !password) {
@@ -509,7 +502,7 @@ const loginWithUsername = async (req, res) => {
 
     // Find user by username
     const user = await User.findOne({
-      username: username.toLowerCase().trim()
+      username: username.toLowerCase().trim(),
     }).select('+password');
 
     if (!user) {
@@ -519,7 +512,7 @@ const loginWithUsername = async (req, res) => {
         message: 'Invalid username or password',
       });
     }
-    
+
     console.log(`👤 User found: ${user.username} | Role: ${user.role} | Active: ${user.isActive}`);
 
     // Check if account is deactivated
@@ -543,7 +536,7 @@ const loginWithUsername = async (req, res) => {
         message: 'Invalid username or password',
       });
     }
-    
+
     console.log(`✅ Username login successful: ${username} | Role: ${user.role}`);
 
     // Update last login
@@ -581,7 +574,6 @@ const loginWithUsername = async (req, res) => {
       user: userResponse,
       token: jwtToken,
     });
-
   } catch (error) {
     console.error('Username login error:', error);
     res.status(500).json({

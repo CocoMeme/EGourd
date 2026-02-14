@@ -3,6 +3,27 @@ const router = express.Router();
 const scanController = require('../controllers/scanController');
 const { authenticate } = require('../middleware/auth');
 
+/**
+ * @swagger
+ * /api/scans/history/{userId}:
+ *   get:
+ *     summary: Get scan history for a user
+ *     tags: [Scans]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: A list of scans
+ *       401:
+ *         description: Unauthorized
+ */
 // Route to analyze image (Gemini) - requires auth
 router.post('/analyze', authenticate, scanController.analyzeImage);
 
@@ -14,7 +35,6 @@ router.post('/predict-harvest', authenticate, scanController.getHarvestPredictio
 
 // Route to get analytics data for a user - requires auth
 router.get('/analytics/:userId', authenticate, scanController.getAnalytics);
-
 
 // Route to save a new scan - requires auth
 router.post('/save', authenticate, scanController.saveScan);

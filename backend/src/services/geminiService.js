@@ -3,26 +3,26 @@ const { logMemoryUsage, forceGC } = require('../utils/memoryUtils');
 
 // Get API keys from environment - supports multiple keys for fallback
 const GEMINI_API_KEYS = [
-  process.env.GEMINI_API_KEY,           // Primary key
-  process.env.GEMINI_API_KEY_2,         // Fallback 1
-  process.env.GEMINI_API_KEY_3,         // Fallback 2
-  process.env.GEMINI_API_KEY_4,         // Fallback 3
-].filter(key => key && key.length > 0);
+  process.env.GEMINI_API_KEY, // Primary key
+  process.env.GEMINI_API_KEY_2, // Fallback 1
+  process.env.GEMINI_API_KEY_3, // Fallback 2
+  process.env.GEMINI_API_KEY_4, // Fallback 3
+].filter((key) => key && key.length > 0);
 
 // Model fallback chain - when primary model is overloaded (503), try next model
 // Only using free tier models that are confirmed to work with v1beta API
 const MODEL_FALLBACK_CHAIN = [
-  'gemini-2.5-flash-lite',   // Primary - newest, fast and lightweight (free)
-  'gemini-2.0-flash-lite',   // Fallback - stable and reliable (free)
+  'gemini-2.5-flash-lite', // Primary - newest, fast and lightweight (free)
+  'gemini-2.0-flash-lite', // Fallback - stable and reliable (free)
 ];
 
 // Retry configuration with exponential backoff
 const RETRY_CONFIG = {
-  initialDelay: 2000,      // 2s initial backoff
-  maxDelay: 15000,          // 15s max backoff
-  backoffMultiplier: 2,     // Double each retry
-  timeBudget: 25000,        // 25s total budget (fits within 35s frontend timeout)
-  maxServerRetries: 3,      // Max 503 retries per model
+  initialDelay: 2000, // 2s initial backoff
+  maxDelay: 15000, // 15s max backoff
+  backoffMultiplier: 2, // Double each retry
+  timeBudget: 25000, // 25s total budget (fits within 35s frontend timeout)
+  maxServerRetries: 3, // Max 503 retries per model
 };
 
 const GEMINI_CONFIG = {
@@ -45,7 +45,7 @@ class RequestQueue {
 
   async enqueue(fn) {
     if (this.running >= this.concurrency) {
-      await new Promise(resolve => this.queue.push(resolve));
+      await new Promise((resolve) => this.queue.push(resolve));
     }
     this.running++;
     try {
@@ -99,7 +99,9 @@ async function executeWithRetry(operation, meta = {}) {
       // Check time budget
       const elapsed = Date.now() - startTime;
       if (elapsed > RETRY_CONFIG.timeBudget) {
-        throw new Error(`Time budget exhausted (${Math.round(elapsed / 1000)}s). Last error: ${lastError?.message}`);
+        throw new Error(
+          `Time budget exhausted (${Math.round(elapsed / 1000)}s). Last error: ${lastError?.message}`
+        );
       }
 
       // Create fresh instances per attempt — no shared state between requests
@@ -111,37 +113,50 @@ async function executeWithRetry(operation, meta = {}) {
       });
 
       try {
-        console.log(`🤖 Gemini: key ${keyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`);
+        console.log(
+          `🤖 Gemini: key ${keyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`
+        );
         const result = await requestQueue.enqueue(() => operation(activeModel));
         meta.modelUsed = modelName;
         return result;
       } catch (error) {
         lastError = error;
         const errorMessage = error.message || '';
-        const statusCode = error.status || (errorMessage.match(/\[(\d{3})/)?.[1]);
+        const statusCode = error.status || errorMessage.match(/\[(\d{3})/)?.[1];
 
         // 503 Server overload → retry same key with backoff, then next model
-        const isServerOverload = statusCode === 503 || statusCode === '503' ||
-          errorMessage.includes('503') || errorMessage.includes('overloaded') ||
+        const isServerOverload =
+          statusCode === 503 ||
+          statusCode === '503' ||
+          errorMessage.includes('503') ||
+          errorMessage.includes('overloaded') ||
           errorMessage.includes('Service Unavailable');
 
         if (isServerOverload) {
           if (serverRetries < RETRY_CONFIG.maxServerRetries) {
             serverRetries++;
-            console.log(`⚠️ Server overloaded (503), backoff ${delay}ms (retry ${serverRetries}/${RETRY_CONFIG.maxServerRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            console.log(
+              `⚠️ Server overloaded (503), backoff ${delay}ms (retry ${serverRetries}/${RETRY_CONFIG.maxServerRetries})...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
             delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
             keyIndex--; // Retry same key
             continue;
           }
-          console.log(`⚠️ Model ${modelName} still overloaded after ${RETRY_CONFIG.maxServerRetries} retries`);
+          console.log(
+            `⚠️ Model ${modelName} still overloaded after ${RETRY_CONFIG.maxServerRetries} retries`
+          );
           break; // Try next model
         }
 
         // 403 Forbidden / invalid key → skip to next key immediately
-        const isForbiddenError = statusCode === 403 || statusCode === '403' ||
-          errorMessage.includes('403') || errorMessage.includes('Forbidden') ||
-          errorMessage.includes('leaked') || errorMessage.includes('API key not valid');
+        const isForbiddenError =
+          statusCode === 403 ||
+          statusCode === '403' ||
+          errorMessage.includes('403') ||
+          errorMessage.includes('Forbidden') ||
+          errorMessage.includes('leaked') ||
+          errorMessage.includes('API key not valid');
 
         if (isForbiddenError) {
           console.log(`⚠️ API key ${keyIndex + 1} invalid (403), trying next...`);
@@ -150,14 +165,18 @@ async function executeWithRetry(operation, meta = {}) {
         }
 
         // 429 Rate limit → backoff then next key
-        const isRateLimitError = statusCode === 429 || statusCode === '429' ||
-          errorMessage.includes('429') || errorMessage.includes('quota exceeded') ||
-          errorMessage.includes('rate limit') || errorMessage.includes('RESOURCE_EXHAUSTED') ||
+        const isRateLimitError =
+          statusCode === 429 ||
+          statusCode === '429' ||
+          errorMessage.includes('429') ||
+          errorMessage.includes('quota exceeded') ||
+          errorMessage.includes('rate limit') ||
+          errorMessage.includes('RESOURCE_EXHAUSTED') ||
           errorMessage.includes('RATE_LIMIT_EXCEEDED');
 
         if (isRateLimitError) {
           console.log(`⚠️ Rate limit (429) on key ${keyIndex + 1}, backoff ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
           delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
           serverRetries = 0;
           continue;
@@ -188,12 +207,16 @@ async function generateMessage(prompt, conversationHistory = []) {
       // Add system context
       history.push({
         role: 'user',
-        parts: [{ text: SYSTEM_CONTEXT }]
+        parts: [{ text: SYSTEM_CONTEXT }],
       });
 
       history.push({
         role: 'model',
-        parts: [{ text: 'Understood. I\'m ready to help with gourd farming questions. What would you like to know?' }]
+        parts: [
+          {
+            text: "Understood. I'm ready to help with gourd farming questions. What would you like to know?",
+          },
+        ],
       });
 
       // Add recent conversation history (limit to last 10 messages)
@@ -201,7 +224,7 @@ async function generateMessage(prompt, conversationHistory = []) {
       for (const msg of recentHistory) {
         history.push({
           role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.text || msg.content || msg.message || '' }]
+          parts: [{ text: msg.text || msg.content || msg.message || '' }],
         });
       }
 
@@ -212,8 +235,8 @@ async function generateMessage(prompt, conversationHistory = []) {
           temperature: 0.7,
           maxOutputTokens: 1024,
           topP: 0.95,
-          topK: 40
-        }
+          topK: 40,
+        },
       });
 
       // Send message and get response
@@ -228,18 +251,18 @@ async function generateMessage(prompt, conversationHistory = []) {
       success: true,
       message: text,
       model: meta.modelUsed || MODEL_FALLBACK_CHAIN[0],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-
   } catch (error) {
     console.error('Gemini API Error:', error.message);
 
     // Provide fallback response
     return {
       success: false,
-      message: 'I\'m having trouble connecting to the AI service right now. Please try again in a moment.',
+      message:
+        "I'm having trouble connecting to the AI service right now. Please try again in a moment.",
       error: error.message,
-      fallback: true
+      fallback: true,
     };
   }
 }
@@ -254,7 +277,7 @@ function getQuickSuggestions() {
     'When is the best time to harvest?',
     'How often should I water my gourds?',
     'What soil is best for growing gourds?',
-    'How do I identify male and female flowers?'
+    'How do I identify male and female flowers?',
   ];
 }
 
@@ -302,8 +325,8 @@ async function generateHarvestPrediction(scanData, environmentalData = {}) {
       return await activeModel.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          responseMimeType: "application/json"
-        }
+          responseMimeType: 'application/json',
+        },
       });
     });
 
@@ -314,12 +337,11 @@ async function generateHarvestPrediction(scanData, environmentalData = {}) {
     let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
 
     return JSON.parse(jsonStr);
-
   } catch (error) {
     console.error('Gemini Harvest Prediction Error:', error.message);
     return {
       error: 'Failed to generate harvest prediction',
-      details: error.message
+      details: error.message,
     };
   }
 }
@@ -437,7 +459,6 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
     forceGC();
 
     return parsedResult;
-
   } catch (error) {
     console.error('Gemini Image Analysis Error:', error.message);
     forceGC(); // Cleanup even on error
@@ -534,7 +555,6 @@ Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
     forceGC();
 
     return parsedResult;
-
   } catch (error) {
     console.error('Gemini Leaf Analysis Error:', error.message);
     forceGC(); // Cleanup even on error
@@ -548,5 +568,5 @@ module.exports = {
   isAvailable,
   generateHarvestPrediction,
   analyzeImage,
-  analyzeLeaf
+  analyzeLeaf,
 };

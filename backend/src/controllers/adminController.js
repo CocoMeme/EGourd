@@ -21,21 +21,21 @@ exports.getDashboardOverview = async (req, res) => {
 
     // Get total users count
     const totalUsers = await User.countDocuments();
-    
+
     // Get active users count
     const activeUsers = await User.countDocuments({ isActive: true });
-    
+
     // Get inactive users count
     const inactiveUsers = await User.countDocuments({ isActive: false });
-    
+
     // Get new users in last 30 days
     const newUsers30Days = await User.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo }
+      createdAt: { $gte: thirtyDaysAgo },
     });
-    
+
     // Get new users in last 7 days
     const newUsers7Days = await User.countDocuments({
-      createdAt: { $gte: sevenDaysAgo }
+      createdAt: { $gte: sevenDaysAgo },
     });
 
     // Get users by role
@@ -43,9 +43,9 @@ exports.getDashboardOverview = async (req, res) => {
       {
         $group: {
           _id: '$role',
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Get users by provider
@@ -53,9 +53,9 @@ exports.getDashboardOverview = async (req, res) => {
       {
         $group: {
           _id: '$provider',
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Get verification stats
@@ -94,7 +94,7 @@ exports.getDashboardOverview = async (req, res) => {
           verifiedUsers,
           unverifiedUsers,
           newUsers30Days,
-          newUsers7Days
+          newUsers7Days,
         },
         forumStats: {
           totalPosts,
@@ -103,13 +103,13 @@ exports.getDashboardOverview = async (req, res) => {
           flaggedPosts,
           rejectedPosts,
           deletedPosts,
-          pinnedPosts
+          pinnedPosts,
         },
         newsStats: {
           totalNews,
           publishedNews,
           draftNews,
-          archivedNews
+          archivedNews,
         },
         usersByRole: usersByRole.reduce((acc, item) => {
           acc[item._id] = item.count;
@@ -119,16 +119,15 @@ exports.getDashboardOverview = async (req, res) => {
           acc[item._id] = item.count;
           return acc;
         }, {}),
-        recentRegistrations
-      }
+        recentRegistrations,
+      },
     });
-
   } catch (error) {
     console.error('Dashboard overview error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve dashboard overview',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -149,7 +148,7 @@ exports.getAllUsers = async (req, res) => {
       isActive = '',
       isEmailVerified = '',
       sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
     } = req.query;
 
     // Build filter query
@@ -161,7 +160,7 @@ exports.getAllUsers = async (req, res) => {
         { username: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
         { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } }
+        { lastName: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -210,17 +209,16 @@ exports.getAllUsers = async (req, res) => {
           totalUsers: total,
           usersPerPage: parseInt(limit),
           hasNextPage: skip + users.length < total,
-          hasPrevPage: parseInt(page) > 1
-        }
-      }
+          hasPrevPage: parseInt(page) > 1,
+        },
+      },
     });
-
   } catch (error) {
     console.error('Get all users error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve users',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -238,32 +236,30 @@ exports.getUserProfile = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
-    const user = await User.findById(userId)
-      .select('-password -refreshTokens -verificationPin');
+    const user = await User.findById(userId).select('-password -refreshTokens -verificationPin');
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'User profile retrieved successfully',
-      data: { user }
+      data: { user },
     });
-
   } catch (error) {
     console.error('Get user profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve user profile',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -282,13 +278,13 @@ exports.updateUser = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
     // Prevent updating sensitive fields through this endpoint
     const restrictedFields = ['password', 'refreshTokens', 'verificationPin', '_id'];
-    restrictedFields.forEach(field => delete updates[field]);
+    restrictedFields.forEach((field) => delete updates[field]);
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -299,22 +295,21 @@ exports.updateUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'User updated successfully',
-      data: { user }
+      data: { user },
     });
-
   } catch (error) {
     console.error('Update user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update user',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -332,7 +327,7 @@ exports.activateUser = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
@@ -345,22 +340,21 @@ exports.activateUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'User account activated successfully',
-      data: { user }
+      data: { user },
     });
-
   } catch (error) {
     console.error('Activate user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to activate user account',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -379,7 +373,7 @@ exports.deactivateUser = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
@@ -387,23 +381,23 @@ exports.deactivateUser = async (req, res) => {
     if (userId === req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'You cannot deactivate your own account'
+        message: 'You cannot deactivate your own account',
       });
     }
 
     // First, find the user and revoke refresh tokens
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     // Revoke all refresh tokens if they exist
     if (user.refreshTokens && user.refreshTokens.length > 0) {
-      user.refreshTokens.forEach(token => {
+      user.refreshTokens.forEach((token) => {
         token.isActive = false;
       });
     }
@@ -413,7 +407,7 @@ exports.deactivateUser = async (req, res) => {
     if (reason) {
       user.deactivationReason = reason;
     }
-    
+
     await user.save();
 
     // Return user without sensitive fields
@@ -425,15 +419,14 @@ exports.deactivateUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'User account deactivated successfully',
-      data: { user: userResponse }
+      data: { user: userResponse },
     });
-
   } catch (error) {
     console.error('Deactivate user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to deactivate user account',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -452,7 +445,7 @@ exports.suspendUser = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
@@ -460,23 +453,21 @@ exports.suspendUser = async (req, res) => {
     if (userId === req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'You cannot suspend your own account'
+        message: 'You cannot suspend your own account',
       });
     }
 
-    const suspendUntil = duration 
-      ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000) 
-      : null;
+    const suspendUntil = duration ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000) : null;
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { 
-        $set: { 
+      {
+        $set: {
           isActive: false,
           suspendedAt: new Date(),
           suspendUntil,
-          ...(reason && { suspensionReason: reason })
-        }
+          ...(reason && { suspensionReason: reason }),
+        },
       },
       { new: true }
     ).select('-password -refreshTokens -verificationPin');
@@ -484,22 +475,21 @@ exports.suspendUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: `User account suspended${suspendUntil ? ` until ${suspendUntil.toISOString()}` : ''}`,
-      data: { user }
+      data: { user },
     });
-
   } catch (error) {
     console.error('Suspend user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to suspend user account',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -517,7 +507,7 @@ exports.deleteUser = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
@@ -525,31 +515,31 @@ exports.deleteUser = async (req, res) => {
     if (userId === req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'You cannot delete your own account'
+        message: 'You cannot delete your own account',
       });
     }
 
     // Soft delete - mark as deleted with timestamp
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     // Mark as deleted and inactive
     user.deletedAt = new Date();
     user.isActive = false;
-    
+
     // Revoke all refresh tokens if they exist
     if (user.refreshTokens && user.refreshTokens.length > 0) {
-      user.refreshTokens.forEach(token => {
+      user.refreshTokens.forEach((token) => {
         token.isActive = false;
       });
     }
-    
+
     await user.save();
 
     // Return user without sensitive fields
@@ -561,15 +551,14 @@ exports.deleteUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'User account deleted successfully',
-      data: { user: userResponse }
+      data: { user: userResponse },
     });
-
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete user account',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -588,7 +577,7 @@ exports.changeUserRole = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
@@ -597,7 +586,7 @@ exports.changeUserRole = async (req, res) => {
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`
+        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
       });
     }
 
@@ -605,35 +594,32 @@ exports.changeUserRole = async (req, res) => {
     if (userId === req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'You cannot change your own role'
+        message: 'You cannot change your own role',
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: { role } },
-      { new: true }
-    ).select('-password -refreshTokens -verificationPin');
+    const user = await User.findByIdAndUpdate(userId, { $set: { role } }, { new: true }).select(
+      '-password -refreshTokens -verificationPin'
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: `User role changed to ${role} successfully`,
-      data: { user }
+      data: { user },
     });
-
   } catch (error) {
     console.error('Change user role error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to change user role',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -651,23 +637,23 @@ exports.bulkUpdateUsers = async (req, res) => {
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'User IDs array is required'
+        message: 'User IDs array is required',
       });
     }
 
     if (!action) {
       return res.status(400).json({
         success: false,
-        message: 'Action is required'
+        message: 'Action is required',
       });
     }
 
     // Validate all ObjectIds
-    const validIds = userIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    const validIds = userIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
     if (validIds.length !== userIds.length) {
       return res.status(400).json({
         success: false,
-        message: 'One or more invalid user IDs'
+        message: 'One or more invalid user IDs',
       });
     }
 
@@ -675,7 +661,7 @@ exports.bulkUpdateUsers = async (req, res) => {
     if (validIds.includes(req.user._id.toString())) {
       return res.status(403).json({
         success: false,
-        message: 'You cannot perform bulk actions on your own account'
+        message: 'You cannot perform bulk actions on your own account',
       });
     }
 
@@ -695,7 +681,7 @@ exports.bulkUpdateUsers = async (req, res) => {
         if (!['user', 'admin', 'researcher'].includes(value)) {
           return res.status(400).json({
             success: false,
-            message: 'Invalid role value'
+            message: 'Invalid role value',
           });
         }
         update = { role: value };
@@ -708,30 +694,26 @@ exports.bulkUpdateUsers = async (req, res) => {
       default:
         return res.status(400).json({
           success: false,
-          message: 'Invalid action'
+          message: 'Invalid action',
         });
     }
 
-    const result = await User.updateMany(
-      { _id: { $in: validIds } },
-      { $set: update }
-    );
+    const result = await User.updateMany({ _id: { $in: validIds } }, { $set: update });
 
     res.status(200).json({
       success: true,
       message,
       data: {
         modifiedCount: result.modifiedCount,
-        matchedCount: result.matchedCount
-      }
+        matchedCount: result.matchedCount,
+      },
     });
-
   } catch (error) {
     console.error('Bulk update users error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to perform bulk update',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -749,17 +731,16 @@ exports.getUserStats = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: 'Invalid user ID format',
       });
     }
 
-    const user = await User.findById(userId)
-      .select('stats loginCount lastLogin createdAt');
+    const user = await User.findById(userId).select('stats loginCount lastLogin createdAt');
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -771,16 +752,15 @@ exports.getUserStats = async (req, res) => {
         stats: user.stats,
         loginCount: user.loginCount,
         lastLogin: user.lastLogin,
-        memberSince: user.createdAt
-      }
+        memberSince: user.createdAt,
+      },
     });
-
   } catch (error) {
     console.error('Get user stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve user statistics',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -800,7 +780,7 @@ exports.getAllForumPosts = async (req, res) => {
       status = '',
       isPinned,
       sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
     } = req.query;
 
     // Build filter query
@@ -811,7 +791,7 @@ exports.getAllForumPosts = async (req, res) => {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
         { content: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { tags: { $in: [new RegExp(search, 'i')] } },
       ];
     }
 
@@ -847,7 +827,7 @@ exports.getAllForumPosts = async (req, res) => {
     const total = await ForumPost.countDocuments(filter);
 
     // Format posts
-    const formattedPosts = posts.map(post => ({
+    const formattedPosts = posts.map((post) => ({
       ...post,
       likeCount: post.likes?.length || 0,
       commentCount: post.comments?.length || 0,
@@ -864,16 +844,16 @@ exports.getAllForumPosts = async (req, res) => {
           totalPosts: total,
           postsPerPage: parseInt(limit),
           hasNextPage: skip + posts.length < total,
-          hasPrevPage: parseInt(page) > 1
-        }
-      }
+          hasPrevPage: parseInt(page) > 1,
+        },
+      },
     });
   } catch (error) {
     console.error('Get all forum posts error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve forum posts',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -891,7 +871,7 @@ exports.getForumPostById = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -903,21 +883,21 @@ exports.getForumPostById = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Forum post retrieved successfully',
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Get forum post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve forum post',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -936,7 +916,7 @@ exports.updateForumPostStatus = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -945,7 +925,7 @@ exports.updateForumPostStatus = async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
       });
     }
 
@@ -958,21 +938,21 @@ exports.updateForumPostStatus = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: `Forum post status updated to ${status}`,
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Update forum post status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update forum post status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -990,7 +970,7 @@ exports.deleteForumPost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -1004,21 +984,21 @@ exports.deleteForumPost = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Forum post removed from community (soft delete)',
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Delete forum post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete forum post',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1036,7 +1016,7 @@ exports.togglePinPost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -1045,7 +1025,7 @@ exports.togglePinPost = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
@@ -1055,14 +1035,14 @@ exports.togglePinPost = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Forum post ${post.isPinned ? 'pinned' : 'unpinned'}`,
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Toggle pin post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to toggle pin status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1080,7 +1060,7 @@ exports.toggleLockPost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -1089,7 +1069,7 @@ exports.toggleLockPost = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
@@ -1099,14 +1079,14 @@ exports.toggleLockPost = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Forum post ${post.isLocked ? 'locked' : 'unlocked'}`,
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Toggle lock post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to toggle lock status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1125,7 +1105,7 @@ exports.approvePost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
@@ -1136,8 +1116,8 @@ exports.approvePost = async (req, res) => {
           status: 'active',
           moderatedBy: req.user._id,
           moderatedAt: new Date(),
-          ...(note && { moderationNote: note })
-        }
+          ...(note && { moderationNote: note }),
+        },
       },
       { new: true }
     ).populate('author', 'username firstName lastName email');
@@ -1145,21 +1125,21 @@ exports.approvePost = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Post approved and published to community',
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Approve post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to approve post',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1178,14 +1158,14 @@ exports.rejectPost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post ID format'
+        message: 'Invalid post ID format',
       });
     }
 
     if (!reason || reason.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Rejection reason is required'
+        message: 'Rejection reason is required',
       });
     }
 
@@ -1196,8 +1176,8 @@ exports.rejectPost = async (req, res) => {
           status: 'rejected',
           moderatedBy: req.user._id,
           moderatedAt: new Date(),
-          moderationNote: reason.trim()
-        }
+          moderationNote: reason.trim(),
+        },
       },
       { new: true }
     ).populate('author', 'username firstName lastName email');
@@ -1205,21 +1185,21 @@ exports.rejectPost = async (req, res) => {
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'Forum post not found'
+        message: 'Forum post not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Post rejected',
-      data: { post }
+      data: { post },
     });
   } catch (error) {
     console.error('Reject post error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reject post',
-      error: error.message
+      error: error.message,
     });
   }
 };

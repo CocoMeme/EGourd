@@ -22,7 +22,7 @@ const getPaginationMeta = (page, limit, totalCount) => {
     hasNext,
     hasPrev,
     nextPage: hasNext ? page + 1 : null,
-    prevPage: hasPrev ? page - 1 : null
+    prevPage: hasPrev ? page - 1 : null,
   };
 };
 
@@ -150,15 +150,15 @@ const getConfidenceLevel = (confidence) => {
  */
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3; // Earth's radius in meters
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
 };
@@ -202,7 +202,7 @@ const createApiResponse = (status, message, data = null, meta = null) => {
   const response = {
     status,
     message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   if (data !== null) {
@@ -243,7 +243,7 @@ const errorResponse = (message, error = null) => {
  * @returns {Promise} Promise that resolves after delay
  */
 const sleep = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 /**
@@ -255,22 +255,22 @@ const sleep = (ms) => {
  */
 const retryWithBackoff = async (fn, maxRetries = 3, baseDelay = 1000) => {
   let lastError;
-  
+
   for (let i = 0; i <= maxRetries; i++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       if (i === maxRetries) {
         throw lastError;
       }
-      
+
       const delay = baseDelay * Math.pow(2, i);
       await sleep(delay);
     }
   }
-  
+
   throw lastError;
 };
 
@@ -293,5 +293,5 @@ module.exports = {
   successResponse,
   errorResponse,
   sleep,
-  retryWithBackoff
+  retryWithBackoff,
 };

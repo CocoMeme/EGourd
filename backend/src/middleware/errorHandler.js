@@ -46,7 +46,7 @@ const handleDuplicateFieldsDB = (err) => {
  * Handle Mongoose Validation Errors
  */
 const handleValidationErrorDB = (err) => {
-  const errors = Object.values(err.errors).map(el => el.message);
+  const errors = Object.values(err.errors).map((el) => el.message);
   const message = `Invalid input data: ${errors.join('. ')}`;
   return new AppError(message, 400, 'VALIDATION_ERROR');
 };
@@ -102,7 +102,7 @@ const sendErrorDev = (err, res) => {
     message: err.message,
     code: err.code,
     stack: err.stack,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -116,7 +116,7 @@ const sendErrorProd = (err, res) => {
       status: err.status,
       message: err.message,
       code: err.code,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } else {
     // Programming or other unknown error: don't leak error details
@@ -126,7 +126,7 @@ const sendErrorProd = (err, res) => {
       status: 'error',
       message: 'Something went wrong!',
       code: 'INTERNAL_SERVER_ERROR',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -157,7 +157,7 @@ const logError = async (err, req) => {
       method: req?.method,
       ip: req?.ip,
       userAgent: req?.get('User-Agent'),
-      userId: req?.user?.id
+      userId: req?.user?.id,
     };
 
     await fs.appendFile(logFile, JSON.stringify(logEntry) + '\n');
@@ -212,7 +212,7 @@ const rateLimitErrorHandler = (req, res) => {
     status: 'error',
     message: 'Too many requests from this IP. Please try again later.',
     code: 'RATE_LIMIT_EXCEEDED',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -255,5 +255,5 @@ module.exports = {
   handleValidationErrorDB,
   handleJWTError,
   handleJWTExpiredError,
-  handleMulterError
+  handleMulterError,
 };

@@ -38,14 +38,14 @@ const authenticateToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Token authentication error:', error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         message: 'Invalid token',
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
@@ -223,10 +223,10 @@ const validateRequestSource = (req, res, next) => {
   try {
     const origin = req.headers.origin;
     const userAgent = req.headers['user-agent'];
-    
+
     // Log request for monitoring (you can enhance this based on your needs)
     console.log(`Request from origin: ${origin}, User-Agent: ${userAgent}`);
-    
+
     // Add any specific validation logic here if needed
     // For now, we'll just continue
     next();

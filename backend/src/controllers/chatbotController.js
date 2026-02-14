@@ -6,11 +6,11 @@ const { generateMessage, getQuickSuggestions, isAvailable } = require('../servic
 async function postMessage(req, res, next) {
   try {
     const { message, conversationHistory = [] } = req.body;
-    
+
     if (!message || !message.trim()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Message is required and cannot be empty' 
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required and cannot be empty',
       });
     }
 
@@ -19,13 +19,13 @@ async function postMessage(req, res, next) {
       return res.status(503).json({
         success: false,
         message: 'AI service is not available. Please contact administrator.',
-        error: 'GEMINI_NOT_CONFIGURED'
+        error: 'GEMINI_NOT_CONFIGURED',
       });
     }
 
     // Generate AI response
     const aiResponse = await generateMessage(message.trim(), conversationHistory);
-    
+
     return res.json({
       success: aiResponse.success !== false,
       message: aiResponse.message,
@@ -33,16 +33,15 @@ async function postMessage(req, res, next) {
         reply: aiResponse.message,
         model: aiResponse.model,
         timestamp: aiResponse.timestamp,
-        fallback: aiResponse.fallback || false
-      }
+        fallback: aiResponse.fallback || false,
+      },
     });
-    
   } catch (err) {
     console.error('Chatbot controller error:', err);
     return res.status(500).json({
       success: false,
       message: 'An error occurred while processing your message',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
   }
 }
@@ -55,13 +54,13 @@ async function getSuggestions(req, res) {
     const suggestions = getQuickSuggestions();
     return res.json({
       success: true,
-      data: suggestions
+      data: suggestions,
     });
   } catch (err) {
     console.error('Get suggestions error:', err);
     return res.status(500).json({
       success: false,
-      message: 'Failed to load suggestions'
+      message: 'Failed to load suggestions',
     });
   }
 }
@@ -77,19 +76,19 @@ async function getStatus(req, res) {
       data: {
         available,
         model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
-        status: available ? 'online' : 'offline'
-      }
+        status: available ? 'online' : 'offline',
+      },
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: 'Failed to check status'
+      message: 'Failed to check status',
     });
   }
 }
 
-module.exports = { 
+module.exports = {
   postMessage,
   getSuggestions,
-  getStatus
+  getStatus,
 };

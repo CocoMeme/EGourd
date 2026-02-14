@@ -21,7 +21,9 @@ const validateEnv = () => {
 
   // Optional but strongly recommended if email is configured.
   const emailLooksConfigured =
-    isTruthy(process.env.EMAIL_HOST) || isTruthy(process.env.EMAIL_USER) || isTruthy(process.env.EMAIL_PASS);
+    isTruthy(process.env.EMAIL_HOST) ||
+    isTruthy(process.env.EMAIL_USER) ||
+    isTruthy(process.env.EMAIL_PASS);
 
   if (isProduction && emailLooksConfigured && !isTruthy(process.env.FRONTEND_URL)) {
     // Password reset emails use FRONTEND_URL. Don’t hard-fail because not all deployments use email.

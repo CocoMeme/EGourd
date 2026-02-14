@@ -62,8 +62,7 @@ const startServer = async () => {
           continue;
         }
         for (const addr of interfaces[name]) {
-          if (addr.family === 'IPv4' && !addr.internal &&
-            !addr.address.startsWith('169.254')) {
+          if (addr.family === 'IPv4' && !addr.internal && !addr.address.startsWith('169.254')) {
             return addr.address;
           }
         }
@@ -128,7 +127,6 @@ const startServer = async () => {
       console.error('❌ Uncaught Exception:', err);
       gracefulShutdown('UNCAUGHT_EXCEPTION');
     });
-
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

@@ -15,7 +15,7 @@ exports.uploadImage = async (req, res) => {
           {
             folder: 'gourd-scans',
             allowed_formats: ['jpg', 'png', 'jpeg'],
-            transformation: [{ width: 1000, crop: "limit" }]
+            transformation: [{ width: 1000, crop: 'limit' }],
           },
           (error, result) => {
             if (result) {
@@ -35,7 +35,7 @@ exports.uploadImage = async (req, res) => {
     res.status(200).json({
       message: 'Image uploaded successfully',
       url: result.secure_url,
-      publicId: result.public_id
+      publicId: result.public_id,
     });
   } catch (error) {
     console.error('Error uploading image:', error);

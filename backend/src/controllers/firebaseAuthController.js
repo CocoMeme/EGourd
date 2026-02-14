@@ -30,11 +30,8 @@ const googleAuth = async (req, res) => {
     const firebaseUser = verificationResult.user;
 
     // Check if user exists in local database
-    let localUser = await User.findOne({ 
-      $or: [
-        { firebaseUid: firebaseUser.uid },
-        { email: firebaseUser.email }
-      ]
+    let localUser = await User.findOne({
+      $or: [{ firebaseUid: firebaseUser.uid }, { email: firebaseUser.email }],
     });
 
     if (!localUser) {
@@ -94,7 +91,6 @@ const googleAuth = async (req, res) => {
       user: userResponse,
       token: jwtToken,
     });
-
   } catch (error) {
     console.error('Google authentication error:', error);
     res.status(500).json({
@@ -155,7 +151,7 @@ const firebaseLogin = async (req, res) => {
       // Update existing user's login info
       localUser.lastLogin = new Date();
       localUser.emailVerified = firebaseUser.email_verified;
-      
+
       // Update profile picture if available from Firebase
       if (firebaseUser.picture && !localUser.profilePicture) {
         localUser.profilePicture = firebaseUser.picture;
@@ -374,7 +370,7 @@ const googleLogin = async (req, res) => {
       // Update existing user's login info
       localUser.lastLogin = new Date();
       localUser.emailVerified = firebaseUser.email_verified;
-      
+
       // Update profile picture if available
       if (firebaseUser.picture) {
         localUser.profilePicture = firebaseUser.picture;
@@ -433,10 +429,7 @@ const firebaseLogout = async (req, res) => {
 
     if (uid) {
       // Update last login timestamp
-      await User.updateOne(
-        { firebaseUid: uid },
-        { lastActive: new Date() }
-      );
+      await User.updateOne({ firebaseUid: uid }, { lastActive: new Date() });
     }
 
     // Note: Firebase tokens cannot be invalidated server-side

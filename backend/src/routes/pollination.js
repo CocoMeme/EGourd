@@ -31,7 +31,7 @@ const {
   getYieldPrediction,
   recordActualYield,
   getYieldPredictionStats,
-  deleteYieldPrediction
+  deleteYieldPrediction,
 } = require('../controllers/pollinationController');
 
 // Import middleware
@@ -58,29 +58,23 @@ router.get('/notifications/pending', getPendingNotifications);
 router.post('/predict-flowers', predictFlowerProduction);
 router.get('/predictions/stats', getFlowerPredictionStats);
 router.get('/predictions', getFlowerPredictions);
-router.route('/predictions/:id')
-  .get(getFlowerPrediction)
-  .delete(deleteFlowerPrediction);
+router.route('/predictions/:id').get(getFlowerPrediction).delete(deleteFlowerPrediction);
 
 // Yield prediction routes (must be before /:id routes)
 router.post('/predict-yield', predictYield);
 router.get('/yield-predictions/stats', getYieldPredictionStats);
 router.get('/yield-predictions', getYieldPredictions);
-router.route('/yield-predictions/:id')
+router
+  .route('/yield-predictions/:id')
   .get(getYieldPrediction)
   .put(recordActualYield)
   .delete(deleteYieldPrediction);
 router.put('/yield-predictions/:id/actual-yield', recordActualYield);
 
 // Main CRUD routes
-router.route('/')
-  .get(getPollinations)
-  .post(validatePollination, createPollination);
+router.route('/').get(getPollinations).post(validatePollination, createPollination);
 
-router.route('/:id')
-  .get(getPollination)
-  .put(updatePollination)
-  .delete(deletePollination);
+router.route('/:id').get(getPollination).put(updatePollination).delete(deletePollination);
 
 // Image management routes
 router.post('/:id/images', upload.single('image'), addImage);

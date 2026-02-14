@@ -5,7 +5,6 @@ const User = require('../models/User');
  * Service class for Firebase user management and synchronization
  */
 class FirebaseUserService {
-  
   /**
    * Sync Firebase user with local database
    */
@@ -37,7 +36,7 @@ class FirebaseUserService {
         // Update existing user
         localUser.lastLogin = new Date();
         localUser.emailVerified = firebaseUser.email_verified;
-        
+
         // Update profile picture if available from Firebase
         if (firebaseUser.picture && !localUser.profilePicture) {
           localUser.profilePicture = firebaseUser.picture;

@@ -61,15 +61,15 @@ const getPollinations = async (req, res) => {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error('Get pollinations error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching pollination records',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -81,26 +81,26 @@ const getPollination = async (req, res) => {
   try {
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     }).populate('user', 'username email');
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Get pollination error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching pollination record',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -110,19 +110,13 @@ const getPollination = async (req, res) => {
 // @access  Private
 const createPollination = async (req, res) => {
   try {
-    const {
-      name,
-      datePlanted,
-      gender,
-      location,
-      notes
-    } = req.body;
+    const { name, datePlanted, gender, location, notes } = req.body;
 
     // Validate required fields
     if (!name || !datePlanted) {
       return res.status(400).json({
         success: false,
-        message: 'Plant name and planting date are required'
+        message: 'Plant name and planting date are required',
       });
     }
 
@@ -134,7 +128,7 @@ const createPollination = async (req, res) => {
       displayName: displayNames[name],
       datePlanted,
       gender: gender || 'undetermined',
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     // Create new pollination record
@@ -143,13 +137,13 @@ const createPollination = async (req, res) => {
       displayName: displayNames[name],
       datePlanted: new Date(datePlanted),
       gender: gender || 'undetermined',
-      user: req.user.id
-    });    // Add initial note if provided
+      user: req.user.id,
+    }); // Add initial note if provided
     if (notes) {
       pollination.notes.push({
         content: notes,
         type: 'observation',
-        date: new Date()
+        date: new Date(),
       });
     }
 
@@ -161,14 +155,14 @@ const createPollination = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Pollination record created successfully',
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Create pollination error:', error);
     res.status(400).json({
       success: false,
       message: 'Error creating pollination record',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -180,23 +174,28 @@ const updatePollination = async (req, res) => {
   try {
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
     // Update allowed fields
     const allowedUpdates = [
-      'gender', 'dateFirstFlowering', 'datePollinated', 'status',
-      'location', 'growth', 'careSchedule'
+      'gender',
+      'dateFirstFlowering',
+      'datePollinated',
+      'status',
+      'location',
+      'growth',
+      'careSchedule',
     ];
 
-    allowedUpdates.forEach(update => {
+    allowedUpdates.forEach((update) => {
       if (req.body[update] !== undefined) {
         pollination[update] = req.body[update];
       }
@@ -208,14 +207,14 @@ const updatePollination = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Pollination record updated successfully',
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Update pollination error:', error);
     res.status(400).json({
       success: false,
       message: 'Error updating pollination record',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -227,13 +226,13 @@ const deletePollination = async (req, res) => {
   try {
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -250,14 +249,14 @@ const deletePollination = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Pollination record deleted successfully'
+      message: 'Pollination record deleted successfully',
     });
   } catch (error) {
     console.error('Delete pollination error:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting pollination record',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -275,14 +274,14 @@ const addImage = async (req, res) => {
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       console.log('❌ Pollination record not found');
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -290,7 +289,7 @@ const addImage = async (req, res) => {
       console.log('❌ No image file provided');
       return res.status(400).json({
         success: false,
-        message: 'No image file provided'
+        message: 'No image file provided',
       });
     }
 
@@ -298,7 +297,7 @@ const addImage = async (req, res) => {
       console.log('❌ File received but no buffer:', req.file);
       return res.status(400).json({
         success: false,
-        message: 'File buffer is empty'
+        message: 'File buffer is empty',
       });
     }
 
@@ -310,7 +309,7 @@ const addImage = async (req, res) => {
         {
           folder: 'pollination',
           allowed_formats: ['jpg', 'png', 'jpeg'],
-          transformation: [{ width: 800, height: 600, crop: 'limit' }]
+          transformation: [{ width: 800, height: 600, crop: 'limit' }],
         },
         (error, result) => {
           if (result) {
@@ -330,7 +329,7 @@ const addImage = async (req, res) => {
     const imageData = {
       url: result.secure_url,
       cloudinaryId: result.public_id,
-      caption: req.body.caption || ''
+      caption: req.body.caption || '',
     };
 
     await pollination.addImage(imageData);
@@ -340,15 +339,14 @@ const addImage = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Image added successfully',
-      data: pollination
+      data: pollination,
     });
-
   } catch (error) {
     console.error('❌ Error adding image:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to add image',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -360,13 +358,13 @@ const deleteImage = async (req, res) => {
   try {
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -374,7 +372,7 @@ const deleteImage = async (req, res) => {
     if (!image) {
       return res.status(404).json({
         success: false,
-        message: 'Image not found'
+        message: 'Image not found',
       });
     }
 
@@ -394,15 +392,14 @@ const deleteImage = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Image deleted successfully',
-      data: pollination
+      data: pollination,
     });
-
   } catch (error) {
     console.error('Error deleting image:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete image',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -417,19 +414,19 @@ const addNote = async (req, res) => {
     if (!content) {
       return res.status(400).json({
         success: false,
-        message: 'Note content is required'
+        message: 'Note content is required',
       });
     }
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -438,14 +435,14 @@ const addNote = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Note added successfully',
-      data: pollination.notes[pollination.notes.length - 1]
+      data: pollination.notes[pollination.notes.length - 1],
     });
   } catch (error) {
     console.error('Add note error:', error);
     res.status(400).json({
       success: false,
       message: 'Error adding note',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -460,19 +457,19 @@ const markFlowering = async (req, res) => {
     if (!gender || !['male', 'female'].includes(gender)) {
       return res.status(400).json({
         success: false,
-        message: 'Valid gender (male/female) is required'
+        message: 'Valid gender (male/female) is required',
       });
     }
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -481,14 +478,14 @@ const markFlowering = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `${gender.charAt(0).toUpperCase() + gender.slice(1)} flowering marked successfully`,
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Mark flowering error:', error);
     res.status(400).json({
       success: false,
       message: 'Error marking flowering',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -502,13 +499,13 @@ const markPollinated = async (req, res) => {
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -517,14 +514,14 @@ const markPollinated = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Pollination marked successfully',
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Mark pollination error:', error);
     res.status(400).json({
       success: false,
       message: 'Error marking pollination',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -538,14 +535,14 @@ const getPlantsNeedingAttention = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: plants
+      data: plants,
     });
   } catch (error) {
     console.error('Get plants needing attention error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching plants needing attention',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -560,14 +557,14 @@ const getUpcomingPollinations = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: pollinations
+      data: pollinations,
     });
   } catch (error) {
     console.error('Get upcoming pollinations error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching upcoming pollinations',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -581,14 +578,14 @@ const getPlantTypes = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: plantTypes
+      data: plantTypes,
     });
   } catch (error) {
     console.error('Get plant types error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching plant types',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -605,19 +602,19 @@ const getDashboardStats = async (req, res) => {
     const totalPlants = await Pollination.countDocuments({ user: userId });
     const activePlants = await Pollination.countDocuments({
       user: userId,
-      status: { $in: ['planted', 'flowering', 'pollinated', 'fruiting'] }
+      status: { $in: ['planted', 'flowering', 'pollinated', 'fruiting'] },
     });
 
     // Get status breakdown
     const statusCounts = await Pollination.aggregate([
       { $match: { user: userObjectId } },
-      { $group: { _id: '$status', count: { $sum: 1 } } }
+      { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
 
     // Get plant type breakdown
     const plantTypeCounts = await Pollination.aggregate([
       { $match: { user: userObjectId } },
-      { $group: { _id: '$name', count: { $sum: 1 } } }
+      { $group: { _id: '$name', count: { $sum: 1 } } },
     ]);
 
     // Get plants needing attention
@@ -632,9 +629,11 @@ const getDashboardStats = async (req, res) => {
       $or: [
         { datePollinated: { $gte: sevenDaysAgo } },
         { dateFirstFlowering: { $gte: sevenDaysAgo } },
-        { updatedAt: { $gte: sevenDaysAgo } }
-      ]
-    }).sort({ updatedAt: -1 }).limit(10);
+        { updatedAt: { $gte: sevenDaysAgo } },
+      ],
+    })
+      .sort({ updatedAt: -1 })
+      .limit(10);
 
     res.status(200).json({
       success: true,
@@ -642,20 +641,20 @@ const getDashboardStats = async (req, res) => {
         counts: {
           total: totalPlants,
           active: activePlants,
-          needsAttention: needsAttention.length
+          needsAttention: needsAttention.length,
         },
         statusBreakdown: statusCounts,
         plantTypeBreakdown: plantTypeCounts,
         needsAttention: needsAttention.slice(0, 5), // Limit to 5 for dashboard
-        recentActivity
-      }
+        recentActivity,
+      },
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching dashboard statistics',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -671,26 +670,26 @@ const updatePollinationStatus = async (req, res) => {
     if (!['Successful', 'Failed'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Status must be either "Successful" or "Failed"'
+        message: 'Status must be either "Successful" or "Failed"',
       });
     }
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
     // Add new pollination status entry
     pollination.pollinationStatus.push({
       statuspollination: status,
-      date: new Date()
+      date: new Date(),
     });
 
     // Update main status based on result
@@ -707,17 +706,18 @@ const updatePollinationStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: status === 'Successful'
-        ? '🌸 Pollination successful! Plant advancing to fruiting stage.'
-        : '❌ Pollination failed. This flower cannot be re-pollinated.',
-      data: pollination
+      message:
+        status === 'Successful'
+          ? '🌸 Pollination successful! Plant advancing to fruiting stage.'
+          : '❌ Pollination failed. This flower cannot be re-pollinated.',
+      data: pollination,
     });
   } catch (error) {
     console.error('Update pollination status error:', error);
     res.status(400).json({
       success: false,
       message: 'Error updating pollination status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -734,19 +734,19 @@ const updateStatus = async (req, res) => {
     if (!validStatuses.includes(newStatus)) {
       return res.status(400).json({
         success: false,
-        message: `Status must be one of: ${validStatuses.join(', ')}`
+        message: `Status must be one of: ${validStatuses.join(', ')}`,
       });
     }
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
@@ -756,14 +756,14 @@ const updateStatus = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Status updated to ${newStatus}`,
-      data: pollination
+      data: pollination,
     });
   } catch (error) {
     console.error('Update status error:', error);
     res.status(400).json({
       success: false,
       message: 'Error updating status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -778,14 +778,14 @@ const getPendingNotifications = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Found ${notifications.length} pending notifications`,
-      data: notifications
+      data: notifications,
     });
   } catch (error) {
     console.error('Get pending notifications error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching pending notifications',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -800,35 +800,38 @@ const markNotificationSent = async (req, res) => {
     if (!['oneHourBefore', 'thirtyMinsBefore'].includes(notificationType)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid notification type'
+        message: 'Invalid notification type',
       });
     }
 
     const pollination = await Pollination.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!pollination) {
       return res.status(404).json({
         success: false,
-        message: 'Pollination record not found'
+        message: 'Pollination record not found',
       });
     }
 
-    const updated = await notificationScheduler.markNotificationAsSent(req.params.id, notificationType);
+    const updated = await notificationScheduler.markNotificationAsSent(
+      req.params.id,
+      notificationType
+    );
 
     res.status(200).json({
       success: true,
       message: `Notification marked as sent: ${notificationType}`,
-      data: updated
+      data: updated,
     });
   } catch (error) {
     console.error('Mark notification sent error:', error);
     res.status(400).json({
       success: false,
       message: 'Error marking notification as sent',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -845,14 +848,14 @@ const predictFlowerProduction = async (req, res) => {
       environmental,
       care,
       growth,
-      notes
+      notes,
     } = req.body;
 
     // Validate required fields
     if (!plantType || !plantAge || !environmental || !care || !growth) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields for prediction'
+        message: 'Missing required fields for prediction',
       });
     }
 
@@ -861,7 +864,7 @@ const predictFlowerProduction = async (req, res) => {
     if (!validPlantTypes.includes(plantType)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid plant type'
+        message: 'Invalid plant type',
       });
     }
 
@@ -869,13 +872,13 @@ const predictFlowerProduction = async (req, res) => {
     if (pollinationId) {
       const pollinationRecord = await Pollination.findOne({
         _id: pollinationId,
-        user: req.user.id
+        user: req.user.id,
       });
 
       if (!pollinationRecord) {
         return res.status(404).json({
           success: false,
-          message: 'Pollination record not found'
+          message: 'Pollination record not found',
         });
       }
     }
@@ -886,7 +889,7 @@ const predictFlowerProduction = async (req, res) => {
       plantAge,
       environmental,
       care,
-      growth
+      growth,
     });
 
     // Save prediction to database
@@ -899,7 +902,7 @@ const predictFlowerProduction = async (req, res) => {
       growth,
       prediction: predictionResult,
       user: req.user.id,
-      notes: notes || undefined
+      notes: notes || undefined,
     });
 
     await flowerPrediction.save();
@@ -916,20 +919,20 @@ const predictFlowerProduction = async (req, res) => {
         totalFlowers: {
           min: predictionResult.maleFlowers.min + predictionResult.femaleFlowers.min,
           max: predictionResult.maleFlowers.max + predictionResult.femaleFlowers.max,
-          average: predictionResult.maleFlowers.average + predictionResult.femaleFlowers.average
+          average: predictionResult.maleFlowers.average + predictionResult.femaleFlowers.average,
         },
         confidence: predictionResult.confidence,
         influencingFactors: predictionResult.influencingFactors,
         recommendations: predictionResult.recommendations,
-        createdAt: flowerPrediction.createdAt
-      }
+        createdAt: flowerPrediction.createdAt,
+      },
     });
   } catch (error) {
     console.error('Predict flower production error:', error);
     res.status(400).json({
       success: false,
       message: 'Error generating flower production prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -969,14 +972,14 @@ const getFlowerPredictions = async (req, res) => {
       total,
       page,
       pages: Math.ceil(total / limit),
-      data: predictions
+      data: predictions,
     });
   } catch (error) {
     console.error('Get flower predictions error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching flower predictions',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -988,26 +991,26 @@ const getFlowerPrediction = async (req, res) => {
   try {
     const prediction = await FlowerPrediction.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     }).populate('pollination', 'name displayName datePlanted status gender image');
 
     if (!prediction) {
       return res.status(404).json({
         success: false,
-        message: 'Prediction not found'
+        message: 'Prediction not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: prediction
+      data: prediction,
     });
   } catch (error) {
     console.error('Get flower prediction error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching flower prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1019,13 +1022,13 @@ const deleteFlowerPrediction = async (req, res) => {
   try {
     const prediction = await FlowerPrediction.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!prediction) {
       return res.status(404).json({
         success: false,
-        message: 'Prediction not found'
+        message: 'Prediction not found',
       });
     }
 
@@ -1033,14 +1036,14 @@ const deleteFlowerPrediction = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Prediction deleted successfully'
+      message: 'Prediction deleted successfully',
     });
   } catch (error) {
     console.error('Delete flower prediction error:', error);
     res.status(400).json({
       success: false,
       message: 'Error deleting flower prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1068,19 +1071,23 @@ const getFlowerPredictionStats = async (req, res) => {
           genderRatio: { male: 0, female: 0 },
           byPlantType: {},
           recentPredictions: [],
-          weeklyStats: { thisWeek: 0, lastWeek: 0, change: 0 }
-        }
+          weeklyStats: { thisWeek: 0, lastWeek: 0, change: 0 },
+        },
       });
     }
 
     // Calculate averages
-    let totalMaleMin = 0, totalMaleMax = 0, totalMaleAvg = 0;
-    let totalFemaleMin = 0, totalFemaleMax = 0, totalFemaleAvg = 0;
+    let totalMaleMin = 0,
+      totalMaleMax = 0,
+      totalMaleAvg = 0;
+    let totalFemaleMin = 0,
+      totalFemaleMax = 0,
+      totalFemaleAvg = 0;
     let totalConfidence = 0;
 
     const byPlantType = {};
 
-    predictions.forEach(pred => {
+    predictions.forEach((pred) => {
       const male = pred.prediction?.maleFlowers || { min: 0, max: 0, average: 0 };
       const female = pred.prediction?.femaleFlowers || { min: 0, max: 0, average: 0 };
 
@@ -1099,7 +1106,7 @@ const getFlowerPredictionStats = async (req, res) => {
           count: 0,
           totalMale: 0,
           totalFemale: 0,
-          avgConfidence: 0
+          avgConfidence: 0,
         };
       }
       byPlantType[plantType].count++;
@@ -1109,7 +1116,7 @@ const getFlowerPredictionStats = async (req, res) => {
     });
 
     // Calculate per-type averages
-    Object.keys(byPlantType).forEach(type => {
+    Object.keys(byPlantType).forEach((type) => {
       const data = byPlantType[type];
       data.avgMale = Math.round(data.totalMale / data.count);
       data.avgFemale = Math.round(data.totalFemale / data.count);
@@ -1122,18 +1129,23 @@ const getFlowerPredictionStats = async (req, res) => {
     const totalMale = totalMaleAvg;
     const totalFemale = totalFemaleAvg;
     const total = totalMale + totalFemale;
-    const genderRatio = total > 0 ? {
-      male: Math.round((totalMale / total) * 100),
-      female: Math.round((totalFemale / total) * 100)
-    } : { male: 50, female: 50 };
+    const genderRatio =
+      total > 0
+        ? {
+            male: Math.round((totalMale / total) * 100),
+            female: Math.round((totalFemale / total) * 100),
+          }
+        : { male: 50, female: 50 };
 
     // Weekly comparison
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const thisWeekPreds = predictions.filter(p => new Date(p.createdAt) >= weekAgo).length;
-    const lastWeekPreds = predictions.filter(p => new Date(p.createdAt) >= twoWeeksAgo && new Date(p.createdAt) < weekAgo).length;
+    const thisWeekPreds = predictions.filter((p) => new Date(p.createdAt) >= weekAgo).length;
+    const lastWeekPreds = predictions.filter(
+      (p) => new Date(p.createdAt) >= twoWeeksAgo && new Date(p.createdAt) < weekAgo
+    ).length;
 
     // Recent predictions (last 5)
     const recentPredictions = await FlowerPrediction.find({ user: userId })
@@ -1150,37 +1162,37 @@ const getFlowerPredictionStats = async (req, res) => {
         totalMaleFlowers: {
           min: Math.round(totalMaleMin / totalPredictions),
           max: Math.round(totalMaleMax / totalPredictions),
-          average: Math.round(totalMaleAvg / totalPredictions)
+          average: Math.round(totalMaleAvg / totalPredictions),
         },
         totalFemaleFlowers: {
           min: Math.round(totalFemaleMin / totalPredictions),
           max: Math.round(totalFemaleMax / totalPredictions),
-          average: Math.round(totalFemaleAvg / totalPredictions)
+          average: Math.round(totalFemaleAvg / totalPredictions),
         },
         genderRatio,
         byPlantType,
-        recentPredictions: recentPredictions.map(p => ({
+        recentPredictions: recentPredictions.map((p) => ({
           id: p._id,
           plantType: p.plantType,
           plantAge: p.plantAge,
           maleFlowers: p.prediction?.maleFlowers?.average || 0,
           femaleFlowers: p.prediction?.femaleFlowers?.average || 0,
           confidence: p.prediction?.confidence || 0,
-          createdAt: p.createdAt
+          createdAt: p.createdAt,
         })),
         weeklyStats: {
           thisWeek: thisWeekPreds,
           lastWeek: lastWeekPreds,
-          change: thisWeekPreds - lastWeekPreds
-        }
-      }
+          change: thisWeekPreds - lastWeekPreds,
+        },
+      },
     });
   } catch (error) {
     console.error('Get flower prediction stats error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching flower prediction statistics',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1200,7 +1212,7 @@ const predictYield = async (req, res) => {
       femaleFlowerCount,
       temperatureCelsius,
       soilMoisturePercent,
-      notes
+      notes,
     } = req.body;
 
     let inputData;
@@ -1209,13 +1221,13 @@ const predictYield = async (req, res) => {
     if (pollinationId) {
       const pollination = await Pollination.findOne({
         _id: pollinationId,
-        user: req.user.id
+        user: req.user.id,
       });
 
       if (!pollination) {
         return res.status(404).json({
           success: false,
-          message: 'Pollination record not found'
+          message: 'Pollination record not found',
         });
       }
 
@@ -1240,14 +1252,14 @@ const predictYield = async (req, res) => {
         male_flower_count: maleFlowerCount,
         female_flower_count: femaleFlowerCount,
         temperature_celsius: temperatureCelsius,
-        soil_moisture_percent: soilMoisturePercent
+        soil_moisture_percent: soilMoisturePercent,
       });
 
       if (!validation.isValid) {
         return res.status(400).json({
           success: false,
           message: 'Invalid input data',
-          errors: validation.errors
+          errors: validation.errors,
         });
       }
 
@@ -1259,7 +1271,7 @@ const predictYield = async (req, res) => {
         male_flower_count: parseFloat(maleFlowerCount),
         female_flower_count: parseFloat(femaleFlowerCount),
         temperature_celsius: parseFloat(temperatureCelsius),
-        soil_moisture_percent: parseFloat(soilMoisturePercent)
+        soil_moisture_percent: parseFloat(soilMoisturePercent),
       };
     }
 
@@ -1270,7 +1282,7 @@ const predictYield = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Prediction failed',
-        error: predictionResult.error
+        error: predictionResult.error,
       });
     }
 
@@ -1289,12 +1301,15 @@ const predictYield = async (req, res) => {
       predictedYieldKg: predictionResult.prediction.yield_kg,
       confidenceScore: predictionResult.prediction.confidence_score,
       recommendations: predictionResult.prediction.recommendations,
-      modelMetrics: (predictionResult.model_info?.test_r2 && predictionResult.model_info?.test_mae) ? {
-        testR2: predictionResult.model_info.test_r2,
-        testMae: predictionResult.model_info.test_mae
-      } : undefined,
+      modelMetrics:
+        predictionResult.model_info?.test_r2 && predictionResult.model_info?.test_mae
+          ? {
+              testR2: predictionResult.model_info.test_r2,
+              testMae: predictionResult.model_info.test_mae,
+            }
+          : undefined,
       notes: notes || '',
-      isManualEntry: !pollinationId
+      isManualEntry: !pollinationId,
     });
 
     await yieldPrediction.save();
@@ -1307,19 +1322,19 @@ const predictYield = async (req, res) => {
           id: yieldPrediction._id,
           yield_kg: yieldPrediction.predictedYieldKg,
           confidence_score: yieldPrediction.confidenceScore,
-          recommendations: yieldPrediction.recommendations
+          recommendations: yieldPrediction.recommendations,
         },
         input_summary: predictionResult.input_summary,
         model_info: predictionResult.model_info,
-        expected_range: MLYieldPredictionService.getExpectedYieldRange(inputData.plant_type)
-      }
+        expected_range: MLYieldPredictionService.getExpectedYieldRange(inputData.plant_type),
+      },
     });
   } catch (error) {
     console.error('Yield prediction error:', error);
     res.status(400).json({
       success: false,
       message: 'Error generating yield prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1335,13 +1350,13 @@ const getYieldPredictions = async (req, res) => {
     const options = {
       limit: parseInt(limit),
       skip,
-      plantType: plantType || null
+      plantType: plantType || null,
     };
 
     const predictions = await YieldPrediction.getUserPredictions(req.user.id, options);
     const total = await YieldPrediction.countDocuments({
       user: req.user.id,
-      ...(plantType && { plantType })
+      ...(plantType && { plantType }),
     });
 
     res.status(200).json({
@@ -1350,14 +1365,14 @@ const getYieldPredictions = async (req, res) => {
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: predictions
+      data: predictions,
     });
   } catch (error) {
     console.error('Get yield predictions error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching yield predictions',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1369,26 +1384,26 @@ const getYieldPrediction = async (req, res) => {
   try {
     const prediction = await YieldPrediction.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     }).populate('pollination', 'plantName pollinationDate plantType');
 
     if (!prediction) {
       return res.status(404).json({
         success: false,
-        message: 'Yield prediction not found'
+        message: 'Yield prediction not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: prediction
+      data: prediction,
     });
   } catch (error) {
     console.error('Get yield prediction error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching yield prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1403,19 +1418,19 @@ const recordActualYield = async (req, res) => {
     if (!actualYield || actualYield < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Valid actual yield is required'
+        message: 'Valid actual yield is required',
       });
     }
 
     const prediction = await YieldPrediction.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!prediction) {
       return res.status(404).json({
         success: false,
-        message: 'Yield prediction not found'
+        message: 'Yield prediction not found',
       });
     }
 
@@ -1428,15 +1443,15 @@ const recordActualYield = async (req, res) => {
         predicted: prediction.predictedYieldKg,
         actual: prediction.actualYieldKg,
         accuracy: prediction.predictionAccuracy,
-        variance: prediction.yieldVariance
-      }
+        variance: prediction.yieldVariance,
+      },
     });
   } catch (error) {
     console.error('Record actual yield error:', error);
     res.status(400).json({
       success: false,
       message: 'Error recording actual yield',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1450,14 +1465,14 @@ const getYieldPredictionStats = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: stats
+      data: stats,
     });
   } catch (error) {
     console.error('Get yield prediction stats error:', error);
     res.status(400).json({
       success: false,
       message: 'Error fetching yield prediction statistics',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1469,13 +1484,13 @@ const deleteYieldPrediction = async (req, res) => {
   try {
     const prediction = await YieldPrediction.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user.id,
     });
 
     if (!prediction) {
       return res.status(404).json({
         success: false,
-        message: 'Yield prediction not found'
+        message: 'Yield prediction not found',
       });
     }
 
@@ -1483,14 +1498,14 @@ const deleteYieldPrediction = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Yield prediction deleted successfully'
+      message: 'Yield prediction deleted successfully',
     });
   } catch (error) {
     console.error('Delete yield prediction error:', error);
     res.status(400).json({
       success: false,
       message: 'Error deleting yield prediction',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1524,5 +1539,5 @@ module.exports = {
   getYieldPrediction,
   recordActualYield,
   getYieldPredictionStats,
-  deleteYieldPrediction
+  deleteYieldPrediction,
 };
