@@ -13,7 +13,17 @@ module.exports = [
       globals: {
         ...globals.node,
         ...globals.commonjs,
-        ...globals.jest,
+        ...(globals.jest || {
+          describe: 'readonly',
+          it: 'readonly',
+          expect: 'readonly',
+          beforeAll: 'readonly',
+          afterAll: 'readonly',
+          beforeEach: 'readonly',
+          afterEach: 'readonly',
+          jest: 'readonly',
+          test: 'readonly',
+        }),
       },
     },
     rules: {
@@ -28,7 +38,6 @@ module.exports = [
     },
   },
   {
-    // Ignore the mysterious preserve-caught-error rule
     rules: {
       'preserve-caught-error': 'off',
     },
