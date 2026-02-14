@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  PlayCircle, 
-  BookOpen, 
-  Lightbulb, 
-  ChevronDown, 
+import {
+  PlayCircle,
+  BookOpen,
+  Lightbulb,
+  ChevronDown,
   ChevronUp,
   Clock,
   Droplets,
@@ -16,7 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  GraduationCap
+  GraduationCap,
 } from 'lucide-react';
 import UserLayout from '../../components/user/UserLayout';
 import './UserEducational.css';
@@ -31,7 +31,7 @@ const UserEducational = () => {
       /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
       /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
     ];
-    
+
     for (const pattern of patterns) {
       const match = url.match(pattern);
       if (match && match[1]) {
@@ -52,7 +52,8 @@ const UserEducational = () => {
     {
       id: 'v1',
       title: 'How to Hand Pollinate Gourds',
-      description: 'Step-by-step guide on manual pollination techniques for better fruit production.',
+      description:
+        'Step-by-step guide on manual pollination techniques for better fruit production.',
       duration: '5:30',
       url: 'https://www.youtube.com/watch?v=zF_ZQFaaEkc',
       category: 'Pollination',
@@ -277,8 +278,8 @@ const UserEducational = () => {
           </div>
           <h1>Learn About Gourd Cultivation</h1>
           <p>
-            Master the art of growing, pollinating, and harvesting gourds with our 
-            comprehensive guides and video tutorials.
+            Master the art of growing, pollinating, and harvesting gourds with our comprehensive
+            guides and video tutorials.
           </p>
         </div>
 
@@ -292,8 +293,8 @@ const UserEducational = () => {
             {videoTutorials.map((video) => {
               const thumbnailUrl = getYouTubeThumbnail(video.url);
               return (
-                <div 
-                  key={video.id} 
+                <div
+                  key={video.id}
                   className="video-card"
                   onClick={() => handleVideoClick(video.url)}
                 >
@@ -358,12 +359,9 @@ const UserEducational = () => {
               const isExpanded = expandedGuide === guide.id;
               return (
                 <div key={guide.id} className="guide-card">
-                  <button 
-                    className="guide-header"
-                    onClick={() => toggleGuide(guide.id)}
-                  >
+                  <button className="guide-header" onClick={() => toggleGuide(guide.id)}>
                     <div className="guide-header-left">
-                      <div 
+                      <div
                         className="guide-icon"
                         style={{ backgroundColor: `${guide.color}15`, color: guide.color }}
                       >
@@ -377,7 +375,7 @@ const UserEducational = () => {
                       <ChevronDown size={24} className="chevron" />
                     )}
                   </button>
-                  
+
                   {isExpanded && (
                     <div className="guide-content">
                       {guide.sections.map((section, index) => (
@@ -412,8 +410,8 @@ const UserEducational = () => {
               <div className="resource-content">
                 <h3>Need Help?</h3>
                 <p>
-                  Check our FAQ section or contact support for personalized 
-                  assistance with your gourd growing questions.
+                  Check our FAQ section or contact support for personalized assistance with your
+                  gourd growing questions.
                 </p>
               </div>
             </div>
@@ -424,8 +422,8 @@ const UserEducational = () => {
               <div className="resource-content">
                 <h3>Community Forum</h3>
                 <p>
-                  Join our growing community of gourd enthusiasts to share 
-                  tips, photos, and experiences.
+                  Join our growing community of gourd enthusiasts to share tips, photos, and
+                  experiences.
                 </p>
                 <span className="resource-link">
                   Join Discussion <ExternalLink size={14} />

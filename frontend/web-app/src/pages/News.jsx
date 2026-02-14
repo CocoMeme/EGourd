@@ -49,7 +49,7 @@ const News = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       if (editingNews) {
         await newsService.updateNews(editingNews._id, formData);
@@ -58,7 +58,7 @@ const News = () => {
         await newsService.createNews(formData);
         toast.success('News created successfully');
       }
-      
+
       setShowModal(false);
       resetForm();
       fetchNews();
@@ -120,8 +120,11 @@ const News = () => {
           <h1>News Management</h1>
           <p>Create and manage news articles</p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setShowModal(true); }}
+        <button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
           className="btn btn-primary"
         >
           <Plus size={18} />
@@ -166,12 +169,8 @@ const News = () => {
           news.map((item) => (
             <div key={item._id} className="news-card">
               <div className="news-header">
-                <span className={`category-badge category-${item.category}`}>
-                  {item.category}
-                </span>
-                <span className={`status-badge status-${item.status}`}>
-                  {item.status}
-                </span>
+                <span className={`category-badge category-${item.category}`}>{item.category}</span>
+                <span className={`status-badge status-${item.status}`}>{item.status}</span>
               </div>
 
               <h3>{item.title}</h3>
@@ -186,17 +185,11 @@ const News = () => {
               </div>
 
               <div className="news-actions">
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="btn btn-outline btn-sm"
-                >
+                <button onClick={() => handleEdit(item)} className="btn btn-outline btn-sm">
                   <Edit size={16} />
                   Edit
                 </button>
-                <button
-                  onClick={() => handleDelete(item._id)}
-                  className="btn btn-danger btn-sm"
-                >
+                <button onClick={() => handleDelete(item._id)} className="btn btn-danger btn-sm">
                   <Trash2 size={16} />
                   Delete
                 </button>
@@ -212,7 +205,9 @@ const News = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingNews ? 'Edit News' : 'Create News'}</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="news-form">
@@ -283,12 +278,14 @@ const News = () => {
                     <input
                       type="checkbox"
                       checked={formData.display.showAsPopup}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        display: { ...formData.display, showAsPopup: e.target.checked }
-                      })}
-                    />
-                    {' '}Show as popup
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          display: { ...formData.display, showAsPopup: e.target.checked },
+                        })
+                      }
+                    />{' '}
+                    Show as popup
                   </label>
                 </div>
 
@@ -299,16 +296,22 @@ const News = () => {
                     min="1"
                     max="10"
                     value={formData.display.priority}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      display: { ...formData.display, priority: parseInt(e.target.value) }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        display: { ...formData.display, priority: parseInt(e.target.value) },
+                      })
+                    }
                   />
                 </div>
               </div>
 
               <div className="modal-footer">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="btn btn-outline"
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">

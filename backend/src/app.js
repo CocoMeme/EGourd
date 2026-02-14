@@ -26,10 +26,10 @@ class App {
         contentSecurityPolicy: {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-            imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
-            connectSrc: ["'self'", "https://egourd.onrender.com", "http://localhost:5000"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+            imgSrc: ["'self'", 'data:', 'https://validator.swagger.io'],
+            connectSrc: ["'self'", 'https://egourd.onrender.com', 'http://localhost:5000'],
           },
         },
       })

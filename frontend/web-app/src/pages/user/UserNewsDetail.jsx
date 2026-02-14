@@ -31,7 +31,14 @@ const ShareIcon = () => (
 );
 
 const NewspaperIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    width="64"
+    height="64"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
     <path d="M18 14h-8"></path>
     <path d="M15 18h-5"></path>
@@ -72,7 +79,7 @@ const UserNewsDetail = () => {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -81,7 +88,7 @@ const UserNewsDetail = () => {
       update: '#3b82f6',
       announcement: '#ef4444',
       tips: '#10b981',
-      community: '#8b5cf6'
+      community: '#8b5cf6',
     };
     return colors[category] || '#6b7280';
   };
@@ -92,7 +99,7 @@ const UserNewsDetail = () => {
         await navigator.share({
           title: news.title,
           text: news.content?.substring(0, 100),
-          url: window.location.href
+          url: window.location.href,
         });
       } catch (error) {
         console.log('Share cancelled');
@@ -158,7 +165,7 @@ const UserNewsDetail = () => {
         <article className="news-article">
           {/* Category Badge */}
           {news.category && (
-            <span 
+            <span
               className="article-category"
               style={{ background: getCategoryColor(news.category) }}
             >
@@ -191,16 +198,18 @@ const UserNewsDetail = () => {
 
           {/* Content */}
           <div className="article-content">
-            {news.content?.split('\n').map((paragraph, index) => (
-              paragraph.trim() && <p key={index}>{paragraph}</p>
-            ))}
+            {news.content
+              ?.split('\n')
+              .map((paragraph, index) => paragraph.trim() && <p key={index}>{paragraph}</p>)}
           </div>
 
           {/* Tags */}
           {news.tags && news.tags.length > 0 && (
             <div className="article-tags">
               {news.tags.map((tag, index) => (
-                <span key={index} className="tag">#{tag}</span>
+                <span key={index} className="tag">
+                  #{tag}
+                </span>
               ))}
             </div>
           )}

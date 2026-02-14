@@ -25,7 +25,7 @@ const Login = () => {
 
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
         toast.success('Login successful!');
         navigate('/dashboard');
@@ -77,11 +77,7 @@ const Login = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary btn-full"
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? (
               'Logging in...'
             ) : (

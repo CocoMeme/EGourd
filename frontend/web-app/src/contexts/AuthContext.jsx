@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const response = await authService.login(email, password);
-    
+
     if (response.success && response.user.role === 'admin') {
       setUser(response.user);
       return { success: true };
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
       authService.logout();
       return { success: false, message: 'Access denied. Admin role required.' };
     }
-    
+
     return { success: false, message: response.message || 'Login failed' };
   };
 

@@ -12,19 +12,19 @@ import logoTransparent from '../../assets/gourdvision-name-high-resolution-logo-
 const UserLogin = () => {
   // Auth method: 'email' or 'username'
   const [authMethod, setAuthMethod] = useState('email');
-  
+
   // Email login state
   const [email, setEmail] = useState('');
-  
+
   // Username login state
   const [username, setUsername] = useState('');
-  
+
   // Common state
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [puzzleVerified, setPuzzleVerified] = useState(false);
-  
+
   const { login, loginWithUsername, isAuthenticated } = useUserAuth();
   const navigate = useNavigate();
 
@@ -42,7 +42,7 @@ const UserLogin = () => {
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.warning('Please fill in all fields');
       return;
@@ -59,11 +59,11 @@ const UserLogin = () => {
 
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
         const user = result.user;
         const isVerified = user?.isEmailVerified || user?.emailVerified;
-        
+
         if (!isVerified) {
           toast.info('Please verify your email to continue');
           navigate('/user/verify-email', { state: { email: user.email, sendPin: true } });
@@ -83,7 +83,7 @@ const UserLogin = () => {
 
   const handleUsernameLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       toast.warning('Please fill in all fields');
       return;
@@ -98,7 +98,7 @@ const UserLogin = () => {
 
     try {
       const result = await loginWithUsername(username, password);
-      
+
       if (result.success) {
         toast.success('Welcome back!');
         navigate('/user/home');
@@ -135,7 +135,7 @@ const UserLogin = () => {
 
         {/* Auth Method Tabs */}
         <div className="auth-tabs">
-          <button 
+          <button
             type="button"
             className={`auth-tab ${authMethod === 'email' ? 'active' : ''}`}
             onClick={() => setAuthMethod('email')}
@@ -143,7 +143,7 @@ const UserLogin = () => {
             <Mail size={18} />
             Email Login
           </button>
-          <button 
+          <button
             type="button"
             className={`auth-tab ${authMethod === 'username' ? 'active' : ''}`}
             onClick={() => setAuthMethod('username')}
@@ -202,12 +202,10 @@ const UserLogin = () => {
               Email verification code will be sent after login
             </div>
 
-            <button 
-              type="submit" 
-              className="auth-submit"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : (
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? (
+                'Signing in...'
+              ) : (
                 <>
                   <LogIn size={18} />
                   Sign In with Email
@@ -263,21 +261,17 @@ const UserLogin = () => {
 
             {/* Puzzle CAPTCHA */}
             <div className="puzzle-section">
-              <label className="puzzle-label">
-                🧩 Complete the puzzle to verify
-              </label>
-              <PuzzleCaptcha 
+              <label className="puzzle-label">🧩 Complete the puzzle to verify</label>
+              <PuzzleCaptcha
                 onVerify={handlePuzzleVerify}
                 onReset={() => setPuzzleVerified(false)}
               />
             </div>
 
-            <button 
-              type="submit" 
-              className="auth-submit"
-              disabled={loading || !puzzleVerified}
-            >
-              {loading ? 'Signing in...' : (
+            <button type="submit" className="auth-submit" disabled={loading || !puzzleVerified}>
+              {loading ? (
+                'Signing in...'
+              ) : (
                 <>
                   <LogIn size={18} />
                   Sign In with Username
@@ -288,7 +282,9 @@ const UserLogin = () => {
         )}
 
         <div className="auth-footer">
-          <p>Don't have an account? <Link to="/user/register">Sign Up</Link></p>
+          <p>
+            Don't have an account? <Link to="/user/register">Sign Up</Link>
+          </p>
         </div>
       </div>
     </div>

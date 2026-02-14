@@ -29,12 +29,12 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
   const initializePuzzle = useCallback(() => {
     const randomImage = PUZZLE_IMAGES[Math.floor(Math.random() * PUZZLE_IMAGES.length)];
     setImage(randomImage);
-    
+
     // Random target position (where the piece should go)
     const targetX = Math.floor(Math.random() * 200) + 100; // 100-300px from left
     const targetY = Math.floor(Math.random() * 80) + 40; // 40-120px from top
     setTargetPosition({ x: targetX, y: targetY });
-    
+
     // Puzzle piece starts at the left
     setPuzzlePosition({ x: 0, y: targetY });
     setSliderValue(0);
@@ -48,16 +48,16 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
   // Handle slider change
   const handleSliderChange = (e) => {
     if (status === 'success') return;
-    
+
     const value = parseInt(e.target.value, 10);
     setSliderValue(value);
-    setPuzzlePosition(prev => ({ ...prev, x: value }));
+    setPuzzlePosition((prev) => ({ ...prev, x: value }));
   };
 
   // Handle slider release (verification check)
   const handleSliderRelease = () => {
     if (status === 'success') return;
-    
+
     setStatus('verifying');
     setIsDragging(false);
 
@@ -70,21 +70,21 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
         onVerify?.(true);
       } else {
         setStatus('failed');
-        setAttempts(prev => prev + 1);
-        
+        setAttempts((prev) => prev + 1);
+
         // Reset after failed attempt
         setTimeout(() => {
           setSliderValue(0);
-          setPuzzlePosition(prev => ({ ...prev, x: 0 }));
+          setPuzzlePosition((prev) => ({ ...prev, x: 0 }));
           setStatus('idle');
-          
+
           // Refresh puzzle after 3 failed attempts
           if (attempts >= 2) {
             initializePuzzle();
             setAttempts(0);
           }
         }, 1000);
-        
+
         onVerify?.(false);
       }
     }, 500);
@@ -109,9 +109,9 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
             'Drag the puzzle piece to complete'
           )}
         </span>
-        <button 
-          type="button" 
-          className="puzzle-refresh" 
+        <button
+          type="button"
+          className="puzzle-refresh"
           onClick={handleRefresh}
           disabled={status === 'verifying'}
         >
@@ -122,15 +122,15 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
       <div className="puzzle-image-container">
         {image && (
           <>
-            <img 
-              src={image} 
-              alt="Puzzle background" 
+            <img
+              src={image}
+              alt="Puzzle background"
               className="puzzle-background"
               draggable={false}
             />
-            
+
             {/* Target slot (where piece should go) */}
-            <div 
+            <div
               className={`puzzle-slot ${status === 'success' ? 'matched' : ''}`}
               style={{
                 left: `${targetPosition.x}px`,
@@ -141,7 +141,7 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
             />
 
             {/* Draggable puzzle piece */}
-            <div 
+            <div
               className={`puzzle-piece ${status}`}
               style={{
                 left: `${puzzlePosition.x}px`,
@@ -176,10 +176,7 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
       {/* Slider control */}
       <div className="puzzle-slider-container">
         <div className="puzzle-slider-track">
-          <div 
-            className="puzzle-slider-fill"
-            style={{ width: `${(sliderValue / 350) * 100}%` }}
-          />
+          <div className="puzzle-slider-fill" style={{ width: `${(sliderValue / 350) * 100}%` }} />
           <input
             ref={sliderRef}
             type="range"
@@ -204,9 +201,7 @@ const PuzzleCaptcha = ({ onVerify, onReset }) => {
       </div>
 
       {attempts > 0 && status !== 'success' && (
-        <div className="puzzle-attempts">
-          Attempts: {attempts}/3
-        </div>
+        <div className="puzzle-attempts">Attempts: {attempts}/3</div>
       )}
     </div>
   );

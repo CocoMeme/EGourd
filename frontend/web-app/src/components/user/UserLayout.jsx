@@ -106,7 +106,7 @@ const UserLayout = ({ children }) => {
 
           {/* Desktop Navigation */}
           <nav className="desktop-nav">
-            {navItems.map(item => (
+            {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -138,13 +138,17 @@ const UserLayout = ({ children }) => {
               </div>
             ) : (
               <div className="auth-buttons">
-                <Link to="/user/login" className="login-btn">Login</Link>
-                <Link to="/user/register" className="register-btn">Register</Link>
+                <Link to="/user/login" className="login-btn">
+                  Login
+                </Link>
+                <Link to="/user/register" className="register-btn">
+                  Register
+                </Link>
               </div>
             )}
 
             {/* Mobile Menu Toggle */}
-            <button 
+            <button
               className="mobile-menu-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -156,7 +160,7 @@ const UserLayout = ({ children }) => {
 
       {/* Mobile Navigation */}
       <nav className={`mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
-        {navItems.map(item => (
+        {navItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
@@ -174,11 +178,19 @@ const UserLayout = ({ children }) => {
           </button>
         ) : (
           <>
-            <Link to="/user/login" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              to="/user/login"
+              className="mobile-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               <UserIcon />
               <span>Login</span>
             </Link>
-            <Link to="/user/register" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              to="/user/register"
+              className="mobile-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               <UserIcon />
               <span>Register</span>
             </Link>
@@ -187,9 +199,7 @@ const UserLayout = ({ children }) => {
       </nav>
 
       {/* Main Content */}
-      <main className="user-main">
-        {children}
-      </main>
+      <main className="user-main">{children}</main>
 
       {/* Footer */}
       <footer className="user-footer">

@@ -50,59 +50,69 @@ const UserHome = () => {
   };
 
   const prevHeroSlide = () => {
-    setCurrentHeroSlide((prev) => (prev - 1 + heroCarouselImages.length) % heroCarouselImages.length);
+    setCurrentHeroSlide(
+      (prev) => (prev - 1 + heroCarouselImages.length) % heroCarouselImages.length
+    );
   };
 
   // Features/Quick Actions
   const quickActions = [
-    { 
-      icon: '📊', 
-      title: 'Dashboard', 
+    {
+      icon: '📊',
+      title: 'Dashboard',
       desc: 'View your farming insights and analytics',
       link: '/user/dashboard',
-      color: 'green'
+      color: 'green',
     },
-    { 
-      icon: '🔬', 
-      title: 'AI Scanner', 
+    {
+      icon: '🔬',
+      title: 'AI Scanner',
       desc: 'Scan and analyze your gourd crops',
       link: '/user/scan',
-      color: 'blue'
+      color: 'blue',
     },
-    { 
-      icon: '💬', 
-      title: 'Forum', 
+    {
+      icon: '💬',
+      title: 'Forum',
       desc: 'Connect with other gourd farmers',
       link: '/user/forum',
-      color: 'purple'
+      color: 'purple',
     },
-    { 
-      icon: '📰', 
-      title: 'News', 
+    {
+      icon: '📰',
+      title: 'News',
       desc: 'Latest agricultural updates and tips',
       link: '/user/news',
-      color: 'orange'
+      color: 'orange',
     },
-    { 
-      icon: '📚', 
-      title: 'Learn', 
+    {
+      icon: '📚',
+      title: 'Learn',
       desc: 'Educational resources for better farming',
       link: '/user/learn',
-      color: 'teal'
+      color: 'teal',
     },
-    { 
-      icon: '📈', 
-      title: 'Yield Prediction', 
+    {
+      icon: '📈',
+      title: 'Yield Prediction',
       desc: 'AI-powered harvest forecasting',
       link: '/user/yield',
-      color: 'lime'
+      color: 'lime',
     },
   ];
 
   // Farming tips
   const farmingTips = [
-    { icon: '💧', title: 'Morning Watering', tip: 'Water your gourds in the early morning to reduce evaporation.' },
-    { icon: '🌱', title: 'Soil Health', tip: 'Add organic compost regularly for better nutrient absorption.' },
+    {
+      icon: '💧',
+      title: 'Morning Watering',
+      tip: 'Water your gourds in the early morning to reduce evaporation.',
+    },
+    {
+      icon: '🌱',
+      title: 'Soil Health',
+      tip: 'Add organic compost regularly for better nutrient absorption.',
+    },
     { icon: '🐝', title: 'Pollination', tip: 'Encourage pollinators by planting flowers nearby.' },
   ];
 
@@ -110,37 +120,37 @@ const UserHome = () => {
   // To add your own images, place them in: src/assets/images/muntinlupa/
   // Then import them at the top and add them to the image property
   const muntinlupaFarms = [
-    { 
-      id: 1, 
+    {
+      id: 1,
       name: 'Tunasan Community Farm',
       location: 'Brgy. Tunasan',
       image: null, // Replace with your imported image
       placeholder: '🌾',
-      crops: ['Ampalaya', 'Upo']
+      crops: ['Ampalaya', 'Upo'],
     },
-    { 
-      id: 2, 
+    {
+      id: 2,
       name: 'Poblacion Urban Garden',
       location: 'Brgy. Poblacion',
       image: null, // Replace with your imported image
       placeholder: '🥬',
-      crops: ['Kalabasa', 'Sayote']
+      crops: ['Kalabasa', 'Sayote'],
     },
-    { 
-      id: 3, 
+    {
+      id: 3,
       name: 'Sucat Agricultural Center',
       location: 'Brgy. Sucat',
       image: null, // Replace with your imported image
       placeholder: '👨‍🌾',
-      crops: ['Ampalaya', 'Kalabasa']
+      crops: ['Ampalaya', 'Kalabasa'],
     },
-    { 
-      id: 4, 
+    {
+      id: 4,
       name: 'Alabang Hills Farm',
       location: 'Brgy. Alabang',
       image: null, // Replace with your imported image
       placeholder: '🌱',
-      crops: ['Patola', 'Upo']
+      crops: ['Patola', 'Upo'],
     },
   ];
 
@@ -167,13 +177,27 @@ const UserHome = () => {
                 {heroCarouselImages.length > 1 && (
                   <>
                     <button className="hero-carousel-btn hero-prev" onClick={prevHeroSlide}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M15 18l-6-6 6-6"/>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M15 18l-6-6 6-6" />
                       </svg>
                     </button>
                     <button className="hero-carousel-btn hero-next" onClick={nextHeroSlide}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 18l6-6-6-6"/>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M9 18l6-6-6-6" />
                       </svg>
                     </button>
                     <div className="hero-carousel-dots">
@@ -192,7 +216,7 @@ const UserHome = () => {
               <div className="hero-bg-fallback"></div>
             )}
           </div>
-          
+
           {/* Content Overlay */}
           <div className="welcome-content">
             <div className="welcome-text">
@@ -205,8 +229,8 @@ const UserHome = () => {
                 <span className="highlight"> Command Center</span>
               </h1>
               <p className="welcome-description">
-                Access all your farming tools, connect with the community, and leverage AI-powered insights 
-                to optimize your gourd farming operations.
+                Access all your farming tools, connect with the community, and leverage AI-powered
+                insights to optimize your gourd farming operations.
               </p>
             </div>
           </div>
@@ -220,18 +244,21 @@ const UserHome = () => {
           </div>
           <div className="quick-actions-grid">
             {quickActions.map((action, index) => (
-              <Link 
-                key={index} 
-                to={action.link} 
-                className={`action-card ${action.color}`}
-              >
+              <Link key={index} to={action.link} className={`action-card ${action.color}`}>
                 <div className="action-icon">{action.icon}</div>
                 <div className="action-content">
                   <h3>{action.title}</h3>
                   <p>{action.desc}</p>
                 </div>
                 <div className="action-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="m9 18 6-6-6-6"></path>
                   </svg>
                 </div>
@@ -278,15 +305,24 @@ const UserHome = () => {
                 <div className="farm-info">
                   <h3>{farm.name}</h3>
                   <p className="farm-location">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                      <circle cx="12" cy="10" r="3"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
                     </svg>
                     {farm.location}
                   </p>
                   <div className="farm-crops">
                     {farm.crops.map((crop, index) => (
-                      <span key={index} className="crop-tag">{crop}</span>
+                      <span key={index} className="crop-tag">
+                        {crop}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -302,7 +338,14 @@ const UserHome = () => {
             <p>Use our AI-powered scanner to get instant insights about your gourd plants.</p>
             <Link to="/user/dashboard" className="cta-button">
               <span>Go to Dashboard</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="m9 18 6-6-6-6"></path>
               </svg>
             </Link>

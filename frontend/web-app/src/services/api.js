@@ -22,13 +22,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Log outgoing requests
     console.log(`📤 [${config.method?.toUpperCase()}] ${config.baseURL}${config.url}`, {
       params: config.params,
       data: config.data,
     });
-    
+
     return config;
   },
   (error) => {
@@ -50,7 +50,7 @@ api.interceptors.response.use(
       message: error.message,
       data: error.response?.data,
     });
-    
+
     if (error.response?.status === 401) {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');

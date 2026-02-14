@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import { userForumService } from '../../services/userApi';
-import { 
-  MessageSquare, 
-  Heart, 
-  Search, 
-  Plus, 
-  Filter, 
-  Lightbulb, 
-  HelpCircle, 
-  Image, 
+import {
+  MessageSquare,
+  Heart,
+  Search,
+  Plus,
+  Filter,
+  Lightbulb,
+  HelpCircle,
+  Image,
   MessagesSquare,
   ChevronRight,
   Clock,
   User,
   Flag,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import UserLayout from '../../components/user/UserLayout';
@@ -42,17 +42,17 @@ const UserForum = () => {
   const fetchPosts = async () => {
     try {
       const params = { limit: 20, sortBy: 'recent' };
-      
+
       if (selectedCategory !== 'all') {
         params.category = selectedCategory;
       }
-      
+
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
       }
 
       const response = await userForumService.getAllPosts(params);
-      
+
       if (response.success) {
         setPosts(response.data || []);
       } else {
@@ -87,7 +87,7 @@ const UserForum = () => {
 
   const handleLike = async (e, postId) => {
     e.stopPropagation();
-    
+
     if (!user) {
       toast.warning('Please login to like posts');
       navigate('/user/login');
@@ -97,8 +97,8 @@ const UserForum = () => {
     try {
       const response = await userForumService.toggleLike(postId);
       if (response.success) {
-        setPosts(prevPosts =>
-          prevPosts.map(post =>
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
             post._id === postId
               ? { ...post, likeCount: response.data.likes, isLiked: response.data.isLiked }
               : post
@@ -112,7 +112,7 @@ const UserForum = () => {
 
   const handleReport = async (e, postId) => {
     e.stopPropagation();
-    
+
     if (!user) {
       toast.warning('Please login to report posts');
       return;
@@ -132,7 +132,7 @@ const UserForum = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Just now';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -144,12 +144,12 @@ const UserForum = () => {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const getCategoryInfo = (categoryId) => {
-    return categories.find(c => c.id === categoryId) || categories[0];
+    return categories.find((c) => c.id === categoryId) || categories[0];
   };
 
   return (
@@ -162,13 +162,10 @@ const UserForum = () => {
           </div>
           <h1>Community Forum</h1>
           <p>
-            Connect with fellow gourd enthusiasts, share tips, ask questions, 
-            and showcase your farming journey with the community.
+            Connect with fellow gourd enthusiasts, share tips, ask questions, and showcase your
+            farming journey with the community.
           </p>
-          <button 
-            className="welcome-action-btn"
-            onClick={() => navigate('/user/forum/create')}
-          >
+          <button className="welcome-action-btn" onClick={() => navigate('/user/forum/create')}>
             <Plus size={20} />
             Create New Post
           </button>
@@ -192,7 +189,7 @@ const UserForum = () => {
 
         {/* Categories */}
         <div className="category-tabs">
-          {categories.map(cat => {
+          {categories.map((cat) => {
             const Icon = cat.icon;
             return (
               <button
@@ -220,27 +217,24 @@ const UserForum = () => {
               <MessageSquare size={48} />
               <h3>No posts found</h3>
               <p>Be the first to start a discussion!</p>
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigate('/user/forum/create')}
-              >
+              <button className="btn btn-primary" onClick={() => navigate('/user/forum/create')}>
                 Create Post
               </button>
             </div>
           ) : (
             <div className="posts-list">
-              {posts.map(post => {
+              {posts.map((post) => {
                 const category = getCategoryInfo(post.category);
                 const CategoryIcon = category.icon;
-                
+
                 return (
-                  <div 
-                    key={post._id} 
+                  <div
+                    key={post._id}
                     className="post-card"
                     onClick={() => navigate(`/user/forum/post/${post._id}`)}
                   >
                     <div className="post-header">
-                      <div 
+                      <div
                         className="post-category-badge"
                         style={{ backgroundColor: `${category.color}15`, color: category.color }}
                       >
@@ -259,7 +253,9 @@ const UserForum = () => {
                     {post.images && post.images.length > 0 && (
                       <div className="post-images-preview">
                         <Image size={16} />
-                        <span>{post.images.length} image{post.images.length > 1 ? 's' : ''}</span>
+                        <span>
+                          {post.images.length} image{post.images.length > 1 ? 's' : ''}
+                        </span>
                       </div>
                     )}
 
@@ -276,7 +272,7 @@ const UserForum = () => {
                       </div>
 
                       <div className="post-stats">
-                        <button 
+                        <button
                           className={`stat-btn like-btn ${post.isLiked ? 'liked' : ''}`}
                           onClick={(e) => handleLike(e, post._id)}
                         >
@@ -287,7 +283,7 @@ const UserForum = () => {
                           <MessageSquare size={18} />
                           <span>{post.commentCount || 0}</span>
                         </div>
-                        <button 
+                        <button
                           className="stat-btn report-btn"
                           onClick={(e) => handleReport(e, post._id)}
                           title="Report post"

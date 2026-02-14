@@ -113,7 +113,13 @@ const Forum = () => {
         <div className="filters">
           <div className="filter-group">
             <label>Status:</label>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+            >
               <option value="all">All Posts</option>
               <option value="active">Active</option>
               <option value="pending">Pending</option>
@@ -142,9 +148,7 @@ const Forum = () => {
                       <div className="post-meta">
                         <span className="post-author">by {post.author?.username || 'Unknown'}</span>
                         <span className="post-date">{formatDate(post.createdAt)}</span>
-                        <span className={`post-status status-${post.status}`}>
-                          {post.status}
-                        </span>
+                        <span className={`post-status status-${post.status}`}>{post.status}</span>
                         {post.isPinned && <Pin size={14} className="pin-icon" />}
                         {post.isLocked && <Lock size={14} className="lock-icon" />}
                       </div>

@@ -11,7 +11,7 @@ const VerifyEmail = () => {
   const location = useLocation();
   const { user, updateUser } = useUserAuth();
   const email = location.state?.email || user?.email;
-  
+
   const [pin, setPin] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
@@ -45,7 +45,7 @@ const VerifyEmail = () => {
   const handlePinChange = (value, index) => {
     // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1);
-    
+
     const newPin = [...pin];
     newPin[index] = digit;
     setPin(newPin);
@@ -174,7 +174,14 @@ const VerifyEmail = () => {
               <span className="loading-spinner"></span>
             ) : (
               <>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
@@ -188,20 +195,13 @@ const VerifyEmail = () => {
             {resendTimer > 0 ? (
               <span className="resend-timer">Resend in {resendTimer}s</span>
             ) : (
-              <button
-                className="resend-btn"
-                onClick={handleResend}
-                disabled={loading}
-              >
+              <button className="resend-btn" onClick={handleResend} disabled={loading}>
                 Resend Code
               </button>
             )}
           </div>
 
-          <button
-            className="back-link"
-            onClick={() => navigate('/user/login')}
-          >
+          <button className="back-link" onClick={() => navigate('/user/login')}>
             ← Back to Login
           </button>
         </div>

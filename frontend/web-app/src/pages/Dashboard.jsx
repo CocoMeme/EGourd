@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { adminService } from '../services/api';
 import { Users, UserCheck, UserX, MessageSquare, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { toast } from 'react-toastify';
 import './Dashboard.css';
 
@@ -40,7 +51,14 @@ const Dashboard = () => {
     return <div className="error-message">Failed to load dashboard data</div>;
   }
 
-  const { overview = {}, usersByRole = {}, usersByProvider = {}, forumStats = {}, newsStats = {}, verificationStats = {} } = dashboard;
+  const {
+    overview = {},
+    usersByRole = {},
+    usersByProvider = {},
+    forumStats = {},
+    newsStats = {},
+    verificationStats = {},
+  } = dashboard;
 
   const statCards = [
     {

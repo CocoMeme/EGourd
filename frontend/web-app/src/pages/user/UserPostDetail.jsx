@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import { userForumService } from '../../services/userApi';
-import { 
-  ArrowLeft, 
-  Heart, 
-  MessageSquare, 
-  Clock, 
-  User, 
+import {
+  ArrowLeft,
+  Heart,
+  MessageSquare,
+  Clock,
+  User,
   Send,
   Flag,
   Lightbulb,
@@ -16,7 +16,7 @@ import {
   MessagesSquare,
   Reply,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import UserLayout from '../../components/user/UserLayout';
@@ -33,7 +33,7 @@ const UserPostDetail = () => {
   const { id: postId } = useParams();
   const navigate = useNavigate();
   const { user } = useUserAuth();
-  
+
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
@@ -75,7 +75,7 @@ const UserPostDetail = () => {
     try {
       const response = await userForumService.toggleLike(postId);
       if (response.success) {
-        setPost(prev => ({
+        setPost((prev) => ({
           ...prev,
           likeCount: response.data.likes,
           isLiked: response.data.isLiked,
@@ -88,7 +88,7 @@ const UserPostDetail = () => {
 
   const handleComment = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.warning('Please login to comment');
       navigate('/user/login');
@@ -119,7 +119,7 @@ const UserPostDetail = () => {
 
   const handleReply = async (e, commentId) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.warning('Please login to reply');
       navigate('/user/login');
@@ -139,7 +139,7 @@ const UserPostDetail = () => {
         setReplyingTo(null);
         fetchPost(); // Refresh to get new reply
         // Auto-expand replies for this comment
-        setExpandedReplies(prev => ({ ...prev, [commentId]: true }));
+        setExpandedReplies((prev) => ({ ...prev, [commentId]: true }));
         toast.success('Reply added!');
       } else {
         toast.error(response.message || 'Failed to add reply');
@@ -152,9 +152,9 @@ const UserPostDetail = () => {
   };
 
   const toggleReplies = (commentId) => {
-    setExpandedReplies(prev => ({
+    setExpandedReplies((prev) => ({
       ...prev,
-      [commentId]: !prev[commentId]
+      [commentId]: !prev[commentId],
     }));
   };
 
@@ -178,7 +178,7 @@ const UserPostDetail = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Just now';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -190,16 +190,16 @@ const UserPostDetail = () => {
     if (diffMins < 60) return `${diffMins} minutes ago`;
     if (diffHours < 24) return `${diffHours} hours ago`;
     if (diffDays < 7) return `${diffDays} days ago`;
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'long', 
+
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
   const getCategoryInfo = (categoryId) => {
-    return categories.find(c => c.id === categoryId) || categories[3];
+    return categories.find((c) => c.id === categoryId) || categories[3];
   };
 
   if (loading) {
@@ -234,7 +234,7 @@ const UserPostDetail = () => {
         {/* Post Content */}
         <article className="post-detail-card">
           <div className="post-detail-header">
-            <div 
+            <div
               className="post-category-badge"
               style={{ backgroundColor: `${category.color}15`, color: category.color }}
             >
@@ -263,9 +263,7 @@ const UserPostDetail = () => {
             </div>
           </div>
 
-          <div className="post-detail-content">
-            {post.content}
-          </div>
+          <div className="post-detail-content">{post.content}</div>
 
           {post.images && post.images.length > 0 && (
             <div className="post-images">
@@ -278,13 +276,15 @@ const UserPostDetail = () => {
           {post.tags && post.tags.length > 0 && (
             <div className="post-tags">
               {post.tags.map((tag, index) => (
-                <span key={index} className="tag">#{tag}</span>
+                <span key={index} className="tag">
+                  #{tag}
+                </span>
               ))}
             </div>
           )}
 
           <div className="post-actions-bar">
-            <button 
+            <button
               className={`action-btn like-btn ${post.isLiked ? 'liked' : ''}`}
               onClick={handleLike}
             >
@@ -318,13 +318,13 @@ const UserPostDetail = () => {
               </div>
               <input
                 type="text"
-                placeholder={user ? "Write a comment..." : "Login to comment..."}
+                placeholder={user ? 'Write a comment...' : 'Login to comment...'}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 disabled={!user || submitting}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="send-btn"
                 disabled={!user || !commentText.trim() || submitting}
               >
@@ -355,15 +355,17 @@ const UserPostDetail = () => {
                       </div>
                       <p className="comment-content">{comment.content}</p>
                       <div className="comment-actions">
-                        <button 
+                        <button
                           className="reply-btn"
-                          onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)}
+                          onClick={() =>
+                            setReplyingTo(replyingTo === comment._id ? null : comment._id)
+                          }
                         >
                           <Reply size={14} />
                           Reply
                         </button>
                         {comment.replies && comment.replies.length > 0 && (
-                          <button 
+                          <button
                             className="view-replies-btn"
                             onClick={() => toggleReplies(comment._id)}
                           >
@@ -397,14 +399,18 @@ const UserPostDetail = () => {
                         </div>
                         <input
                           type="text"
-                          placeholder={user ? `Reply to ${comment.user?.username || 'Anonymous'}...` : "Login to reply..."}
+                          placeholder={
+                            user
+                              ? `Reply to ${comment.user?.username || 'Anonymous'}...`
+                              : 'Login to reply...'
+                          }
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           disabled={!user || submittingReply}
                           autoFocus
                         />
-                        <button 
-                          type="submit" 
+                        <button
+                          type="submit"
                           className="send-btn small"
                           disabled={!user || !replyText.trim() || submittingReply}
                         >
@@ -415,30 +421,32 @@ const UserPostDetail = () => {
                   )}
 
                   {/* Replies List */}
-                  {expandedReplies[comment._id] && comment.replies && comment.replies.length > 0 && (
-                    <div className="replies-list">
-                      {comment.replies.map((reply) => (
-                        <div key={reply._id} className="reply-item">
-                          <div className="reply-avatar">
-                            {reply.user?.profilePicture ? (
-                              <img src={reply.user.profilePicture} alt="" />
-                            ) : (
-                              <User size={14} />
-                            )}
-                          </div>
-                          <div className="reply-body">
-                            <div className="reply-header">
-                              <span className="reply-author">
-                                {reply.user?.username || reply.user?.firstName || 'Anonymous'}
-                              </span>
-                              <span className="reply-time">{formatDate(reply.createdAt)}</span>
+                  {expandedReplies[comment._id] &&
+                    comment.replies &&
+                    comment.replies.length > 0 && (
+                      <div className="replies-list">
+                        {comment.replies.map((reply) => (
+                          <div key={reply._id} className="reply-item">
+                            <div className="reply-avatar">
+                              {reply.user?.profilePicture ? (
+                                <img src={reply.user.profilePicture} alt="" />
+                              ) : (
+                                <User size={14} />
+                              )}
                             </div>
-                            <p className="reply-content">{reply.content}</p>
+                            <div className="reply-body">
+                              <div className="reply-header">
+                                <span className="reply-author">
+                                  {reply.user?.username || reply.user?.firstName || 'Anonymous'}
+                                </span>
+                                <span className="reply-time">{formatDate(reply.createdAt)}</span>
+                              </div>
+                              <p className="reply-content">{reply.content}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
                 </div>
               ))
             ) : (

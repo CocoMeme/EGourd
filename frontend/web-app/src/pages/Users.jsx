@@ -14,7 +14,11 @@ const Users = () => {
   const [pagination, setPagination] = useState(null);
   const [deactivateModal, setDeactivateModal] = useState({ show: false, userId: null });
   const [deactivateReason, setDeactivateReason] = useState('');
-  const [roleChangeModal, setRoleChangeModal] = useState({ show: false, userId: null, currentRole: '' });
+  const [roleChangeModal, setRoleChangeModal] = useState({
+    show: false,
+    userId: null,
+    currentRole: '',
+  });
   const [newRole, setNewRole] = useState('');
 
   useEffect(() => {
@@ -53,7 +57,7 @@ const Users = () => {
 
   const handleActivateUser = async (userId) => {
     if (!window.confirm('Are you sure you want to activate this user?')) return;
-    
+
     try {
       await adminService.activateUser(userId);
       toast.success('User activated successfully');
@@ -97,8 +101,9 @@ const Users = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.'))
+      return;
+
     try {
       await adminService.deleteUser(userId);
       toast.success('User deleted successfully');
@@ -143,7 +148,13 @@ const Users = () => {
         <div className="filters">
           <div className="filter-group">
             <label>Role:</label>
-            <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}>
+            <select
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setPage(1);
+              }}
+            >
               <option value="all">All Roles</option>
               <option value="user">User</option>
               <option value="admin">Admin</option>
@@ -152,7 +163,13 @@ const Users = () => {
 
           <div className="filter-group">
             <label>Status:</label>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+            >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -199,7 +216,7 @@ const Users = () => {
                       </td>
                       <td>{user.email}</td>
                       <td>
-                        <span 
+                        <span
                           className={`badge badge-${user.role}`}
                           onClick={() => handleRoleChange(user._id, user.role)}
                           style={{ cursor: 'pointer' }}
@@ -272,8 +289,8 @@ const Users = () => {
                   Previous
                 </button>
                 <span className="pagination-info">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                  {' '}({pagination.totalUsers} total users)
+                  Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalUsers}{' '}
+                  total users)
                 </span>
                 <button
                   onClick={() => setPage(page + 1)}
@@ -290,7 +307,10 @@ const Users = () => {
 
       {/* Deactivate Modal */}
       {deactivateModal.show && (
-        <div className="modal-overlay" onClick={() => setDeactivateModal({ show: false, userId: null })}>
+        <div
+          className="modal-overlay"
+          onClick={() => setDeactivateModal({ show: false, userId: null })}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Deactivate User</h2>
             <p>Are you sure you want to deactivate this user?</p>
@@ -304,8 +324,8 @@ const Users = () => {
               />
             </div>
             <div className="modal-actions">
-              <button 
-                className="btn btn-outline" 
+              <button
+                className="btn btn-outline"
                 onClick={() => {
                   setDeactivateModal({ show: false, userId: null });
                   setDeactivateReason('');
@@ -323,7 +343,10 @@ const Users = () => {
 
       {/* Role Change Modal */}
       {roleChangeModal.show && (
-        <div className="modal-overlay" onClick={() => setRoleChangeModal({ show: false, userId: null, currentRole: '' })}>
+        <div
+          className="modal-overlay"
+          onClick={() => setRoleChangeModal({ show: false, userId: null, currentRole: '' })}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Change User Role</h2>
             <p>Select a new role for this user:</p>
@@ -335,8 +358,8 @@ const Users = () => {
               </select>
             </div>
             <div className="modal-actions">
-              <button 
-                className="btn btn-outline" 
+              <button
+                className="btn btn-outline"
                 onClick={() => {
                   setRoleChangeModal({ show: false, userId: null, currentRole: '' });
                   setNewRole('');
@@ -344,8 +367,8 @@ const Users = () => {
               >
                 Cancel
               </button>
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 onClick={confirmRoleChange}
                 disabled={newRole === roleChangeModal.currentRole}
               >

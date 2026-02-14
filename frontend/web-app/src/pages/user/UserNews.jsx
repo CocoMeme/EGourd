@@ -28,7 +28,14 @@ const ChevronRightIcon = () => (
 );
 
 const NewspaperIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    width="48"
+    height="48"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
     <path d="M18 14h-8"></path>
     <path d="M15 18h-5"></path>
@@ -48,7 +55,7 @@ const UserNews = () => {
     { id: 'update', label: 'Updates' },
     { id: 'announcement', label: 'Announcements' },
     { id: 'tips', label: 'Tips & Guides' },
-    { id: 'community', label: 'Community' }
+    { id: 'community', label: 'Community' },
   ];
 
   useEffect(() => {
@@ -69,8 +76,9 @@ const UserNews = () => {
     }
   };
 
-  const filteredNews = news.filter(item => {
-    const matchesSearch = item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredNews = news.filter((item) => {
+    const matchesSearch =
+      item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.content?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -80,7 +88,7 @@ const UserNews = () => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -95,7 +103,7 @@ const UserNews = () => {
       update: '#3b82f6',
       announcement: '#ef4444',
       tips: '#10b981',
-      community: '#8b5cf6'
+      community: '#8b5cf6',
     };
     return colors[category] || '#6b7280';
   };
@@ -110,8 +118,8 @@ const UserNews = () => {
           </div>
           <h1>News & Updates</h1>
           <p>
-            Stay informed with the latest GourdVision announcements, farming tips, 
-            community updates, and agricultural news.
+            Stay informed with the latest GourdVision announcements, farming tips, community
+            updates, and agricultural news.
           </p>
         </div>
 
@@ -128,7 +136,7 @@ const UserNews = () => {
           </div>
 
           <div className="category-tabs">
-            {categories.map(cat => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 className={`cat-tab ${selectedCategory === cat.id ? 'active' : ''}`}
@@ -143,7 +151,7 @@ const UserNews = () => {
         {/* News Content */}
         {loading ? (
           <div className="news-loading">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="news-skeleton">
                 <div className="skeleton-image"></div>
                 <div className="skeleton-content">
@@ -158,7 +166,7 @@ const UserNews = () => {
           <div className="news-grid">
             {/* Featured news (first item) */}
             {filteredNews.length > 0 && (
-              <div 
+              <div
                 className="news-featured"
                 onClick={() => navigate(`/user/news/${filteredNews[0]._id}`)}
               >
@@ -170,7 +178,7 @@ const UserNews = () => {
                       <NewspaperIcon />
                     </div>
                   )}
-                  <span 
+                  <span
                     className="featured-badge"
                     style={{ background: getCategoryColor(filteredNews[0].category) }}
                   >
@@ -195,8 +203,8 @@ const UserNews = () => {
 
             {/* Other news items */}
             <div className="news-list">
-              {filteredNews.slice(1).map(item => (
-                <div 
+              {filteredNews.slice(1).map((item) => (
+                <div
                   key={item._id}
                   className="news-card"
                   onClick={() => navigate(`/user/news/${item._id}`)}
@@ -211,7 +219,7 @@ const UserNews = () => {
                     )}
                   </div>
                   <div className="card-content">
-                    <span 
+                    <span
                       className="card-category"
                       style={{ color: getCategoryColor(item.category) }}
                     >
@@ -233,7 +241,7 @@ const UserNews = () => {
             <NewspaperIcon />
             <h3>No news found</h3>
             <p>
-              {searchQuery || selectedCategory !== 'all' 
+              {searchQuery || selectedCategory !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'Check back later for updates'}
             </p>

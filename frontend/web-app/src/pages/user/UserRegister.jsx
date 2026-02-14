@@ -12,7 +12,7 @@ import logoTransparent from '../../assets/gourdvision-name-high-resolution-logo-
 const UserRegister = () => {
   // Auth method: 'email' or 'username'
   const [authMethod, setAuthMethod] = useState('email');
-  
+
   // Email registration form data
   const [emailFormData, setEmailFormData] = useState({
     firstName: '',
@@ -36,7 +36,7 @@ const UserRegister = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [puzzleVerified, setPuzzleVerified] = useState(false);
-  
+
   const { register, registerWithUsername, isAuthenticated } = useUserAuth();
   const navigate = useNavigate();
 
@@ -56,11 +56,11 @@ const UserRegister = () => {
   }, [authMethod]);
 
   const updateEmailField = (field, value) => {
-    setEmailFormData(prev => ({ ...prev, [field]: value }));
+    setEmailFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateUsernameField = (field, value) => {
-    setUsernameFormData(prev => ({ ...prev, [field]: value }));
+    setUsernameFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const validateEmailForm = () => {
@@ -104,7 +104,13 @@ const UserRegister = () => {
   const validateUsernameForm = () => {
     const { firstName, lastName, username, password, confirmPassword } = usernameFormData;
 
-    if (!firstName.trim() || !lastName.trim() || !username.trim() || !password || !confirmPassword) {
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !username.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
       toast.warning('Please fill in all fields');
       return false;
     }
@@ -146,7 +152,7 @@ const UserRegister = () => {
 
   const handleEmailRegister = async (e) => {
     e.preventDefault();
-    
+
     if (!validateEmailForm()) return;
 
     setLoading(true);
@@ -154,7 +160,7 @@ const UserRegister = () => {
     try {
       const { confirmPassword, ...signupData } = emailFormData;
       const result = await register(signupData);
-      
+
       if (result.success) {
         toast.success('Account created! Please verify your email.');
         navigate('/user/verify-email', { state: { email: signupData.email, sendPin: true } });
@@ -170,7 +176,7 @@ const UserRegister = () => {
 
   const handleUsernameRegister = async (e) => {
     e.preventDefault();
-    
+
     if (!validateUsernameForm()) return;
 
     setLoading(true);
@@ -178,7 +184,7 @@ const UserRegister = () => {
     try {
       const { confirmPassword, ...signupData } = usernameFormData;
       const result = await registerWithUsername(signupData);
-      
+
       if (result.success) {
         toast.success('Account created successfully!');
         navigate('/user/home');
@@ -214,7 +220,7 @@ const UserRegister = () => {
 
         {/* Auth Method Tabs */}
         <div className="auth-tabs">
-          <button 
+          <button
             type="button"
             className={`auth-tab ${authMethod === 'email' ? 'active' : ''}`}
             onClick={() => setAuthMethod('email')}
@@ -222,7 +228,7 @@ const UserRegister = () => {
             <Mail size={18} />
             With Email
           </button>
-          <button 
+          <button
             type="button"
             className={`auth-tab ${authMethod === 'username' ? 'active' : ''}`}
             onClick={() => setAuthMethod('username')}
@@ -350,12 +356,10 @@ const UserRegister = () => {
               </label>
             </div>
 
-            <button 
-              type="submit" 
-              className="auth-submit"
-              disabled={loading}
-            >
-              {loading ? 'Creating Account...' : (
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? (
+                'Creating Account...'
+              ) : (
                 <>
                   <UserPlus size={18} />
                   Create Account with Email
@@ -440,9 +444,7 @@ const UserRegister = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <small className="password-hint">
-                Minimum 6 characters
-              </small>
+              <small className="password-hint">Minimum 6 characters</small>
             </div>
 
             <div className="form-group">
@@ -471,10 +473,8 @@ const UserRegister = () => {
 
             {/* Puzzle CAPTCHA */}
             <div className="puzzle-section">
-              <label className="puzzle-label">
-                🧩 Complete the puzzle to verify you're human
-              </label>
-              <PuzzleCaptcha 
+              <label className="puzzle-label">🧩 Complete the puzzle to verify you're human</label>
+              <PuzzleCaptcha
                 onVerify={handlePuzzleVerify}
                 onReset={() => setPuzzleVerified(false)}
               />
@@ -497,12 +497,10 @@ const UserRegister = () => {
               </label>
             </div>
 
-            <button 
-              type="submit" 
-              className="auth-submit"
-              disabled={loading || !puzzleVerified}
-            >
-              {loading ? 'Creating Account...' : (
+            <button type="submit" className="auth-submit" disabled={loading || !puzzleVerified}>
+              {loading ? (
+                'Creating Account...'
+              ) : (
                 <>
                   <UserPlus size={18} />
                   Create Account with Username
@@ -513,7 +511,9 @@ const UserRegister = () => {
         )}
 
         <div className="auth-footer">
-          <p>Already have an account? <Link to="/user/login">Sign In</Link></p>
+          <p>
+            Already have an account? <Link to="/user/login">Sign In</Link>
+          </p>
         </div>
       </div>
     </div>

@@ -9,27 +9,33 @@ const UserProtectedRoute = ({ children }) => {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: '#f8fafc'
-      }}>
-        <div style={{
+      <div
+        style={{
           display: 'flex',
-          flexDirection: 'column',
+          justifyContent: 'center',
           alignItems: 'center',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid #e5e7eb',
-            borderTopColor: '#40916c',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
+          height: '100vh',
+          background: '#f8fafc',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #e5e7eb',
+              borderTopColor: '#40916c',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          ></div>
           <p style={{ color: '#6b7280', fontSize: '15px' }}>Loading...</p>
         </div>
         <style>{`
@@ -53,7 +59,9 @@ const UserProtectedRoute = ({ children }) => {
 
   // Redirect to verify email if not verified
   if (!isEmailVerified) {
-    return <Navigate to="/user/verify-email" state={{ email: user?.email, sendPin: true }} replace />;
+    return (
+      <Navigate to="/user/verify-email" state={{ email: user?.email, sendPin: true }} replace />
+    );
   }
 
   return children;

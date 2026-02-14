@@ -27,12 +27,12 @@ export const UserAuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await userAuthService.login(email, password);
-      
+
       if (response.success) {
         setUser(response.user);
         return { success: true, user: response.user };
       }
-      
+
       return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       return { success: false, message: error.message || 'Login failed' };
@@ -42,12 +42,12 @@ export const UserAuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await userAuthService.register(userData);
-      
+
       if (response.success) {
         setUser(response.user);
         return { success: true, user: response.user };
       }
-      
+
       return { success: false, message: response.message || 'Registration failed' };
     } catch (error) {
       return { success: false, message: error.message || 'Registration failed' };
@@ -58,12 +58,12 @@ export const UserAuthProvider = ({ children }) => {
   const loginWithUsername = async (username, password) => {
     try {
       const response = await userAuthService.loginWithUsername(username, password);
-      
+
       if (response.success) {
         setUser(response.user);
         return { success: true, user: response.user };
       }
-      
+
       return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       return { success: false, message: error.message || 'Login failed' };
@@ -74,12 +74,12 @@ export const UserAuthProvider = ({ children }) => {
   const registerWithUsername = async (userData) => {
     try {
       const response = await userAuthService.registerWithUsername(userData);
-      
+
       if (response.success) {
         setUser(response.user);
         return { success: true, user: response.user };
       }
-      
+
       return { success: false, message: response.message || 'Registration failed' };
     } catch (error) {
       return { success: false, message: error.message || 'Registration failed' };

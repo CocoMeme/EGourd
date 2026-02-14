@@ -2,30 +2,54 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import { userForumService } from '../../services/userApi';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Send,
   Lightbulb,
   HelpCircle,
   Image as ImageIcon,
   MessagesSquare,
-  X
+  X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import UserLayout from '../../components/user/UserLayout';
 import './UserCreatePost.css';
 
 const categories = [
-  { id: 'tips', label: 'Tips & Tricks', icon: Lightbulb, color: '#10b981', description: 'Share your gardening wisdom' },
-  { id: 'questions', label: 'Q&A', icon: HelpCircle, color: '#3b82f6', description: 'Ask the community for help' },
-  { id: 'showcase', label: 'Showcase', icon: ImageIcon, color: '#f59e0b', description: 'Show off your gourds' },
-  { id: 'discussion', label: 'Discussion', icon: MessagesSquare, color: '#8b5cf6', description: 'General discussions' },
+  {
+    id: 'tips',
+    label: 'Tips & Tricks',
+    icon: Lightbulb,
+    color: '#10b981',
+    description: 'Share your gardening wisdom',
+  },
+  {
+    id: 'questions',
+    label: 'Q&A',
+    icon: HelpCircle,
+    color: '#3b82f6',
+    description: 'Ask the community for help',
+  },
+  {
+    id: 'showcase',
+    label: 'Showcase',
+    icon: ImageIcon,
+    color: '#f59e0b',
+    description: 'Show off your gourds',
+  },
+  {
+    id: 'discussion',
+    label: 'Discussion',
+    icon: MessagesSquare,
+    color: '#8b5cf6',
+    description: 'General discussions',
+  },
 ];
 
 const UserCreatePost = () => {
   const navigate = useNavigate();
   const { user } = useUserAuth();
-  
+
   const [selectedCategory, setSelectedCategory] = useState('discussion');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -45,7 +69,7 @@ const UserCreatePost = () => {
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -120,7 +144,7 @@ const UserCreatePost = () => {
           <div className="form-section">
             <label className="section-label">Category</label>
             <div className="category-grid">
-              {categories.map(cat => {
+              {categories.map((cat) => {
                 const Icon = cat.icon;
                 return (
                   <button
@@ -141,7 +165,9 @@ const UserCreatePost = () => {
 
           {/* Title */}
           <div className="form-section">
-            <label className="section-label" htmlFor="title">Title</label>
+            <label className="section-label" htmlFor="title">
+              Title
+            </label>
             <input
               id="title"
               type="text"
@@ -156,7 +182,9 @@ const UserCreatePost = () => {
 
           {/* Content */}
           <div className="form-section">
-            <label className="section-label" htmlFor="content">Content</label>
+            <label className="section-label" htmlFor="content">
+              Content
+            </label>
             <textarea
               id="content"
               className="content-input"
@@ -196,8 +224,8 @@ const UserCreatePost = () => {
           </div>
 
           {/* Submit Button */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="submit-btn"
             disabled={loading || !title.trim() || !content.trim()}
           >

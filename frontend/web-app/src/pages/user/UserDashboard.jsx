@@ -6,11 +6,11 @@ import userApi from '../../services/userApi';
 import './UserDashboard.css';
 
 // Icons
-import { 
-  BarChart3, 
-  Leaf, 
-  Flower2, 
-  TrendingUp, 
+import {
+  BarChart3,
+  Leaf,
+  Flower2,
+  TrendingUp,
   Calendar,
   Activity,
   PieChart,
@@ -23,7 +23,7 @@ import {
   CheckCircle2,
   Sprout,
   AlertTriangle,
-  TreeDeciduous
+  TreeDeciduous,
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -47,14 +47,14 @@ const UserDashboard = () => {
       setLoading(true);
       setError(null);
       const userId = user?._id || user?.id;
-      
+
       // Fetch scan analytics, pollination stats, and flower prediction stats in parallel
       const [scanResponse, pollinationResponse, flowerPredResponse] = await Promise.all([
         userApi.get(`/scans/analytics/${userId}`).catch(() => null),
         userApi.get('/pollination/dashboard/stats').catch(() => null),
-        userApi.get('/pollination/predictions/stats').catch(() => null)
+        userApi.get('/pollination/predictions/stats').catch(() => null),
       ]);
-      
+
       setAnalytics(scanResponse);
       setPollinationStats(pollinationResponse?.data || null);
       setFlowerPredictionStats(flowerPredResponse?.data || null);
@@ -105,14 +105,15 @@ const UserDashboard = () => {
                 Welcome back, <span className="user-name">{user?.firstName || 'Farmer'}</span>
               </h1>
               <p className="header-subtitle">
-                Track your gourd and leaf classifications, monitor scan performance, and view insights from your farming journey.
+                Track your gourd and leaf classifications, monitor scan performance, and view
+                insights from your farming journey.
               </p>
               <div className="header-actions">
                 <Link to="/user/scan" className="action-btn primary">
                   <Scan size={20} />
                   <span>New Scan</span>
                 </Link>
-                <button 
+                <button
                   className="action-btn secondary"
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -161,7 +162,9 @@ const UserDashboard = () => {
                   <Flower2 size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-number">{analytics.distributions?.scanType?.flower || 0}</span>
+                  <span className="stat-number">
+                    {analytics.distributions?.scanType?.flower || 0}
+                  </span>
                   <span className="stat-title">Flower Scans</span>
                 </div>
                 <div className="stat-trend positive">
@@ -175,7 +178,9 @@ const UserDashboard = () => {
                   <Leaf size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-number">{analytics.distributions?.scanType?.leaf || 0}</span>
+                  <span className="stat-number">
+                    {analytics.distributions?.scanType?.leaf || 0}
+                  </span>
                   <span className="stat-title">Leaf Scans</span>
                 </div>
                 <div className="stat-trend positive">
@@ -189,12 +194,18 @@ const UserDashboard = () => {
                   <Target size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-number">{formatPercent(analytics.summary?.avgConfidence)}</span>
+                  <span className="stat-number">
+                    {formatPercent(analytics.summary?.avgConfidence)}
+                  </span>
                   <span className="stat-title">Avg Confidence</span>
                 </div>
-                <div className={`stat-trend ${parseFloat(analytics.summary?.avgConfidence) >= 80 ? 'positive' : 'neutral'}`}>
+                <div
+                  className={`stat-trend ${parseFloat(analytics.summary?.avgConfidence) >= 80 ? 'positive' : 'neutral'}`}
+                >
                   <Activity size={14} />
-                  <span>{parseFloat(analytics.summary?.avgConfidence) >= 80 ? 'High' : 'Moderate'}</span>
+                  <span>
+                    {parseFloat(analytics.summary?.avgConfidence) >= 80 ? 'High' : 'Moderate'}
+                  </span>
                 </div>
               </div>
 
@@ -203,12 +214,19 @@ const UserDashboard = () => {
                   <Calendar size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-number">{analytics.summary?.weeklyComparison?.thisWeek || 0}</span>
+                  <span className="stat-number">
+                    {analytics.summary?.weeklyComparison?.thisWeek || 0}
+                  </span>
                   <span className="stat-title">This Week</span>
                 </div>
-                <div className={`stat-trend ${(analytics.summary?.weeklyComparison?.change || 0) >= 0 ? 'positive' : 'negative'}`}>
+                <div
+                  className={`stat-trend ${(analytics.summary?.weeklyComparison?.change || 0) >= 0 ? 'positive' : 'negative'}`}
+                >
                   <TrendingUp size={14} />
-                  <span>{analytics.summary?.weeklyComparison?.change >= 0 ? '+' : ''}{analytics.summary?.weeklyComparison?.change || 0}</span>
+                  <span>
+                    {analytics.summary?.weeklyComparison?.change >= 0 ? '+' : ''}
+                    {analytics.summary?.weeklyComparison?.change || 0}
+                  </span>
                 </div>
               </div>
             </div>
@@ -243,7 +261,8 @@ const UserDashboard = () => {
                     </div>
                     <div className="stat-info">
                       <span className="stat-number">
-                        {pollinationStats.statusBreakdown?.find(s => s._id === 'flowering')?.count || 0}
+                        {pollinationStats.statusBreakdown?.find((s) => s._id === 'flowering')
+                          ?.count || 0}
                       </span>
                       <span className="stat-title">Flowering</span>
                     </div>
@@ -259,7 +278,8 @@ const UserDashboard = () => {
                     </div>
                     <div className="stat-info">
                       <span className="stat-number">
-                        {pollinationStats.statusBreakdown?.find(s => s._id === 'pollinated')?.count || 0}
+                        {pollinationStats.statusBreakdown?.find((s) => s._id === 'pollinated')
+                          ?.count || 0}
                       </span>
                       <span className="stat-title">Pollinated</span>
                     </div>
@@ -274,39 +294,47 @@ const UserDashboard = () => {
                       <AlertTriangle size={24} />
                     </div>
                     <div className="stat-info">
-                      <span className="stat-number">{pollinationStats.counts?.needsAttention || 0}</span>
+                      <span className="stat-number">
+                        {pollinationStats.counts?.needsAttention || 0}
+                      </span>
                       <span className="stat-title">Needs Attention</span>
                     </div>
-                    <div className={`stat-trend ${pollinationStats.counts?.needsAttention > 0 ? 'warning' : 'positive'}`}>
+                    <div
+                      className={`stat-trend ${pollinationStats.counts?.needsAttention > 0 ? 'warning' : 'positive'}`}
+                    >
                       <Activity size={14} />
-                      <span>{pollinationStats.counts?.needsAttention > 0 ? 'Check Now' : 'All Good'}</span>
+                      <span>
+                        {pollinationStats.counts?.needsAttention > 0 ? 'Check Now' : 'All Good'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Plant Type Breakdown */}
-                {pollinationStats.plantTypeBreakdown && pollinationStats.plantTypeBreakdown.length > 0 && (
-                  <div className="plant-types-card">
-                    <h4>Plant Types</h4>
-                    <div className="plant-types-list">
-                      {pollinationStats.plantTypeBreakdown.slice(0, 5).map((type, index) => (
-                        <div key={type._id || index} className="plant-type-item">
-                          <span className="plant-type-name">{type._id || 'Unknown'}</span>
-                          <div className="plant-type-bar-container">
-                            <div 
-                              className="plant-type-bar"
-                              style={{ 
-                                width: `${(type.count / pollinationStats.counts?.total) * 100}%`,
-                                backgroundColor: index === 0 ? '#40916c' : index === 1 ? '#52b788' : '#95d5b2'
-                              }}
-                            ></div>
+                {pollinationStats.plantTypeBreakdown &&
+                  pollinationStats.plantTypeBreakdown.length > 0 && (
+                    <div className="plant-types-card">
+                      <h4>Plant Types</h4>
+                      <div className="plant-types-list">
+                        {pollinationStats.plantTypeBreakdown.slice(0, 5).map((type, index) => (
+                          <div key={type._id || index} className="plant-type-item">
+                            <span className="plant-type-name">{type._id || 'Unknown'}</span>
+                            <div className="plant-type-bar-container">
+                              <div
+                                className="plant-type-bar"
+                                style={{
+                                  width: `${(type.count / pollinationStats.counts?.total) * 100}%`,
+                                  backgroundColor:
+                                    index === 0 ? '#40916c' : index === 1 ? '#52b788' : '#95d5b2',
+                                }}
+                              ></div>
+                            </div>
+                            <span className="plant-type-count">{type.count}</span>
                           </div>
-                          <span className="plant-type-count">{type.count}</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Plants Needing Attention */}
                 {pollinationStats.needsAttention && pollinationStats.needsAttention.length > 0 && (
@@ -322,7 +350,9 @@ const UserDashboard = () => {
                             <span className="attention-name">{plant.name || 'Unnamed Plant'}</span>
                             <span className="attention-status">{plant.status}</span>
                           </div>
-                          <span className="attention-reason">{plant.attentionReason || 'Check required'}</span>
+                          <span className="attention-reason">
+                            {plant.attentionReason || 'Check required'}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -339,7 +369,9 @@ const UserDashboard = () => {
                     <Flower2 size={20} />
                     <h3>Flower Production Predictions</h3>
                   </div>
-                  <span className="prediction-count">{flowerPredictionStats.totalPredictions} predictions</span>
+                  <span className="prediction-count">
+                    {flowerPredictionStats.totalPredictions} predictions
+                  </span>
                 </div>
 
                 {/* Gender Distribution Donut */}
@@ -362,7 +394,9 @@ const UserDashboard = () => {
                         />
                       </svg>
                       <div className="chart-center">
-                        <span className="center-value">{flowerPredictionStats.averageConfidence}%</span>
+                        <span className="center-value">
+                          {flowerPredictionStats.averageConfidence}%
+                        </span>
                         <span className="center-label">Avg Confidence</span>
                       </div>
                     </div>
@@ -372,70 +406,89 @@ const UserDashboard = () => {
                       <div className="gender-icon">♂</div>
                       <div className="gender-info">
                         <span className="gender-label">Male Flowers</span>
-                        <span className="gender-value">{flowerPredictionStats.totalMaleFlowers?.average || 0}</span>
+                        <span className="gender-value">
+                          {flowerPredictionStats.totalMaleFlowers?.average || 0}
+                        </span>
                         <span className="gender-range">
-                          ({flowerPredictionStats.totalMaleFlowers?.min || 0}-{flowerPredictionStats.totalMaleFlowers?.max || 0} range)
+                          ({flowerPredictionStats.totalMaleFlowers?.min || 0}-
+                          {flowerPredictionStats.totalMaleFlowers?.max || 0} range)
                         </span>
                       </div>
-                      <span className="gender-percent">{flowerPredictionStats.genderRatio?.male || 50}%</span>
+                      <span className="gender-percent">
+                        {flowerPredictionStats.genderRatio?.male || 50}%
+                      </span>
                     </div>
                     <div className="gender-stat female">
                       <div className="gender-icon">♀</div>
                       <div className="gender-info">
                         <span className="gender-label">Female Flowers</span>
-                        <span className="gender-value">{flowerPredictionStats.totalFemaleFlowers?.average || 0}</span>
+                        <span className="gender-value">
+                          {flowerPredictionStats.totalFemaleFlowers?.average || 0}
+                        </span>
                         <span className="gender-range">
-                          ({flowerPredictionStats.totalFemaleFlowers?.min || 0}-{flowerPredictionStats.totalFemaleFlowers?.max || 0} range)
+                          ({flowerPredictionStats.totalFemaleFlowers?.min || 0}-
+                          {flowerPredictionStats.totalFemaleFlowers?.max || 0} range)
                         </span>
                       </div>
-                      <span className="gender-percent">{flowerPredictionStats.genderRatio?.female || 50}%</span>
+                      <span className="gender-percent">
+                        {flowerPredictionStats.genderRatio?.female || 50}%
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* By Plant Type */}
-                {flowerPredictionStats.byPlantType && Object.keys(flowerPredictionStats.byPlantType).length > 0 && (
-                  <div className="plant-type-predictions">
-                    <h4>By Plant Type</h4>
-                    <div className="plant-type-grid">
-                      {Object.entries(flowerPredictionStats.byPlantType).map(([type, data], index) => (
-                        <div key={type} className="plant-type-prediction-card">
-                          <span className="plant-type-label">{type.replace('_', ' ')}</span>
-                          <div className="prediction-details">
-                            <div className="detail-row">
-                              <span className="detail-label">Predictions:</span>
-                              <span className="detail-value">{data.count}</span>
+                {flowerPredictionStats.byPlantType &&
+                  Object.keys(flowerPredictionStats.byPlantType).length > 0 && (
+                    <div className="plant-type-predictions">
+                      <h4>By Plant Type</h4>
+                      <div className="plant-type-grid">
+                        {Object.entries(flowerPredictionStats.byPlantType).map(
+                          ([type, data], index) => (
+                            <div key={type} className="plant-type-prediction-card">
+                              <span className="plant-type-label">{type.replace('_', ' ')}</span>
+                              <div className="prediction-details">
+                                <div className="detail-row">
+                                  <span className="detail-label">Predictions:</span>
+                                  <span className="detail-value">{data.count}</span>
+                                </div>
+                                <div className="detail-row male">
+                                  <span className="detail-label">♂ Avg Male:</span>
+                                  <span className="detail-value">{data.avgMale}</span>
+                                </div>
+                                <div className="detail-row female">
+                                  <span className="detail-label">♀ Avg Female:</span>
+                                  <span className="detail-value">{data.avgFemale}</span>
+                                </div>
+                                <div className="detail-row">
+                                  <span className="detail-label">Confidence:</span>
+                                  <span className="detail-value">{data.avgConfidence}%</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="detail-row male">
-                              <span className="detail-label">♂ Avg Male:</span>
-                              <span className="detail-value">{data.avgMale}</span>
-                            </div>
-                            <div className="detail-row female">
-                              <span className="detail-label">♀ Avg Female:</span>
-                              <span className="detail-value">{data.avgFemale}</span>
-                            </div>
-                            <div className="detail-row">
-                              <span className="detail-label">Confidence:</span>
-                              <span className="detail-value">{data.avgConfidence}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Weekly Stats */}
                 <div className="weekly-prediction-stats">
                   <div className="weekly-stat">
                     <span className="weekly-label">This Week</span>
-                    <span className="weekly-value">{flowerPredictionStats.weeklyStats?.thisWeek || 0}</span>
+                    <span className="weekly-value">
+                      {flowerPredictionStats.weeklyStats?.thisWeek || 0}
+                    </span>
                   </div>
                   <div className="weekly-stat">
                     <span className="weekly-label">Last Week</span>
-                    <span className="weekly-value">{flowerPredictionStats.weeklyStats?.lastWeek || 0}</span>
+                    <span className="weekly-value">
+                      {flowerPredictionStats.weeklyStats?.lastWeek || 0}
+                    </span>
                   </div>
-                  <div className={`weekly-stat change ${(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? 'positive' : 'negative'}`}>
+                  <div
+                    className={`weekly-stat change ${(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? 'positive' : 'negative'}`}
+                  >
                     <span className="weekly-label">Change</span>
                     <span className="weekly-value">
                       {(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? '+' : ''}
@@ -485,12 +538,16 @@ const UserDashboard = () => {
                       <div className="legend-item">
                         <span className="legend-color male"></span>
                         <span className="legend-label">Male</span>
-                        <span className="legend-value">{analytics.distributions?.gender?.male || 0}</span>
+                        <span className="legend-value">
+                          {analytics.distributions?.gender?.male || 0}
+                        </span>
                       </div>
                       <div className="legend-item">
                         <span className="legend-color female"></span>
                         <span className="legend-label">Female</span>
-                        <span className="legend-value">{analytics.distributions?.gender?.female || 0}</span>
+                        <span className="legend-value">
+                          {analytics.distributions?.gender?.female || 0}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -506,7 +563,8 @@ const UserDashboard = () => {
                   </div>
                 </div>
                 <div className="card-content">
-                  {analytics.distributions?.variety && Object.keys(analytics.distributions.variety).length > 0 ? (
+                  {analytics.distributions?.variety &&
+                  Object.keys(analytics.distributions.variety).length > 0 ? (
                     <div className="variety-list">
                       {Object.entries(analytics.distributions.variety)
                         .sort((a, b) => b[1] - a[1])
@@ -518,11 +576,12 @@ const UserDashboard = () => {
                               <span className="variety-name">{variety}</span>
                             </div>
                             <div className="variety-bar-container">
-                              <div 
+                              <div
                                 className="variety-bar"
-                                style={{ 
+                                style={{
                                   width: `${(count / analytics.summary?.totalScans) * 100}%`,
-                                  backgroundColor: index === 0 ? '#40916c' : index === 1 ? '#52b788' : '#95d5b2'
+                                  backgroundColor:
+                                    index === 0 ? '#40916c' : index === 1 ? '#52b788' : '#95d5b2',
                                 }}
                               ></div>
                             </div>
@@ -552,36 +611,48 @@ const UserDashboard = () => {
                     <div className="confidence-item">
                       <div className="confidence-header">
                         <span className="confidence-label">High (85%+)</span>
-                        <span className="confidence-count">{analytics.distributions?.confidence?.high || 0}</span>
+                        <span className="confidence-count">
+                          {analytics.distributions?.confidence?.high || 0}
+                        </span>
                       </div>
                       <div className="confidence-bar-bg">
-                        <div 
+                        <div
                           className="confidence-bar high"
-                          style={{ width: `${((analytics.distributions?.confidence?.high || 0) / (analytics.summary?.totalScans || 1)) * 100}%` }}
+                          style={{
+                            width: `${((analytics.distributions?.confidence?.high || 0) / (analytics.summary?.totalScans || 1)) * 100}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
                     <div className="confidence-item">
                       <div className="confidence-header">
                         <span className="confidence-label">Medium (70-84%)</span>
-                        <span className="confidence-count">{analytics.distributions?.confidence?.medium || 0}</span>
+                        <span className="confidence-count">
+                          {analytics.distributions?.confidence?.medium || 0}
+                        </span>
                       </div>
                       <div className="confidence-bar-bg">
-                        <div 
+                        <div
                           className="confidence-bar medium"
-                          style={{ width: `${((analytics.distributions?.confidence?.medium || 0) / (analytics.summary?.totalScans || 1)) * 100}%` }}
+                          style={{
+                            width: `${((analytics.distributions?.confidence?.medium || 0) / (analytics.summary?.totalScans || 1)) * 100}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
                     <div className="confidence-item">
                       <div className="confidence-header">
                         <span className="confidence-label">Low (&lt;70%)</span>
-                        <span className="confidence-count">{analytics.distributions?.confidence?.low || 0}</span>
+                        <span className="confidence-count">
+                          {analytics.distributions?.confidence?.low || 0}
+                        </span>
                       </div>
                       <div className="confidence-bar-bg">
-                        <div 
+                        <div
                           className="confidence-bar low"
-                          style={{ width: `${((analytics.distributions?.confidence?.low || 0) / (analytics.summary?.totalScans || 1)) * 100}%` }}
+                          style={{
+                            width: `${((analytics.distributions?.confidence?.low || 0) / (analytics.summary?.totalScans || 1)) * 100}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -600,19 +671,27 @@ const UserDashboard = () => {
                 <div className="card-content">
                   <div className="validation-grid">
                     <div className="validation-item tflite">
-                      <span className="validation-count">{analytics.distributions?.validation?.tflite_only || 0}</span>
+                      <span className="validation-count">
+                        {analytics.distributions?.validation?.tflite_only || 0}
+                      </span>
                       <span className="validation-label">TFLite Only</span>
                     </div>
                     <div className="validation-item validated">
-                      <span className="validation-count">{analytics.distributions?.validation?.validated || 0}</span>
+                      <span className="validation-count">
+                        {analytics.distributions?.validation?.validated || 0}
+                      </span>
                       <span className="validation-label">Validated</span>
                     </div>
                     <div className="validation-item manual">
-                      <span className="validation-count">{analytics.distributions?.validation?.manual_override || 0}</span>
+                      <span className="validation-count">
+                        {analytics.distributions?.validation?.manual_override || 0}
+                      </span>
                       <span className="validation-label">Manual</span>
                     </div>
                     <div className="validation-item conflict">
-                      <span className="validation-count">{analytics.distributions?.validation?.conflict || 0}</span>
+                      <span className="validation-count">
+                        {analytics.distributions?.validation?.conflict || 0}
+                      </span>
                       <span className="validation-label">Conflict</span>
                     </div>
                   </div>

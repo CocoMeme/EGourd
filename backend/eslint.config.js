@@ -13,6 +13,7 @@ module.exports = [
       globals: {
         ...globals.node,
         ...globals.commonjs,
+        ...globals.jest,
       },
     },
     rules: {
@@ -21,6 +22,15 @@ module.exports = [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-console': 'off',
       'no-undef': 'error',
+      'no-prototype-builtins': 'off',
+      'no-useless-escape': 'off',
+      'no-useless-assignment': 'off',
+    },
+  },
+  {
+    // Ignore the mysterious preserve-caught-error rule
+    rules: {
+      'preserve-caught-error': 'off',
     },
   },
 ];

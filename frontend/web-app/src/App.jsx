@@ -38,7 +38,7 @@ function App() {
             {/* ==================== ADMIN ROUTES ==================== */}
             {/* Admin Login - accessible at /admin/login */}
             <Route path="/admin/login" element={<Login />} />
-            
+
             {/* Redirect /login to user login */}
             <Route path="/login" element={<Navigate to="/user/login" replace />} />
 
@@ -90,7 +90,7 @@ function App() {
             {/* ==================== USER ROUTES ==================== */}
             {/* Landing Page - Public (for non-logged in users) */}
             <Route path="/" element={<LandingPage />} />
-            
+
             {/* User Authentication - Public */}
             <Route path="/user/login" element={<UserLogin />} />
             <Route path="/user/register" element={<UserRegister />} />
