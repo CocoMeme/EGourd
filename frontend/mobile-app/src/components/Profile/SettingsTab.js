@@ -25,6 +25,8 @@ import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { ProfileItem, ProfileSection } from './shared';
 import { buildConfig } from '../../config/build';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [loading, setLoading] = useState(false);
     const [cacheSize, setCacheSize] = useState(0);
@@ -41,6 +43,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [supportLoading, setSupportLoading] = useState(false);
 
     const SUPPORT_CATEGORIES = ['Bug Report', 'Question', 'Feature Request', 'Other'];
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         calculateStorageUsage();
@@ -510,7 +513,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                     />
 
                                     <TouchableOpacity
-                                        style={[styles.submitButton, supportLoading && styles.disabledButton]}
+                                        style={[styles.submitButton, supportLoading && styles.disabledButton, { marginBottom: insets.bottom || 20 }]}
                                         onPress={handleSubmitSupport}
                                         disabled={supportLoading}
                                     >
@@ -662,6 +665,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: theme.spacing.xl,
+        paddingBottom: 0, // Let scrollview or button handle bottom spacing
         maxHeight: '80%',
     },
     modalHeader: {
@@ -730,7 +734,7 @@ const styles = StyleSheet.create({
         padding: 16,
         alignItems: 'center',
         marginTop: 24,
-        marginBottom: Platform.OS === 'ios' ? 20 : 0,
+        marginBottom: 20, // Default, overridden by insets
     },
     submitButtonText: {
         color: '#FFFFFF',
