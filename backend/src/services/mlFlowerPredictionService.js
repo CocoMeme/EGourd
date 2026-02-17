@@ -80,7 +80,7 @@ class MLFlowerPredictionService {
           }
 
           resolve(result);
-        } catch (parseError) {
+        } catch {
           console.error('Failed to parse prediction output:', outputData);
           reject(new Error('Failed to parse prediction result'));
         }
@@ -112,7 +112,7 @@ class MLFlowerPredictionService {
         fs.existsSync(path.join(modelsDir, 'female_flower_model.joblib')) &&
         fs.existsSync(path.join(modelsDir, 'encoders.joblib'))
       );
-    } catch (error) {
+    } catch {
       return false;
     }
   }

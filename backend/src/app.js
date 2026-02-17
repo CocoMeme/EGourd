@@ -85,12 +85,11 @@ class App {
         res.send = function (body) {
           const duration = Date.now() - start;
           try {
-            const parsed = typeof body === 'string' ? JSON.parse(body) : body;
-            console.log(
-              `   ✅ Response [${res.statusCode}] (${duration}ms):`,
-              parsed.success !== undefined ? `success: ${parsed.success}` : 'sent'
-            );
-          } catch (e) {
+            if (typeof body === 'string') {
+              JSON.parse(body); // Validate JSON but don't store if unused
+            }
+            console.log(`   ✅ Response [${res.statusCode}] (${duration}ms)`);
+          } catch {
             console.log(`   ✅ Response [${res.statusCode}] (${duration}ms)`);
           }
           return originalSend.call(this, body);
@@ -228,7 +227,8 @@ class App {
 
   configureErrorHandling() {
     // Global error handling middleware
-    this.app.use((err, req, res, next) => {
+    // Global error handling middleware
+    this.app.use((err, req, res, _next) => {
       // Log error
       console.error('❌ Error:', err.stack);
 

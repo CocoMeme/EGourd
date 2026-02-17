@@ -7,7 +7,7 @@ export { default as EducationalScreen } from './HomeScreens/EducationalScreen';
 
 // Scan Screens - Flower
 export { CameraScreen } from './ScanScreens/CameraScreen';
-export { CameraScreenTest } from './ScanScreens/CameraScreen.test'; // Developer Mode version
+
 export { FlowerPredictionScreen } from './ScanScreens/FlowerPredictionScreen';
 export { FlowerResultsScreen } from './ScanScreens/FlowerResultsScreen';
 

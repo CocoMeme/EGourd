@@ -3,7 +3,7 @@ const { generateMessage, getQuickSuggestions, isAvailable } = require('../servic
 /**
  * Send message to chatbot and get AI response
  */
-async function postMessage(req, res, next) {
+async function postMessage(req, res) {
   try {
     const { message, conversationHistory = [] } = req.body;
 
@@ -79,7 +79,7 @@ async function getStatus(req, res) {
         status: available ? 'online' : 'offline',
       },
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       success: false,
       message: 'Failed to check status',
