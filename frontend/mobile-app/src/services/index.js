@@ -12,3 +12,4 @@ export { default as weatherService, getWeatherForDate, getSeasonFromDate, DEFAUL
 export { default as analyticsService } from './analyticsService';
 export { guestStorageService } from './guestStorageService';
 export { guestMigrationService } from './guestMigrationService';
+export { supportService } from './supportService';

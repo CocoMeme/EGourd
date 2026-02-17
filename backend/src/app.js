@@ -192,6 +192,7 @@ class App {
           forum: '/api/forum',
           chatbot: '/api/chatbot',
           admin: '/api/admin',
+          support: '/api/support',
         },
         documentation: '/api/docs',
       });
@@ -209,6 +210,7 @@ class App {
     this.app.use('/api/admin', require('./routes/admin'));
     this.app.use('/api/scans', require('./routes/scan'));
     this.app.use('/api/uploads', require('./routes/uploads'));
+    this.app.use('/api/support', require('./routes/support'));
     // TODO: Add these when other route modules are created
     // this.app.use('/api/users', require('./routes/users'));
 

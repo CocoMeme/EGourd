@@ -7,15 +7,23 @@ import {
     Alert,
     ScrollView,
     ActivityIndicator,
+    Modal,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
-import { authService } from '../../services';
+import { authService, supportService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { ProfileItem, ProfileSection } from './shared';
+import { buildConfig } from '../../config/build';
 
 export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [loading, setLoading] = useState(false);
@@ -24,6 +32,15 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
+
+    // Support Modal State
+    const [supportModalVisible, setSupportModalVisible] = useState(false);
+    const [supportSubject, setSupportSubject] = useState('');
+    const [supportMessage, setSupportMessage] = useState('');
+    const [supportCategory, setSupportCategory] = useState('Question');
+    const [supportLoading, setSupportLoading] = useState(false);
+
+    const SUPPORT_CATEGORIES = ['Bug Report', 'Question', 'Feature Request', 'Other'];
 
     useEffect(() => {
         calculateStorageUsage();
@@ -225,13 +242,61 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
         },
     ];
 
+    const handleOpenSupport = () => {
+        setSupportSubject('');
+        setSupportMessage('');
+        setSupportCategory('Question');
+        setSupportModalVisible(true);
+    };
+
+    const handleCloseSupport = () => {
+        setSupportModalVisible(false);
+    };
+
+    const handleSubmitSupport = async () => {
+        if (!supportSubject.trim()) {
+            Alert.alert('Error', 'Please enter a subject');
+            return;
+        }
+        if (!supportMessage.trim()) {
+            Alert.alert('Error', 'Please enter a message');
+            return;
+        }
+
+        try {
+            setSupportLoading(true);
+            const user = await authService.getCurrentUser();
+            // If user is guest/not logged in, we might want to ask for email, but for now we'll send as anonymous or guest
+            // The backend handles auth, so if they are guest (which is a valid auth state in this app), it works.
+
+            await supportService.submitSupportRequest(
+                supportSubject,
+                supportMessage,
+                supportCategory
+            );
+
+            setSupportModalVisible(false);
+            Alert.alert(
+                'Request Sent',
+                'Thank you for your feedback! We have received your support request and will get back to you shortly.',
+                [{ text: 'OK' }]
+            );
+        } catch (error) {
+            console.error('Support submission error:', error);
+            Alert.alert('Error', 'Failed to send support request. Please try again later.');
+        } finally {
+            setSupportLoading(false);
+        }
+    };
+
     const updateDate = getUpdateDate();
     const aboutItems = [
         {
             id: 'version',
             icon: 'information-circle-outline',
             title: 'App Version',
-            value: 'v1.12.07',
+            value: Constants.nativeAppVersion ? `v${Constants.nativeAppVersion}` : 'Development',
+            description: `Built ${buildConfig.buildDate}`,
         },
         {
             id: 'codeVersion',
@@ -245,7 +310,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
             icon: 'help-circle-outline',
             title: 'Help & Support',
             description: 'Find answers and contact our team',
-            action: () => Alert.alert('Support', 'Support resources will be available here soon.'),
+            action: handleOpenSupport,
         },
         {
             id: 'model',
@@ -304,7 +369,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         isLast={true}
                     />
                     <TouchableOpacity
-                        style={[styles.actionButton, loading && { opacity: 0.5 } ]}
+                        style={[styles.actionButton, loading && { opacity: 0.5 }]}
                         onPress={handleClearCache}
                         disabled={loading}
                     >
@@ -379,6 +444,88 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                     </TouchableOpacity>
                 )}
             </ScrollView>
+
+            {/* Support Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={supportModalVisible}
+                onRequestClose={handleCloseSupport}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={styles.modalKeyboardAvoid}
+                        >
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Contact Support</Text>
+                                    <TouchableOpacity onPress={handleCloseSupport} style={styles.closeButton}>
+                                        <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    <Text style={styles.inputLabel}>Category</Text>
+                                    <View style={styles.categoryContainer}>
+                                        {SUPPORT_CATEGORIES.map((cat) => (
+                                            <TouchableOpacity
+                                                key={cat}
+                                                style={[
+                                                    styles.categoryChip,
+                                                    supportCategory === cat && styles.categoryChipSelected
+                                                ]}
+                                                onPress={() => setSupportCategory(cat)}
+                                            >
+                                                <Text style={[
+                                                    styles.categoryChipText,
+                                                    supportCategory === cat && styles.categoryChipTextSelected
+                                                ]}>
+                                                    {cat}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+
+                                    <Text style={styles.inputLabel}>Subject</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="What is this about?"
+                                        placeholderTextColor={theme.colors.text.hint}
+                                        value={supportSubject}
+                                        onChangeText={setSupportSubject}
+                                    />
+
+                                    <Text style={styles.inputLabel}>Message</Text>
+                                    <TextInput
+                                        style={[styles.input, styles.textArea]}
+                                        placeholder="Describe your issue or question..."
+                                        placeholderTextColor={theme.colors.text.hint}
+                                        multiline
+                                        numberOfLines={5}
+                                        textAlignVertical="top"
+                                        value={supportMessage}
+                                        onChangeText={setSupportMessage}
+                                    />
+
+                                    <TouchableOpacity
+                                        style={[styles.submitButton, supportLoading && styles.disabledButton]}
+                                        onPress={handleSubmitSupport}
+                                        disabled={supportLoading}
+                                    >
+                                        {supportLoading ? (
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                        ) : (
+                                            <Text style={styles.submitButtonText}>Send Message</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </ScrollView>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </View>
     );
 };
@@ -500,5 +647,97 @@ const styles = StyleSheet.create({
     boldValue: {
         fontFamily: theme.fonts.bold,
         color: theme.colors.text.primary,
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalKeyboardAvoid: {
+        width: '100%',
+    },
+    modalContent: {
+        backgroundColor: theme.colors.background.primary,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: theme.spacing.xl,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: theme.fonts.bold,
+        color: theme.colors.text.primary,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontFamily: theme.fonts.medium,
+        color: theme.colors.text.secondary,
+        marginBottom: 8,
+        marginTop: 12,
+    },
+    input: {
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 16,
+        fontFamily: theme.fonts.regular,
+        color: theme.colors.text.primary,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    textArea: {
+        minHeight: 120,
+        paddingTop: 12,
+    },
+    categoryContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 8,
+    },
+    categoryChip: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: theme.colors.background.secondary,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    categoryChipSelected: {
+        backgroundColor: theme.colors.primary,
+    },
+    categoryChipText: {
+        fontSize: 14,
+        fontFamily: theme.fonts.medium,
+        color: theme.colors.text.secondary,
+    },
+    categoryChipTextSelected: {
+        color: '#FFFFFF',
+    },
+    submitButton: {
+        backgroundColor: theme.colors.primary,
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'center',
+        marginTop: 24,
+        marginBottom: Platform.OS === 'ios' ? 20 : 0,
+    },
+    submitButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontFamily: theme.fonts.bold,
+    },
+    disabledButton: {
+        opacity: 0.7,
     },
 });

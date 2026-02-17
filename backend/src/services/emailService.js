@@ -70,6 +70,7 @@ class EmailService {
           email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@egourd.com',
         },
         to: [{ email: mailOptions.to }],
+        ...(mailOptions.replyTo ? { replyTo: { email: mailOptions.replyTo } } : {}),
         subject: mailOptions.subject,
         htmlContent: mailOptions.html,
         textContent: mailOptions.text,
@@ -455,6 +456,124 @@ With EGourd, you can:
 Get started by taking your first scan!
 
 © ${new Date().getFullYear()} EGourd. All rights reserved.
+    `;
+  }
+
+  /**
+   * Send a support/help request email to the team
+   * @param {string} senderEmail - The user's email address
+   * @param {string} senderName - The user's display name
+   * @param {string} subject - Support request subject
+   * @param {string} message - Support request message body
+   * @param {string} category - Category (e.g., 'Bug Report', 'Question', 'Feature Request', 'Other')
+   */
+  async sendSupportEmail(senderEmail, senderName, subject, message, category = 'Other') {
+    if (!this.initialized) {
+      throw new Error(
+        'Email service not initialized. Check BREVO_API_KEY or EMAIL_USER/EMAIL_PASS in .env'
+      );
+    }
+
+    const supportEmail = process.env.SUPPORT_EMAIL || 'egourd.app@gmail.com';
+
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || 'eGourd'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      to: supportEmail,
+      replyTo: senderEmail,
+      subject: `[${category}] ${subject}`,
+      html: this.getSupportEmailTemplate(senderName, senderEmail, subject, message, category),
+      text: this.getSupportEmailText(senderName, senderEmail, subject, message, category),
+    };
+
+    try {
+      console.log(
+        `[EmailService] Sending support email from ${senderEmail} (using ${this.useHttpApi ? 'HTTP API' : 'SMTP'})`
+      );
+      const info = await this.sendMail(mailOptions);
+      console.log(`[EmailService] Support email sent. MessageID: ${info.messageId}`);
+
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error) {
+      console.error('[EmailService] Failed to send support email:', error);
+      throw new Error('Failed to send support email. Please try again later.');
+    }
+  }
+
+  /**
+   * HTML template for support email
+   */
+  getSupportEmailTemplate(senderName, senderEmail, subject, message, category) {
+    const escapedMessage = message.replace(/\n/g, '<br>');
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Support Request</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+          .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #4CAF50; }
+          .content { padding: 30px 20px; }
+          .meta-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+          .meta-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+          .meta-table td:first-child { font-weight: bold; color: #555; width: 120px; }
+          .category-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; color: #fff; background-color: #4CAF50; }
+          .message-box { background-color: #f9f9f9; border-left: 4px solid #4CAF50; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0; white-space: pre-wrap; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #ddd; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="https://res.cloudinary.com/dflsh74ta/image/upload/v1769076175/gourdvision-name-high-resolution-logo-transparent_bhihll.png" alt="GourdVision" style="max-width: 180px; height: auto;" />
+            <h2 style="color: #4CAF50; margin-top: 10px;">Support Request</h2>
+          </div>
+          <div class="content">
+            <table class="meta-table">
+              <tr><td>From</td><td>${senderName}</td></tr>
+              <tr><td>Email</td><td><a href="mailto:${senderEmail}">${senderEmail}</a></td></tr>
+              <tr><td>Category</td><td><span class="category-badge">${category}</span></td></tr>
+              <tr><td>Subject</td><td><strong>${subject}</strong></td></tr>
+            </table>
+            <h3>Message</h3>
+            <div class="message-box">${escapedMessage}</div>
+            <p style="color: #888; font-size: 13px;">You can reply directly to this email to respond to the user.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} EGourd. All rights reserved.</p>
+            <p>This support request was submitted from the EGourd mobile app.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Plain text version of support email
+   */
+  getSupportEmailText(senderName, senderEmail, subject, message, category) {
+    return `
+EGOURD SUPPORT REQUEST
+======================
+
+From: ${senderName}
+Email: ${senderEmail}
+Category: ${category}
+Subject: ${subject}
+
+Message:
+--------
+${message}
+
+---
+You can reply directly to this email to respond to the user.
+(c) ${new Date().getFullYear()} EGourd. All rights reserved.
     `;
   }
 }
