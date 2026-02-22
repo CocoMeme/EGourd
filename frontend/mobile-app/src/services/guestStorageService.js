@@ -164,7 +164,6 @@ class GuestStorageService {
     const plant = {
       _id: generateLocalId(),
       gourdType: plantData.gourdType,
-      variety: plantData.variety || this._getDefaultVariety(plantData.gourdType),
       plantName: plantData.plantName,
       datePlanted: plantData.datePlanted || now,
       notes: plantData.notes || '',
@@ -497,13 +496,8 @@ class GuestStorageService {
   // ─── Utility ────────────────────────────────────────────────
 
   _getDefaultVariety(gourdType) {
-    const map = {
-      bitter_gourd: 'Ampalaya Bilog',
-      bottle_gourd: 'Upo (Smooth)',
-      sponge_gourd: 'Patola',
-      cucumber: 'Cucumber',
-    };
-    return map[gourdType] || gourdType;
+    // Returns gourd type directly (variety is now generalized)
+    return gourdType;
   }
 
   _getGourdDaysToResult(gourdType) {

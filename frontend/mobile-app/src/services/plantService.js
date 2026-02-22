@@ -440,6 +440,20 @@ class PlantService {
   }
 
   /**
+   * Get seasonal pollination statistics
+   * Returns monthly successful pollination data for each gourd type
+   */
+  async getSeasonalPollinationStats() {
+    try {
+      const response = await api.get(`${this.baseURL}/seasonal/pollination-stats`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Get seasonal stats error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Get full lifecycle prediction
    */
   async getLifecyclePrediction(plantId) {

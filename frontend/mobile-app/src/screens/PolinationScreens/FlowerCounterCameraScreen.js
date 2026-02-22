@@ -25,8 +25,24 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 const SCAN_INTERVAL = 200; // 200ms between predictions
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Gourd type mapping from TM labels to plant gourd types
+const GOURD_TYPE_MAPPING = {
+  'Ampalaya': 'bitter_gourd',
+  'Patola': 'sponge_gourd',
+  'Upo': 'bottle_gourd',
+  'Cucumber': 'cucumber',
+};
+
+// Reverse mapping for display
+const GOURD_TYPE_DISPLAY = {
+  bitter_gourd: 'Ampalaya',
+  sponge_gourd: 'Patola',
+  bottle_gourd: 'Upo',
+  cucumber: 'Cucumber',
+};
+
 export const FlowerCounterCameraScreen = ({ navigation, route }) => {
-  const { onFlowerDetected } = route.params || {};
+  const { onFlowerDetected, plantGourdType, plantName } = route.params || {};
   
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
@@ -123,7 +139,7 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
    */
   const getGourdTypeFromLabel = (label) => {
     if (!label) return null;
-    if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
+    if (label.includes('Ampalaya')) return 'Ampalaya';
     if (label.includes('Patola')) return 'Patola';
     if (label.includes('Upo')) return 'Upo';
     if (label.includes('Cucumber')) return 'Cucumber';
@@ -248,6 +264,21 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
 
     const { gender, gourdType } = currentPrediction;
     
+    // Validate gourd type matches the plant (if plantGourdType is provided)
+    if (plantGourdType && gourdType) {
+      const detectedGourdType = GOURD_TYPE_MAPPING[gourdType] || gourdType?.toLowerCase()?.replace(' ', '_');
+      
+      if (detectedGourdType && detectedGourdType !== plantGourdType) {
+        const expectedName = GOURD_TYPE_DISPLAY[plantGourdType] || plantGourdType;
+        Alert.alert(
+          'Wrong Flower Type',
+          `This flower appears to be a ${gourdType} flower, but your plant is a ${expectedName}.\n\nPlease only count flowers from this plant.`,
+          [{ text: 'Try Again' }]
+        );
+        return;
+      }
+    }
+    
     // Stop scanning
     stopScanning();
 
@@ -291,6 +322,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
+  // Get expected plant display name
+  const expectedPlantName = plantName || (plantGourdType ? GOURD_TYPE_DISPLAY[plantGourdType] : null);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -302,6 +336,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
         centerComponent={() => (
           <View style={styles.headerBadge}>
             <Text style={styles.headerTitle}>🌸 Flower Counter</Text>
+            {expectedPlantName && (
+              <Text style={styles.headerSubtitle}>For: {expectedPlantName}</Text>
+            )}
           </View>
         )}
         rightComponent={() => (
@@ -342,13 +379,35 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
           </View>
         ) : (
           <View style={styles.detectionResult}>
-            {/* Gourd Type */}
-            {currentPrediction.gourdType && (
-              <View style={styles.gourdTypeRow}>
-                <Ionicons name="leaf" size={20} color="#4CAF50" />
-                <Text style={styles.gourdTypeText}>{currentPrediction.gourdType}</Text>
-              </View>
-            )}
+            {/* Gourd Type with Match Indicator */}
+            {currentPrediction.gourdType && (() => {
+              const detectedType = GOURD_TYPE_MAPPING[currentPrediction.gourdType];
+              const isMatch = !plantGourdType || detectedType === plantGourdType;
+              
+              return (
+                <View style={[
+                  styles.gourdTypeRow,
+                  !isMatch && styles.gourdTypeMismatch
+                ]}>
+                  <Ionicons 
+                    name={isMatch ? "leaf" : "warning"} 
+                    size={20} 
+                    color={isMatch ? "#4CAF50" : "#FF9800"} 
+                  />
+                  <Text style={[
+                    styles.gourdTypeText,
+                    !isMatch && styles.gourdTypeTextMismatch
+                  ]}>
+                    {currentPrediction.gourdType}
+                  </Text>
+                  {!isMatch && plantGourdType && (
+                    <Text style={styles.mismatchText}>
+                      (Expected: {GOURD_TYPE_DISPLAY[plantGourdType]})
+                    </Text>
+                  )}
+                </View>
+              );
+            })()}
 
             {/* Gender Detection */}
             <View style={styles.genderContainer}>
@@ -460,13 +519,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerBadge: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
   },
   headerTitle: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 2,
   },
   flipButton: {
     padding: 8,
@@ -534,12 +598,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     marginBottom: 20,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  gourdTypeMismatch: {
+    backgroundColor: 'rgba(255, 152, 0, 0.2)',
   },
   gourdTypeText: {
     color: '#4CAF50',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  gourdTypeTextMismatch: {
+    color: '#FF9800',
+  },
+  mismatchText: {
+    color: '#FF9800',
+    fontSize: 12,
+    marginLeft: 8,
+    fontStyle: 'italic',
   },
   genderContainer: {
     alignItems: 'center',

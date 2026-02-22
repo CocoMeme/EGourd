@@ -246,7 +246,6 @@ const updatePlant = async (req, res) => {
       try {
         const predictionData = {
           gourdType: plant.gourdType,
-          variety: plant.variety,
           datePlanted: plant.datePlanted,
           ...plant.environment.toObject(),
           ...plant.care.toObject(),
@@ -428,7 +427,6 @@ const predictFlowering = async (req, res) => {
 
     const predictionData = {
       gourdType: plant.gourdType,
-      variety: plant.variety,
       datePlanted: plant.datePlanted,
       ...plant.environment.toObject(),
       ...plant.care.toObject(),
@@ -577,7 +575,6 @@ const predictPollinationSuccess = async (req, res) => {
 
     const predictionData = {
       gourdType: plant.gourdType,
-      variety: plant.variety,
       ...plant.environment.toObject(),
       plantHealth: plant.plantHealth,
       vineLength: plant.vineLength || 200,
@@ -643,7 +640,6 @@ const addPollination = async (req, res) => {
     try {
       const predictionData = {
         gourdType: plant.gourdType,
-        variety: plant.variety,
         ...plant.environment.toObject(),
         plantHealth: plant.plantHealth,
         vineLength: plant.vineLength || 200,
@@ -734,7 +730,6 @@ const recordPollinationResult = async (req, res) => {
       try {
         const predictionData = {
           gourdType: plant.gourdType,
-          variety: plant.variety,
           ...plant.environment.toObject(),
           ...plant.care.toObject(),
           plantHealth: plant.plantHealth,
@@ -939,7 +934,6 @@ const predictFruitMaturity = async (req, res) => {
 
     const predictionData = {
       gourdType: plant.gourdType,
-      variety: plant.variety,
       ...plant.environment.toObject(),
       ...plant.care.toObject(),
       plantHealth: plant.plantHealth,
@@ -1126,8 +1120,6 @@ const getLifecyclePrediction = async (req, res) => {
     const predictionData = {
       gourdType: plant.gourdType,
       gourd_type: plant.gourdType,
-      variety: plant.variety,
-      variety_name: plant.variety,
       datePlanted: plant.datePlanted,
       planting_date: plant.datePlanted
         ? plant.datePlanted.toISOString().split('T')[0]
@@ -1168,6 +1160,17 @@ const getLifecyclePrediction = async (req, res) => {
 
     const prediction = await pollinationMLService.getLifecyclePredictions(predictionData);
 
+    // Update plant's flowering field with predicted dates for consistency
+    if (prediction.summary) {
+      plant.flowering.predictedDaysToFlower = prediction.summary.plantingToFlowering;
+      plant.flowering.predictedFloweringDate = new Date(prediction.summary.expectedFloweringDate);
+      plant.flowering.expectedFloweringDate = new Date(prediction.summary.expectedFloweringDate);
+      plant.flowering.expectedHarvestDate = new Date(prediction.summary.expectedHarvestDate);
+      plant.flowering.floweringPredictionConfidence = prediction.flowering?.confidence;
+      plant.flowering.floweringPredictionDate = new Date();
+      await plant.save();
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -1186,6 +1189,99 @@ const getLifecyclePrediction = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error getting lifecycle prediction',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get seasonal pollination statistics (by month and gourd type)
+ * @route   GET /api/plants/seasonal/pollination-stats
+ * @access  Public (aggregates all users' data for community insights)
+ */
+const getSeasonalPollinationStats = async (req, res) => {
+  try {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Aggregate successful pollinations by month and gourd type
+    const stats = await Plant.aggregate([
+      // Unwind pollinations array
+      { $unwind: '$pollinations' },
+      // Filter only successful/partial pollinations
+      { 
+        $match: { 
+          'pollinations.status': { $in: ['success', 'partial'] }
+        }
+      },
+      // Group by month and gourd type
+      {
+        $group: {
+          _id: {
+            month: { $month: '$pollinations.date' },
+            gourdType: '$gourdType'
+          },
+          successCount: {
+            $sum: { $ifNull: ['$pollinations.actualSuccessfulCount', 1] }
+          },
+          pollinationCount: { $sum: 1 }
+        }
+      },
+      // Sort by month
+      { $sort: { '_id.month': 1 } }
+    ]);
+
+    // Transform into a more usable format
+    const gourdTypes = ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber'];
+    const gourdLabels = {
+      bitter_gourd: 'Ampalaya',
+      bottle_gourd: 'Upo',
+      sponge_gourd: 'Patola',
+      cucumber: 'Pipino'
+    };
+    
+    // Initialize data structure
+    const seasonalData = {
+      months: monthNames,
+      gourdTypes: gourdTypes.map(type => ({
+        type,
+        label: gourdLabels[type],
+        data: new Array(12).fill(0)
+      }))
+    };
+
+    // Fill in the data
+    stats.forEach(stat => {
+      const monthIndex = stat._id.month - 1; // MongoDB months are 1-indexed
+      const gourdType = stat._id.gourdType;
+      const gourdData = seasonalData.gourdTypes.find(g => g.type === gourdType);
+      if (gourdData) {
+        gourdData.data[monthIndex] = stat.successCount;
+      }
+    });
+
+    // Calculate peak months for each gourd
+    seasonalData.gourdTypes.forEach(gourd => {
+      const maxValue = Math.max(...gourd.data);
+      if (maxValue > 0) {
+        gourd.peakMonths = gourd.data
+          .map((val, idx) => ({ month: monthNames[idx], value: val }))
+          .filter(item => item.value >= maxValue * 0.7) // 70% of peak
+          .map(item => item.month);
+      } else {
+        gourd.peakMonths = [];
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: seasonalData,
+      message: 'Seasonal pollination statistics retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get seasonal pollination stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching seasonal pollination statistics',
       error: error.message,
     });
   }
@@ -1224,4 +1320,5 @@ module.exports = {
   getPlantsNeedingAttention,
   getGourdTypes,
   getLifecyclePrediction,
+  getSeasonalPollinationStats,
 };

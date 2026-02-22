@@ -22,5 +22,6 @@ export {
   PlantCard,
   PlantForm,
   ImageCapture,
-  PlantFilter
+  PlantFilter,
+  SeasonalInsightsCard
 } from './PollinationComponents';

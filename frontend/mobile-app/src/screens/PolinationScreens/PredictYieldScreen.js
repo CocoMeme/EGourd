@@ -22,7 +22,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
   const [selectedPlantId, setSelectedPlantId] = useState('');
 
   const [formData, setFormData] = useState({
-    plantType: 'ampalaya_bilog',
+    plantType: 'bitter_gourd',
     plantAgeDays: '',
     vineLengthCm: '',
     nodeCount: '',
@@ -178,9 +178,9 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
   const getPlantTypeLabel = (type) => {
     const labels = {
-      ampalaya_bilog: 'Ampalaya Bilog',
-      upo_smooth: 'Upo Smooth',
-      patola: 'Patola',
+      bitter_gourd: 'Ampalaya',
+      bottle_gourd: 'Upo',
+      sponge_gourd: 'Patola',
       cucumber: 'Cucumber'
     };
     return labels[type] || type;
@@ -289,9 +289,9 @@ const PredictYieldScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!useExistingPlant || !selectedPlantId}
               >
-                <Picker.Item label="Ampalaya Bilog" value="ampalaya_bilog" />
-                <Picker.Item label="Upo Smooth" value="upo_smooth" />
-                <Picker.Item label="Patola" value="patola" />
+                <Picker.Item label="Ampalaya (Bitter Gourd)" value="bitter_gourd" />
+                <Picker.Item label="Upo (Bottle Gourd)" value="bottle_gourd" />
+                <Picker.Item label="Patola (Sponge Gourd)" value="sponge_gourd" />
                 <Picker.Item label="Cucumber" value="cucumber" />
               </Picker>
             </View>

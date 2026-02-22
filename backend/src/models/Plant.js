@@ -20,7 +20,6 @@ const mongoose = require('mongoose');
 // Gourd type configurations for predictions and display
 const GOURD_CONFIGS = {
   bitter_gourd: {
-    varieties: ['ampalaya_bilog', 'ampalaya_oblong', 'ampalaya_hybrid'],
     displayName: { english: 'Bitter Gourd', tagalog: 'Ampalaya' },
     daysToFlower: { min: 35, max: 48 },
     daysToMaturity: { min: 40, max: 50 },
@@ -29,7 +28,6 @@ const GOURD_CONFIGS = {
     daysToResultVisible: { min: 5, max: 7, average: 6 },
   },
   bottle_gourd: {
-    varieties: ['upo_smooth', 'upo_long', 'upo_round'],
     displayName: { english: 'Bottle Gourd', tagalog: 'Upo' },
     daysToFlower: { min: 40, max: 55 },
     daysToMaturity: { min: 45, max: 60 },
@@ -38,7 +36,6 @@ const GOURD_CONFIGS = {
     daysToResultVisible: { min: 7, max: 10, average: 8 },
   },
   sponge_gourd: {
-    varieties: ['patola', 'patola_smooth', 'patola_ridged'],
     displayName: { english: 'Sponge Gourd', tagalog: 'Patola' },
     daysToFlower: { min: 35, max: 45 },
     daysToMaturity: { min: 38, max: 48 },
@@ -47,7 +44,6 @@ const GOURD_CONFIGS = {
     daysToResultVisible: { min: 4, max: 6, average: 5 },
   },
   cucumber: {
-    varieties: ['pipino', 'pipino_japanese', 'pipino_native'],
     displayName: { english: 'Cucumber', tagalog: 'Pipino' },
     daysToFlower: { min: 28, max: 38 },
     daysToMaturity: { min: 30, max: 40 },
@@ -72,13 +68,7 @@ const plantSchema = new mongoose.Schema(
       },
     },
 
-    variety: {
-      type: String,
-      required: false,
-      description: 'Specific variety of the gourd (e.g., ampalaya_bilog, upo_smooth)',
-    },
-
-    plantName: {
+plantName: {
       type: String,
       required: [true, 'Plant name is required'],
       trim: true,
@@ -169,7 +159,7 @@ const plantSchema = new mongoose.Schema(
       description: 'Approximate leaf count',
     },
 
-    // ===== FLOWERING TRACKING =====
+// ===== FLOWERING TRACKING =====
     flowering: {
       // ML Prediction
       predictedDaysToFlower: { type: Number },
@@ -184,6 +174,10 @@ const plantSchema = new mongoose.Schema(
 
       // Flowering status
       hasStartedFlowering: { type: Boolean, default: false },
+
+      // Expected timeline dates (calculated from predictions)
+      expectedFloweringDate: { type: Date },
+      expectedHarvestDate: { type: Date },
     },
 
     // ===== POLLINATION TRACKING =====
@@ -687,14 +681,6 @@ plantSchema.methods.recordHarvest = function (fruitId, harvestData) {
 
 // Pre-save middleware
 plantSchema.pre('save', function (next) {
-  // Set variety if not set
-  if (!this.variety && this.gourdType) {
-    const config = GOURD_CONFIGS[this.gourdType];
-    if (config) {
-      this.variety = config.varieties[0];
-    }
-  }
-
   // Determine season based on planting date
   if (this.datePlanted && !this.environment.season) {
     const month = this.datePlanted.getMonth() + 1;

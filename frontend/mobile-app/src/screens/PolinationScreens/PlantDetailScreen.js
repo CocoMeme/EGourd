@@ -63,12 +63,44 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     }
   };
 
+  // Initialize lifecycle predictions from saved plant data
+  const initLifecyclePredictionsFromPlant = (plantData) => {
+    if (plantData?.flowering?.expectedFloweringDate || plantData?.flowering?.expectedHarvestDate) {
+      const datePlanted = new Date(plantData.datePlanted);
+      const expectedFlowering = plantData.flowering.expectedFloweringDate ? new Date(plantData.flowering.expectedFloweringDate) : null;
+      const expectedHarvest = plantData.flowering.expectedHarvestDate ? new Date(plantData.flowering.expectedHarvestDate) : null;
+      
+      // Calculate days
+      const plantingToFlowering = expectedFlowering 
+        ? Math.ceil((expectedFlowering - datePlanted) / (1000 * 60 * 60 * 24))
+        : plantData.flowering.predictedDaysToFlower || null;
+      
+      const floweringToHarvest = expectedFlowering && expectedHarvest
+        ? Math.ceil((expectedHarvest - expectedFlowering) / (1000 * 60 * 60 * 24))
+        : null;
+      
+      const totalDaysToHarvest = expectedHarvest
+        ? Math.ceil((expectedHarvest - datePlanted) / (1000 * 60 * 60 * 24))
+        : null;
+
+      setLifecyclePredictions({
+        summary: {
+          plantingToFlowering,
+          floweringToHarvest,
+          totalDaysToHarvest,
+          expectedFloweringDate: plantData.flowering.expectedFloweringDate,
+          expectedHarvestDate: plantData.flowering.expectedHarvestDate,
+        }
+      });
+    }
+  };
+
   useEffect(() => {
     if (!initialPlant) {
       fetchPlantDetails();
     } else {
-      // Fetch predictions if we have initial plant
-      fetchLifecyclePredictions();
+      // Initialize from saved plant data first (shows immediately)
+      initLifecyclePredictionsFromPlant(initialPlant);
     }
     setupNotificationChannel();
   }, [plantId]);
@@ -93,11 +125,13 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       if (isGuest) {
         const response = await guestStorageService.getLocalPlant(plantId);
         setPlant(response.data);
+        // Initialize predictions from saved plant data
+        initLifecyclePredictionsFromPlant(response.data);
       } else {
         const response = await plantService.getPlant(plantId);
         setPlant(response.data);
-        // Also fetch lifecycle predictions
-        fetchLifecyclePredictions();
+        // Initialize predictions from saved plant data
+        initLifecyclePredictionsFromPlant(response.data);
       }
     } catch (error) {
       console.error('Error fetching plant details:', error);
@@ -290,6 +324,28 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const handleFlowerDetected = ({ gender, gourdType }) => {
     console.log(`🌸 Flower detected: ${gender} (${gourdType})`);
     
+    // Map TM model gourd type labels to plant gourd types
+    const gourdTypeMapping = {
+      'Ampalaya': 'bitter_gourd',
+      'Patola': 'sponge_gourd',
+      'Upo': 'bottle_gourd',
+      'Cucumber': 'cucumber',
+    };
+    
+    const detectedGourdType = gourdTypeMapping[gourdType] || gourdType?.toLowerCase()?.replace(' ', '_');
+    const plantGourdType = plant?.gourdType;
+    
+    // Validate that detected flower matches the plant's gourd type
+    if (detectedGourdType && plantGourdType && detectedGourdType !== plantGourdType) {
+      const plantDisplayName = getGourdDisplayName(plantGourdType);
+      Alert.alert(
+        'Wrong Flower Type',
+        `This flower appears to be a ${gourdType} flower, but your plant is a ${plantDisplayName}.\n\nPlease only count flowers from this plant.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
     if (gender === 'male') {
       const currentCount = parseInt(maleFlowerCount) || 0;
       setMaleFlowerCount(String(currentCount + 1));
@@ -302,7 +358,9 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   // Open flower counter camera
   const openFlowerCounterCamera = () => {
     navigation.navigate('FlowerCounterCamera', {
-      onFlowerDetected: handleFlowerDetected
+      onFlowerDetected: handleFlowerDetected,
+      plantGourdType: plant?.gourdType,
+      plantName: plant?.plantName || getGourdDisplayName(plant?.gourdType)
     });
   };
 
@@ -437,14 +495,28 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const renderFloweringInfo = () => {
     if (!plant.flowering) return null;
     
-    const { hasStarted, startDate, predictedDaysToFlower, predictedFloweringDate, maleFlowerCount: male, femaleFlowerCount: female, confidence } = plant.flowering;
+    const { 
+      hasStartedFlowering, 
+      actualFirstFlowerDate, 
+      predictedDaysToFlower, 
+      predictedFloweringDate,
+      expectedFloweringDate,
+      floweringPredictionConfidence,
+      maleFlowerCount: male, 
+      femaleFlowerCount: female 
+    } = plant.flowering;
     const plantAge = calculateAge();
+    
+    // Use lifecycle predictions if available for consistency
+    const daysToFlower = lifecyclePredictions?.summary?.plantingToFlowering || predictedDaysToFlower;
+    const expectedDate = lifecyclePredictions?.summary?.expectedFloweringDate || expectedFloweringDate || predictedFloweringDate;
+    const confidence = lifecyclePredictions?.flowering?.confidence || floweringPredictionConfidence;
     
     return (
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>🌸 Flowering Status</Text>
-          {hasStarted ? (
+          {hasStartedFlowering ? (
             <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
               <Text style={styles.badgeText}>FLOWERING</Text>
             </View>
@@ -455,9 +527,11 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           )}
         </View>
         
-        {hasStarted ? (
+        {hasStartedFlowering ? (
           <>
-            <Text style={styles.infoText}>Started: {formatDate(startDate)}</Text>
+            <Text style={styles.infoText}>
+              🌼 First flower: {formatDate(actualFirstFlowerDate)}
+            </Text>
             <View style={styles.flowerCountsRow}>
               <View style={styles.flowerCount}>
                 <Ionicons name="male" size={20} color="#4A90E2" />
@@ -483,15 +557,15 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           </>
         ) : (
           <>
-            {predictedDaysToFlower && (
+            {daysToFlower && (
               <View style={styles.predictionInfo}>
                 <Text style={styles.predictionLabel}>Predicted flowering in:</Text>
                 <Text style={styles.predictionValue}>
-                  ~{Math.max(0, predictedDaysToFlower - plantAge)} days
+                  ~{Math.max(0, daysToFlower - plantAge)} days
                 </Text>
-                {predictedFloweringDate && (
+                {expectedDate && (
                   <Text style={styles.predictionDate}>
-                    Expected: {formatDate(predictedFloweringDate)}
+                    Expected: {formatDate(expectedDate)}
                   </Text>
                 )}
                 {confidence && (
@@ -546,9 +620,6 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           </View>
           <Text style={styles.infoText}>No pollinations recorded yet.</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity onPress={handleGetPollinationPrediction} style={styles.predictButton}>
-              <Text style={styles.predictButtonText}>Predict Success</Text>
-            </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButtonPrimary}
               onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
@@ -786,7 +857,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   }
 
   const plantAge = calculateAge();
-  const displayName = plant.plantName || formatLabel(plant.variety) || formatLabel(plant.gourdType);
+  const displayName = plant.plantName || formatLabel(plant.gourdType);
 
   return (
     <View style={styles.container}>
@@ -819,9 +890,6 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           <Text style={styles.gourdTypeEmoji}>{getGourdEmoji(plant.gourdType)}</Text>
           <View style={styles.gourdTypeInfo}>
             <Text style={styles.gourdTypeName}>{getGourdDisplayName(plant.gourdType)}</Text>
-            {plant.variety && (
-              <Text style={styles.varietyText}>Variety: {formatLabel(plant.variety)}</Text>
-            )}
           </View>
         </View>
 
@@ -868,15 +936,21 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           
           {lifecyclePredictions ? (
             <View style={styles.lifecycleTimelineContainer}>
+              {/* Timeline Row */}
               <View style={styles.lifecycleTimelineRow}>
                 <View style={styles.lifecycleTimelineItem}>
                   <View style={[styles.lifecycleTimelineIcon, { backgroundColor: '#E8F5E9' }]}>
                     <Ionicons name="flower" size={20} color="#4CAF50" />
                   </View>
                   <Text style={styles.lifecycleTimelineDays}>
-                    {lifecyclePredictions.summary?.plantingToFlowering || lifecyclePredictions.flowering?.predictedDaysToFlower || '—'}
+                    {lifecyclePredictions.summary?.plantingToFlowering || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Days to Flowering</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Days to First Flower</Text>
+                  {lifecyclePredictions.summary?.expectedFloweringDate && (
+                    <Text style={styles.lifecycleTimelineDate}>
+                      {formatDate(lifecyclePredictions.summary.expectedFloweringDate)}
+                    </Text>
+                  )}
                 </View>
                 
                 <View style={styles.lifecycleTimelineArrow}>
@@ -888,9 +962,10 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                     <Ionicons name="leaf" size={20} color="#FF9800" />
                   </View>
                   <Text style={styles.lifecycleTimelineDays}>
-                    {lifecyclePredictions.summary?.floweringToHarvest || '—'}
+                    +{lifecyclePredictions.summary?.floweringToHarvest || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Flowering to Harvest</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Flower → Harvest</Text>
+                  <Text style={styles.lifecycleTimelineSubLabel}>(After flowering starts)</Text>
                 </View>
                 
                 <View style={styles.lifecycleTimelineArrow}>
@@ -902,10 +977,24 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                     <Ionicons name="calendar" size={20} color="#2196F3" />
                   </View>
                   <Text style={styles.lifecycleTimelineDays}>
-                    {lifecyclePredictions.summary?.totalDaysToHarvest || '—'}
+                    {lifecyclePredictions.summary?.totalDaysToHarvest || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Total to Harvest</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Total (Plant → Harvest)</Text>
+                  {lifecyclePredictions.summary?.expectedHarvestDate && (
+                    <Text style={styles.lifecycleTimelineDate}>
+                      {formatDate(lifecyclePredictions.summary.expectedHarvestDate)}
+                    </Text>
+                  )}
                 </View>
+              </View>
+
+              {/* Explanation Card */}
+              <View style={styles.timelineExplanation}>
+                <Ionicons name="information-circle-outline" size={16} color={theme.colors.text.secondary} />
+                <Text style={styles.timelineExplanationText}>
+                  "Flower → Harvest" is the time from first flower to ready harvest. 
+                  "Total" is from planting date to harvest.
+                </Text>
               </View>
             </View>
           ) : !loadingPredictions ? (
@@ -1790,6 +1879,36 @@ const styles = StyleSheet.create({
     fontSize: 9,
     textAlign: 'center',
     marginTop: 2,
+  },
+  lifecycleTimelineDate: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  lifecycleTimelineSubLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 7,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  timelineExplanation: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: theme.colors.background.secondary,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.small,
+    marginTop: theme.spacing.md,
+  },
+  timelineExplanationText: {
+    ...theme.typography.caption,
+    color: theme.colors.text.secondary,
+    fontSize: 10,
+    marginLeft: theme.spacing.xs,
+    flex: 1,
   },
   lifecycleTimelineArrow: {
     paddingHorizontal: theme.spacing.xs,

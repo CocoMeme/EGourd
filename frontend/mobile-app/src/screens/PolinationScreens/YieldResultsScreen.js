@@ -15,9 +15,9 @@ const YieldResultsScreen = ({ navigation, route }) => {
 
   const getPlantTypeLabel = (type) => {
     const labels = {
-      ampalaya_bilog: 'Ampalaya Bilog',
-      upo_smooth: 'Upo Smooth',
-      patola: 'Patola',
+      bitter_gourd: 'Ampalaya',
+      bottle_gourd: 'Upo',
+      sponge_gourd: 'Patola',
       cucumber: 'Cucumber'
     };
     return labels[type] || type;

@@ -56,6 +56,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
   const [selectedPollination, setSelectedPollination] = useState(null);
   
   // Form states
@@ -64,6 +65,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
   const [notes, setNotes] = useState('');
   const [resultStatus, setResultStatus] = useState('pending');
   const [successCount, setSuccessCount] = useState('0');
+  const [resultSuccessCount, setResultSuccessCount] = useState('0');
 
   // Fetch pollinations
   const fetchPollinations = async (showLoader = true) => {
@@ -313,8 +315,86 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
     );
   };
 
-  // Record result quickly
+  // Open result modal
+  const openResultModal = (pollination) => {
+    setSelectedPollination(pollination);
+    setResultSuccessCount(String(pollination.femaleFlowersPollinated || 1));
+    setShowResultModal(true);
+  };
+
+  // Record result with specific count
+  const handleRecordResult = async () => {
+    if (!selectedPollination) return;
+    
+    try {
+      const totalPollinated = selectedPollination.femaleFlowersPollinated || 1;
+      const successfulCount = Math.min(Math.max(0, parseInt(resultSuccessCount) || 0), totalPollinated);
+      
+      // Determine status based on success count
+      let status = 'pending';
+      if (successfulCount === 0) {
+        status = 'failed';
+      } else if (successfulCount === totalPollinated) {
+        status = 'success';
+      } else {
+        status = 'partial';
+      }
+      
+      // Cancel scheduled notification if exists
+      if (selectedPollination.notificationId) {
+        await pollinationNotificationHelper.cancelPollinationResultNotification(selectedPollination.notificationId);
+      }
+      
+      // Record the result
+      await plantService.updatePollination(plantId, selectedPollination._id, {
+        status: status,
+        actualSuccessfulCount: successfulCount,
+        resultRecordedDate: new Date(),
+        notificationScheduled: false
+      });
+      
+      // Show instant notification to confirm the action
+      await pollinationNotificationHelper.showPollinationResultNotification(
+        selectedPollination,
+        plant,
+        status,
+        successfulCount
+      );
+      
+      // Show confirmation
+      let message = '';
+      if (status === 'success') {
+        message = `Great! All ${successfulCount} fruit(s) developing!`;
+      } else if (status === 'partial') {
+        message = `${successfulCount} out of ${totalPollinated} fruit(s) developing!`;
+      } else {
+        message = 'No worries, try again with the next pollination.';
+      }
+      
+      Alert.alert(
+        status === 'failed' ? '😔 Failed' : '🎉 Result Recorded!',
+        message,
+        [{ text: 'OK' }]
+      );
+      
+      setShowResultModal(false);
+      setSelectedPollination(null);
+      setResultSuccessCount('0');
+      fetchPollinations(false);
+    } catch (error) {
+      console.error('Error recording result:', error);
+      Alert.alert('Error', 'Failed to record result');
+    }
+  };
+
+  // Record result quickly (legacy - for single flower pollinations)
   const handleQuickResult = async (pollination, status) => {
+    // For multiple flowers, open result modal to input specific count
+    if ((pollination.femaleFlowersPollinated || 1) > 1) {
+      openResultModal(pollination);
+      return;
+    }
+    
     try {
       const successfulCount = status === 'success' ? pollination.femaleFlowersPollinated : 0;
       
@@ -455,33 +535,37 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             </View>
           )}
 
+          {pollination.status === 'partial' && (
+            <View style={styles.partialInfo}>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#FF9800" />
+              <Text style={styles.partialText}>
+                {pollination.actualSuccessfulCount} of {pollination.femaleFlowersPollinated} fruit(s) developing
+              </Text>
+            </View>
+          )}
+
           {pollination.notes && (
             <Text style={styles.notesText}>📝 {pollination.notes}</Text>
           )}
         </View>
 
-        {/* Quick result buttons for ALL pending pollinations */}
+        {/* Quick result button for ALL pending pollinations - opens modal */}
         {isPending && (
           <View style={styles.quickResultContainer}>
-            <Text style={styles.quickResultLabel}>
-              {isCheckTime ? '🔔 Record Result:' : 'Record Result Early:'}
-            </Text>
-            <View style={styles.quickResultButtons}>
-              <TouchableOpacity 
-                style={[styles.quickResultButton, styles.successButton]}
-                onPress={() => handleQuickResult(pollination, 'success')}
-              >
-                <Ionicons name="checkmark" size={18} color="#fff" />
-                <Text style={styles.quickResultButtonText}>Success</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.quickResultButton, styles.failedButton]}
-                onPress={() => handleQuickResult(pollination, 'failed')}
-              >
-                <Ionicons name="close" size={18} color="#fff" />
-                <Text style={styles.quickResultButtonText}>Failed</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.recordResultButton, isCheckTime && styles.recordResultButtonAlert]}
+              onPress={() => openResultModal(pollination)}
+            >
+              <Ionicons 
+                name={isCheckTime ? "alert-circle" : "create-outline"} 
+                size={20} 
+                color="#fff" 
+              />
+              <Text style={styles.recordResultButtonText}>
+                {isCheckTime ? '🔔 Time to Record Result!' : 'Record Result'}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color="#fff" />
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -738,6 +822,108 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       {/* Modals */}
       {renderModal(false)}
       {renderModal(true)}
+      
+      {/* Result Modal */}
+      <Modal
+        visible={showResultModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowResultModal(false);
+          setSelectedPollination(null);
+          setResultSuccessCount('0');
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: 400 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Record Result
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowResultModal(false);
+                  setSelectedPollination(null);
+                  setResultSuccessCount('0');
+                }}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.resultModalInfo}>
+                {selectedPollination?.label || 'Pollination'}
+              </Text>
+              <Text style={styles.resultModalSubInfo}>
+                {selectedPollination?.femaleFlowersPollinated || 1} female flower(s) pollinated
+              </Text>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>How many fruits are developing?</Text>
+                <View style={styles.resultCountContainer}>
+                  <TouchableOpacity 
+                    style={styles.countButton}
+                    onPress={() => setResultSuccessCount(String(Math.max(0, (parseInt(resultSuccessCount) || 0) - 1)))}
+                  >
+                    <Ionicons name="remove" size={24} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.resultCountInput}
+                    value={resultSuccessCount}
+                    onChangeText={setResultSuccessCount}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                  <TouchableOpacity 
+                    style={styles.countButton}
+                    onPress={() => setResultSuccessCount(String(Math.min(selectedPollination?.femaleFlowersPollinated || 1, (parseInt(resultSuccessCount) || 0) + 1)))}
+                  >
+                    <Ionicons name="add" size={24} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.countHint}>
+                  Enter 0 if all failed, or the number of successful fruits
+                </Text>
+              </View>
+
+              <View style={styles.quickSetButtons}>
+                <TouchableOpacity 
+                  style={[styles.quickSetButton, styles.failedButton]}
+                  onPress={() => setResultSuccessCount('0')}
+                >
+                  <Text style={styles.quickSetButtonText}>All Failed (0)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.quickSetButton, styles.successButton]}
+                  onPress={() => setResultSuccessCount(String(selectedPollination?.femaleFlowersPollinated || 1))}
+                >
+                  <Text style={styles.quickSetButtonText}>All Success ({selectedPollination?.femaleFlowersPollinated || 1})</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowResultModal(false);
+                  setSelectedPollination(null);
+                  setResultSuccessCount('0');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleRecordResult}
+              >
+                <Text style={styles.saveButtonText}>Record Result</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -929,6 +1115,25 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: 'rgba(255, 152, 0, 0.05)',
   },
+  recordResultButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    padding: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  recordResultButtonAlert: {
+    backgroundColor: '#FF9800',
+  },
+  recordResultButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
+    flex: 1,
+    textAlign: 'center',
+  },
   quickResultLabel: {
     fontSize: 12,
     color: theme.colors.text.secondary,
@@ -1117,6 +1322,83 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  // Additional styles for result modal
+  recordButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  partialInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    padding: 8,
+    borderRadius: 6,
+  },
+  partialText: {
+    color: '#FF9800',
+    fontWeight: '500',
+  },
+  resultModalInfo: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    textAlign: 'center',
+  },
+  resultModalSubInfo: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  resultCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  countButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  resultCountInput: {
+    width: 80,
+    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: theme.colors.text.primary,
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: 8,
+    padding: 8,
+  },
+  countHint: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  quickSetButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  quickSetButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  quickSetButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
   },
 });
 

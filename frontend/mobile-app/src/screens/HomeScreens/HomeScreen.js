@@ -10,6 +10,7 @@ import {
   CustomAlert,
   NewsCard,
   NewsModal,
+  SeasonalInsightsCard,
 } from '../../components';
 import { theme } from '../../styles';
 import { getAllNews, getPopupNews, markNewsAsRead } from '../../services/newsService';
@@ -469,6 +470,9 @@ export const HomeScreen = ({ navigation, route }) => {
               ))}
             </View>
           </View>
+
+          {/* Seasonal Pollination Insights */}
+          <SeasonalInsightsCard />
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>

@@ -27,7 +27,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
   const [formData, setFormData] = useState({
     // Plant selection
     selectedPlantId: plant?._id || '',
-    plantType: plant?.name || 'ampalaya_bilog',
+    plantType: plant?.name || 'bitter_gourd',
     plantAge: plant?.ageInDays?.toString() || '',
     
     // Environmental factors - manual input
@@ -238,9 +238,9 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!formData.selectedPlantId}
               >
-                <Picker.Item label="Ampalaya Bilog (Round Bitter Gourd)" value="ampalaya_bilog" />
-                <Picker.Item label="Upo Smooth (Smooth Bottle Gourd)" value="upo_smooth" />
-                <Picker.Item label="Patola (Sponge Gourd)" value="patola" />
+                <Picker.Item label="Ampalaya (Bitter Gourd)" value="bitter_gourd" />
+                <Picker.Item label="Upo (Bottle Gourd)" value="bottle_gourd" />
+                <Picker.Item label="Patola (Sponge Gourd)" value="sponge_gourd" />
                 <Picker.Item label="Cucumber" value="cucumber" />
               </Picker>
             </View>

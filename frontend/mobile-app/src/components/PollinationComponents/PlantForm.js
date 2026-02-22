@@ -91,19 +91,15 @@ export const PlantForm = ({
   // Gourd type configurations from backend
   const [gourdTypeConfigs, setGourdTypeConfigs] = useState({
     bitter_gourd: {
-      varieties: ['ampalaya_bilog', 'ampalaya_haba', 'jade_green'],
       optimalConditions: { minTemp: 26, maxTemp: 32, humidity: '65-80%' }
     },
     bottle_gourd: {
-      varieties: ['upo_smooth', 'upo_long', 'calabash'],
       optimalConditions: { minTemp: 25, maxTemp: 30, humidity: '60-75%' }
     },
     sponge_gourd: {
-      varieties: ['patola_smooth', 'patola_ridged', 'luffa'],
       optimalConditions: { minTemp: 25, maxTemp: 32, humidity: '70-85%' }
     },
     cucumber: {
-      varieties: ['cucumber_slicing', 'cucumber_pickling', 'cucumber_english'],
       optimalConditions: { minTemp: 24, maxTemp: 30, humidity: '60-75%' }
     }
   });
@@ -127,7 +123,6 @@ export const PlantForm = ({
 
   const [formData, setFormData] = useState({
     gourdType: initialData.gourdType || 'bitter_gourd',
-    variety: initialData.variety || 'ampalaya_bilog',
     plantName: initialData.plantName || '',
     datePlanted: initialDate,
     notes: initialData.notes || '',
@@ -142,7 +137,6 @@ export const PlantForm = ({
   });
 
   const [showGourdTypeModal, setShowGourdTypeModal] = useState(false);
-  const [showVarietyModal, setShowVarietyModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showImageCapture, setShowImageCapture] = useState(false);
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
@@ -176,25 +170,6 @@ export const PlantForm = ({
     { value: 'sponge_gourd', label: 'Sponge Gourd', tagalog: 'Patola', icon: '🌿' },
     { value: 'cucumber', label: 'Cucumber', tagalog: 'Pipino', icon: '🥒' },
   ];
-
-  const varietyLabels = {
-    // Bitter Gourd
-    ampalaya_bilog: 'Round Bitter Gourd (Ampalaya Bilog)',
-    ampalaya_haba: 'Long Bitter Gourd (Ampalaya Haba)',
-    jade_green: 'Jade Green',
-    // Bottle Gourd
-    upo_smooth: 'Smooth Bottle Gourd (Upo)',
-    upo_long: 'Long Bottle Gourd',
-    calabash: 'Calabash',
-    // Sponge Gourd
-    patola_smooth: 'Smooth Sponge Gourd (Patola)',
-    patola_ridged: 'Ridged Sponge Gourd',
-    luffa: 'Luffa',
-    // Cucumber
-    cucumber_slicing: 'Slicing Cucumber',
-    cucumber_pickling: 'Pickling Cucumber',
-    cucumber_english: 'English Cucumber'
-  };
 
   // Removed soilTypes, climateTypes, seasons as they are now auto-determined
   const fertilizerTypes = ['organic', 'chemical', 'mixed', 'none'];
@@ -234,14 +209,11 @@ export const PlantForm = ({
     }));
   };
 
-  // Update variety when gourd type changes
+  // Update gourd type
   const handleGourdTypeChange = (gourdType) => {
-    const config = gourdTypeConfigs[gourdType];
-    const defaultVariety = config?.varieties?.[0] || gourdType;
     setFormData(prev => ({
       ...prev,
-      gourdType,
-      variety: defaultVariety
+      gourdType
     }));
     setShowGourdTypeModal(false);
   };
@@ -262,7 +234,6 @@ export const PlantForm = ({
     // Prepare data for submission
     const submissionData = {
       gourdType: formData.gourdType,
-      variety: formData.variety,
       plantName: formData.plantName.trim() || `${formData.gourdType}_${Date.now()}`,
       datePlanted: formData.datePlanted.toISOString(),
       notes: formData.notes.trim() || undefined,
@@ -284,7 +255,6 @@ export const PlantForm = ({
   };
 
   const selectedGourd = gourdTypes.find(g => g.value === formData.gourdType);
-  const availableVarieties = gourdTypeConfigs[formData.gourdType]?.varieties || [];
   const optimalConditions = gourdTypeConfigs[formData.gourdType]?.optimalConditions;
 
   const formatLabel = (str) => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -319,20 +289,6 @@ export const PlantForm = ({
         )}
       </View>
 
-      {/* Variety Selection */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Variety</Text>
-        <TouchableOpacity 
-          style={styles.selector}
-          onPress={() => setShowVarietyModal(true)}
-        >
-          <Text style={styles.selectorText}>
-            {varietyLabels[formData.variety] || formatLabel(formData.variety)}
-          </Text>
-          <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
-        </TouchableOpacity>
-      </View>
-
       {/* Plant Name (Optional) */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Plant Name (Optional)</Text>
@@ -351,7 +307,13 @@ export const PlantForm = ({
         <Text style={styles.sectionTitle}>Date Planted *</Text>
         <TouchableOpacity 
           style={styles.selector}
-          onPress={() => setShowDatePicker(true)}
+          onPress={() => {
+            // Sync date picker state with current formData before opening
+            setSelectedYear(formData.datePlanted.getFullYear());
+            setSelectedMonth(formData.datePlanted.getMonth());
+            setSelectedDay(formData.datePlanted.getDate());
+            setShowDatePicker(true);
+          }}
         >
           <Text style={styles.selectorText}>
             {formData.datePlanted.toLocaleDateString('en-US', {
@@ -567,43 +529,6 @@ export const PlantForm = ({
                   {gourd.icon} {gourd.label} ({gourd.tagalog})
                 </Text>
                 {formData.gourdType === gourd.value && (
-                  <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Variety Modal */}
-      <Modal
-        visible={showVarietyModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowVarietyModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Variety</Text>
-              <TouchableOpacity onPress={() => setShowVarietyModal(false)}>
-                <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
-              </TouchableOpacity>
-            </View>
-            
-            {availableVarieties.map((variety) => (
-              <TouchableOpacity
-                key={variety}
-                style={styles.modalOption}
-                onPress={() => {
-                  handleInputChange('variety', variety);
-                  setShowVarietyModal(false);
-                }}
-              >
-                <Text style={styles.modalOptionText}>
-                  {varietyLabels[variety] || formatLabel(variety)}
-                </Text>
-                {formData.variety === variety && (
                   <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>

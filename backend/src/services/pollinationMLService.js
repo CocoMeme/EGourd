@@ -291,17 +291,34 @@ class PollinationMLService {
     };
     const maturityPrediction = await this.predictFruitMaturity(maturityData);
 
+    // Calculate actual dates based on planting date
+    const plantingDate = plantData.datePlanted ? new Date(plantData.datePlanted) : new Date();
+    const daysToFlower = floweringPrediction.predictedDaysToFlower;
+    const daysToHarvestFromFlowering = maturityPrediction.daysToMaturity;
+    const totalDays = daysToFlower + daysToHarvestFromFlowering;
+
+    // Expected dates
+    const expectedFloweringDate = new Date(plantingDate);
+    expectedFloweringDate.setDate(expectedFloweringDate.getDate() + daysToFlower);
+
+    const expectedHarvestDate = new Date(plantingDate);
+    expectedHarvestDate.setDate(expectedHarvestDate.getDate() + totalDays);
+
     return {
       flowering: floweringPrediction,
       pollination: pollinationPrediction,
       maturity: maturityPrediction,
       summary: {
-        plantingToFlowering: floweringPrediction.predictedDaysToFlower,
+        // Days (for display)
+        plantingToFlowering: daysToFlower,
+        floweringToHarvest: daysToHarvestFromFlowering,
+        totalDaysToHarvest: totalDays,
         expectedPollinationSuccess: pollinationPrediction.successRatePercentage,
-        floweringToHarvest: maturityPrediction.daysToMaturity,
-        totalDaysToHarvest:
-          floweringPrediction.predictedDaysToFlower + maturityPrediction.daysToMaturity,
         expectedYieldKg: maturityPrediction.expectedYieldKg,
+        // Actual dates (for timeline display)
+        expectedFloweringDate: expectedFloweringDate.toISOString(),
+        expectedHarvestDate: expectedHarvestDate.toISOString(),
+        plantingDate: plantingDate.toISOString(),
       },
     };
   }
@@ -315,16 +332,10 @@ class PollinationMLService {
   }
 
   /**
-   * Get default variety for gourd type
+   * Get default variety for gourd type (now just returns gourd type)
    */
   _getDefaultVariety(gourdType) {
-    const varieties = {
-      bitter_gourd: 'ampalaya_bilog',
-      bottle_gourd: 'upo_smooth',
-      sponge_gourd: 'patola',
-      cucumber: 'pipino',
-    };
-    return varieties[gourdType] || gourdType;
+    return gourdType;
   }
 }
 

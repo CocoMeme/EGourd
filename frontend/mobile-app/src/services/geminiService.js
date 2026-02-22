@@ -283,16 +283,17 @@ class GeminiService {
     const isFlower = !isNotFlower;
 
     // Format variety name for display
-    let varietyDisplay = null;
-    if (variety === 'ampalaya_bilog') {
-      varietyDisplay = 'Ampalaya Bilog';
-    } else if (variety === 'patola') {
-      varietyDisplay = 'Patola';
-    } else if (variety === 'upo_smooth') {
-      varietyDisplay = 'Upo (Smooth)';
-    } else if (variety === 'cucumber') {
-      varietyDisplay = 'Cucumber';
-    }
+    const varietyDisplayMap = {
+      'bitter_gourd': 'Ampalaya',
+      'bottle_gourd': 'Upo',
+      'sponge_gourd': 'Patola',
+      'cucumber': 'Cucumber',
+      // Legacy support
+      'ampalaya_bilog': 'Ampalaya',
+      'upo_smooth': 'Upo',
+      'patola': 'Patola',
+    };
+    const varietyDisplay = varietyDisplayMap[variety] || null;
 
     // Build predicted class (matches multi-class model format)
     let predictedClass = 'unknown';
@@ -369,12 +370,12 @@ class GeminiService {
    */
   buildProbabilities(variety, gender, confidence) {
     const classes = [
-      'ampalaya_bilog_female',
-      'ampalaya_bilog_male',
-      'patola_female',
-      'patola_male',
-      'upo_smooth_female',
-      'upo_smooth_male',
+      'bitter_gourd_female',
+      'bitter_gourd_male',
+      'sponge_gourd_female',
+      'sponge_gourd_male',
+      'bottle_gourd_female',
+      'bottle_gourd_male',
       'cucumber_female',
       'cucumber_male',
       'not_flower',

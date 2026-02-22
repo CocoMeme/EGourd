@@ -42,6 +42,7 @@ const {
   getPlantsNeedingAttention,
   getGourdTypes,
   getLifecyclePrediction,
+  getSeasonalPollinationStats,
 } = require('../controllers/plantController');
 
 // Import middleware
@@ -53,6 +54,7 @@ const upload = uploadToMemory;
 
 // ===== PUBLIC ROUTES =====
 router.get('/gourd-types', getGourdTypes);
+router.get('/seasonal/pollination-stats', getSeasonalPollinationStats);
 
 // ===== PROTECTED ROUTES =====
 router.use(authenticate);
