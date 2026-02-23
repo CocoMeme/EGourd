@@ -540,7 +540,7 @@ const updateProfile = async (req, res) => {
  */
 const deleteAccount = async (req, res) => {
   try {
-    const { user, uid } = req;
+    const { user, uid: _uid } = req;
 
     if (!user) {
       return res.status(404).json({

@@ -88,7 +88,7 @@ class PollinationMLService {
 
           console.log('🔮 Prediction success:', result.prediction_type);
           resolve(result);
-        } catch (parseError) {
+        } catch (_parseError) {
           console.error('Failed to parse prediction output:', outputData);
           reject(new Error('Failed to parse prediction result'));
         }

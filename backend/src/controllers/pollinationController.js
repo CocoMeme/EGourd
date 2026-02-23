@@ -110,7 +110,7 @@ const getPollination = async (req, res) => {
 // @access  Private
 const createPollination = async (req, res) => {
   try {
-    const { name, datePlanted, gender, location, notes } = req.body;
+    const { name, datePlanted, gender, location: _location, notes } = req.body;
 
     // Validate required fields
     if (!name || !datePlanted) {

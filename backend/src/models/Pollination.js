@@ -310,7 +310,7 @@ pollinationSchema.methods.addNote = function (content, type = 'observation') {
 };
 
 // Instance method to mark flowering (simplified)
-pollinationSchema.methods.markFlowering = function (gender, date = new Date()) {
+pollinationSchema.methods.markFlowering = function (gender, _date = new Date()) {
   if (gender === 'male' || gender === 'female') {
     this.gender = gender;
     this.status = 'flowering';
@@ -365,7 +365,7 @@ pollinationSchema.statics.getPlantsNeedingAttention = function (userId) {
 };
 
 // Static method to get upcoming pollinations (simplified)
-pollinationSchema.statics.getUpcomingPollinations = function (userId, days = 7) {
+pollinationSchema.statics.getUpcomingPollinations = function (userId, _days = 7) {
   return this.find({
     user: userId,
     status: { $in: ['planted', 'flowering'] },

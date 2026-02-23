@@ -173,7 +173,7 @@ class FlowerPredictionService {
   /**
    * Calculate environmental factors adjustment
    */
-  static calculateEnvironmentalAdjustment(environmental, plantType) {
+  static calculateEnvironmentalAdjustment(environmental, _plantType) {
     const factors = [];
     let factor = 1.0;
 

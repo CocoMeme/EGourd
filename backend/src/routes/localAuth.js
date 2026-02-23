@@ -11,12 +11,6 @@ const {
   deleteAccount,
 } = require('../controllers/localAuthController');
 const { authenticateToken } = require('../middleware/googleAuth'); // We can reuse the JWT auth middleware
-const {
-  validateUserRegistration,
-  validateUserLogin,
-  validateProfileUpdate,
-  validatePasswordChange,
-} = require('../middleware/validation');
 
 const router = express.Router();
 

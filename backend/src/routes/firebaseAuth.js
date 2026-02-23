@@ -5,22 +5,11 @@ const { authenticate } = require('../middleware/auth');
 
 // Controllers
 const {
-  firebaseLogin,
-  firebaseRegister,
   googleAuth,
-  googleLogin,
-  firebaseLogout,
   getCurrentUser,
   updateProfile,
   deleteAccount,
 } = require('../controllers/firebaseAuthController');
-
-// Middleware
-const {
-  verifyFirebaseToken,
-  requireLocalUser,
-  validateTokenFormat,
-} = require('../middleware/firebaseAuth');
 
 // Validation middleware
 const handleValidationErrors = (req, res, next) => {
@@ -36,51 +25,6 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // Validation rules
-const firebaseLoginValidation = [
-  body('idToken')
-    .notEmpty()
-    .withMessage('Firebase ID token is required')
-    .isString()
-    .withMessage('Token must be a string'),
-  body('userData.firstName')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
-  body('userData.lastName')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
-];
-
-const firebaseRegisterValidation = [
-  body('idToken')
-    .notEmpty()
-    .withMessage('Firebase ID token is required')
-    .isString()
-    .withMessage('Token must be a string'),
-  body('userData.firstName')
-    .notEmpty()
-    .withMessage('First name is required')
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
-  body('userData.lastName')
-    .notEmpty()
-    .withMessage('Last name is required')
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
-  body('userData.profilePicture')
-    .optional()
-    .isURL()
-    .withMessage('Profile picture must be a valid URL'),
-];
 
 const googleAuthValidation = [
   body('idToken')
@@ -105,14 +49,6 @@ const googleAuthValidation = [
     .trim()
     .isLength({ min: 1, max: 50 })
     .withMessage('Last name must be between 1 and 50 characters'),
-];
-
-const googleLoginValidation = [
-  body('idToken')
-    .notEmpty()
-    .withMessage('Firebase ID token is required')
-    .isString()
-    .withMessage('Token must be a string'),
 ];
 
 const updateProfileValidation = [
@@ -430,7 +366,7 @@ router.get('/health', (req, res) => {
 });
 
 // Error handling middleware specific to this router
-router.use((error, req, res, next) => {
+router.use((error, req, res, _next) => {
   console.error('Firebase auth route error:', error);
 
   if (error.type === 'entity.parse.failed') {

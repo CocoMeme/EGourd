@@ -68,7 +68,7 @@ const plantSchema = new mongoose.Schema(
       },
     },
 
-plantName: {
+    plantName: {
       type: String,
       required: [true, 'Plant name is required'],
       trim: true,
@@ -159,7 +159,7 @@ plantName: {
       description: 'Approximate leaf count',
     },
 
-// ===== FLOWERING TRACKING =====
+    // ===== FLOWERING TRACKING =====
     flowering: {
       // ML Prediction
       predictedDaysToFlower: { type: Number },

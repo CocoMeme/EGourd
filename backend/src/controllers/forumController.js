@@ -1,5 +1,4 @@
 const ForumPost = require('../models/ForumPost');
-const User = require('../models/User');
 const { cloudinary } = require('../config/cloudinary');
 const filter = require('leo-profanity');
 

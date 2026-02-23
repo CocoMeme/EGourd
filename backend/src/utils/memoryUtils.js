@@ -48,7 +48,7 @@ function startMemoryMonitor(intervalMs = 60000) {
   logMemoryUsage('Monitor Start');
 
   return setInterval(() => {
-    const { heapUsedMB, rssMB } = logMemoryUsage('Periodic');
+    const { heapUsedMB: _heapUsedMB, rssMB } = logMemoryUsage('Periodic');
 
     // Warn if approaching limit (512MB on Render free tier)
     if (rssMB > 400) {

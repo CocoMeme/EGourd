@@ -106,7 +106,7 @@ const optionalAuth = async (req, res, next) => {
     }
 
     next();
-  } catch (error) {
+  } catch (_error) {
     // If there's an error with the token, continue without user
     req.user = null;
     next();

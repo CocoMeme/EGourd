@@ -1201,33 +1201,46 @@ const getLifecyclePrediction = async (req, res) => {
  */
 const getSeasonalPollinationStats = async (req, res) => {
   try {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     // Aggregate successful pollinations by month and gourd type
     const stats = await Plant.aggregate([
       // Unwind pollinations array
       { $unwind: '$pollinations' },
       // Filter only successful/partial pollinations
-      { 
-        $match: { 
-          'pollinations.status': { $in: ['success', 'partial'] }
-        }
+      {
+        $match: {
+          'pollinations.status': { $in: ['success', 'partial'] },
+        },
       },
       // Group by month and gourd type
       {
         $group: {
           _id: {
             month: { $month: '$pollinations.date' },
-            gourdType: '$gourdType'
+            gourdType: '$gourdType',
           },
           successCount: {
-            $sum: { $ifNull: ['$pollinations.actualSuccessfulCount', 1] }
+            $sum: { $ifNull: ['$pollinations.actualSuccessfulCount', 1] },
           },
-          pollinationCount: { $sum: 1 }
-        }
+          pollinationCount: { $sum: 1 },
+        },
       },
       // Sort by month
-      { $sort: { '_id.month': 1 } }
+      { $sort: { '_id.month': 1 } },
     ]);
 
     // Transform into a more usable format
@@ -1236,37 +1249,37 @@ const getSeasonalPollinationStats = async (req, res) => {
       bitter_gourd: 'Ampalaya',
       bottle_gourd: 'Upo',
       sponge_gourd: 'Patola',
-      cucumber: 'Pipino'
+      cucumber: 'Pipino',
     };
-    
+
     // Initialize data structure
     const seasonalData = {
       months: monthNames,
-      gourdTypes: gourdTypes.map(type => ({
+      gourdTypes: gourdTypes.map((type) => ({
         type,
         label: gourdLabels[type],
-        data: new Array(12).fill(0)
-      }))
+        data: new Array(12).fill(0),
+      })),
     };
 
     // Fill in the data
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       const monthIndex = stat._id.month - 1; // MongoDB months are 1-indexed
       const gourdType = stat._id.gourdType;
-      const gourdData = seasonalData.gourdTypes.find(g => g.type === gourdType);
+      const gourdData = seasonalData.gourdTypes.find((g) => g.type === gourdType);
       if (gourdData) {
         gourdData.data[monthIndex] = stat.successCount;
       }
     });
 
     // Calculate peak months for each gourd
-    seasonalData.gourdTypes.forEach(gourd => {
+    seasonalData.gourdTypes.forEach((gourd) => {
       const maxValue = Math.max(...gourd.data);
       if (maxValue > 0) {
         gourd.peakMonths = gourd.data
           .map((val, idx) => ({ month: monthNames[idx], value: val }))
-          .filter(item => item.value >= maxValue * 0.7) // 70% of peak
-          .map(item => item.month);
+          .filter((item) => item.value >= maxValue * 0.7) // 70% of peak
+          .map((item) => item.month);
       } else {
         gourd.peakMonths = [];
       }
@@ -1275,7 +1288,7 @@ const getSeasonalPollinationStats = async (req, res) => {
     res.status(200).json({
       success: true,
       data: seasonalData,
-      message: 'Seasonal pollination statistics retrieved successfully'
+      message: 'Seasonal pollination statistics retrieved successfully',
     });
   } catch (error) {
     console.error('Get seasonal pollination stats error:', error);
