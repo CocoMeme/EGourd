@@ -21,9 +21,11 @@ import { CustomAlert } from '../../components';
 export const LoginScreen = ({ navigation, onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [authAction, setAuthAction] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [alert, setAlert] = useState({ visible: false, type: 'info', title: '', message: '', buttons: [] });
+
+  const isBusy = authAction !== null;
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -50,7 +52,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       return;
     }
 
-    setLoading(true);
+    setAuthAction('local');
 
     try {
       const result = await authService.login(email, password);
@@ -66,7 +68,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         } else {
           // Navigate immediately without showing alert on login screen
           if (onAuthSuccess) {
-            onAuthSuccess();
+            await onAuthSuccess();
           }
         }
       } else {
@@ -103,12 +105,12 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         buttons: [],
       });
     } finally {
-      setLoading(false);
+      setAuthAction(null);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
+    setAuthAction('google');
 
     try {
       // Check Google Auth configuration status
@@ -116,6 +118,10 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       console.log('🔍 Google Auth Status:', authStatus);
 
       const result = await authService.signInWithGoogle();
+
+      if (result.cancelled) {
+        return;
+      }
 
       if (result.success) {
         // Check if email is verified
@@ -127,7 +133,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         } else {
           // Navigate immediately
           if (onAuthSuccess) {
-            onAuthSuccess();
+            await onAuthSuccess();
           }
         }
       } else {
@@ -179,7 +185,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         buttons: [],
       });
     } finally {
-      setLoading(false);
+      setAuthAction(null);
     }
   };
 
@@ -282,8 +288,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
               {/* Login Button */}
               <TouchableOpacity
                 onPress={handleLogin}
-                disabled={loading}
-                style={[styles.loginButton, loading && styles.buttonDisabled]}
+                disabled={isBusy}
+                style={[styles.loginButton, isBusy && styles.buttonDisabled]}
               >
                 <LinearGradient
                   colors={[theme.colors.primary, '#4a8a3f']}
@@ -291,7 +297,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.loginButtonGradient}
                 >
-                  {loading ? (
+                  {authAction === 'local' ? (
                     <Text style={styles.buttonText}>Signing In...</Text>
                   ) : (
                     <Text style={styles.buttonText}>Sign In</Text>
@@ -309,8 +315,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
               {/* Google Sign In Button */}
               <TouchableOpacity
                 onPress={handleGoogleSignIn}
-                disabled={loading}
-                style={[styles.googleButton, loading && styles.buttonDisabled]}
+                disabled={isBusy}
+                style={[styles.googleButton, isBusy && styles.buttonDisabled]}
               >
                 <Ionicons
                   name="logo-google"
@@ -318,7 +324,9 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   color={theme.colors.primary}
                   style={styles.googleIcon}
                 />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <Text style={styles.googleButtonText}>
+                  {authAction === 'google' ? 'Connecting to Google...' : 'Continue with Google'}
+                </Text>
               </TouchableOpacity>
 
               {/* Guest Button */}
@@ -328,8 +336,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                     onAuthSuccess(true); // true indicates guest mode
                   }
                 }}
-                disabled={loading}
-                style={[styles.guestButton, loading && styles.buttonDisabled]}
+                disabled={isBusy}
+                style={[styles.guestButton, isBusy && styles.buttonDisabled]}
               >
                 <Ionicons
                   name="person-outline"
@@ -348,7 +356,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                 <Text style={styles.signupLink}>Create Account</Text>
               </TouchableOpacity>
             </View>
-            
+
             <View style={{ padding: 10, alignItems: 'center' }}>
                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Server: {API_BASE_URL}</Text>
             </View>

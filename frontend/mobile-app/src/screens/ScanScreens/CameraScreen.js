@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Animated,
   Dimensions,
   StatusBar
 } from 'react-native';
@@ -26,7 +25,9 @@ import { geminiService } from '../../services/geminiService';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
-const TOP_N = 3; // Show top 3 predictions
+const CONFIDENCE_THRESHOLD = 0.60; // Minimum confidence to display a detection
+const PREDICTION_BUFFER_SIZE = 15; // Frames kept in rolling buffer
+const STABLE_FRAME_GATE = 7; // Consecutive matching frames required for stability
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const CameraScreen = ({ navigation }) => {
@@ -63,10 +64,6 @@ export const CameraScreen = ({ navigation }) => {
   const bestFrame = useRef({ uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 }); // Track best stable frame
   const recentPredictions = useRef([]); // Track recent predictions for stability
 
-  // Animated values for smooth transitions
-  const animatedBars = useRef({});
-  const animatedPositions = useRef({});
-
   /**
    * Stop scanning - defined first as it has no dependencies
    */
@@ -94,8 +91,6 @@ export const CameraScreen = ({ navigation }) => {
     recentPredictions.current = [];
     bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
     lastFrameUri.current = { uri: null, width: 0, height: 0 }; // Clear stale frames from previous mode
-    animatedBars.current = {};
-    animatedPositions.current = {};
 
     try {
       setIsModelReady(false);
@@ -181,7 +176,7 @@ export const CameraScreen = ({ navigation }) => {
         const currentLabel = result.topPrediction.label;
         const currentConfidence = result.topPrediction.percentage;
 
-        // Add to recent predictions 
+        // Add to recent predictions
         // Logic Preservation: Increased buffer to 7 for better "recent" selection
         recentPredictions.current.push({
           label: currentLabel,
@@ -190,15 +185,14 @@ export const CameraScreen = ({ navigation }) => {
           width: photo.width,
           height: photo.height
         });
-        if (recentPredictions.current.length > 7) {
+        if (recentPredictions.current.length > PREDICTION_BUFFER_SIZE) {
           recentPredictions.current.shift();
         }
 
-        // Check for stable prediction 
-        // Logic Preservation: Increased to 5 frames for better stability
+        // Check for stable prediction using 7-frame gate
         const recent = recentPredictions.current;
-        const lastFive = recent.slice(-5);
-        const stableNow = lastFive.length >= 5 && lastFive.every(p => p.label === currentLabel);
+        const lastSeven = recent.slice(-STABLE_FRAME_GATE);
+        const stableNow = lastSeven.length >= STABLE_FRAME_GATE && lastSeven.every(p => p.label === currentLabel);
 
         // Mode-aware rejection label check
         const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
@@ -217,7 +211,7 @@ export const CameraScreen = ({ navigation }) => {
                 height: photo.height,
                 label: currentLabel,
                 confidence: currentConfidence,
-                count: lastFive.length
+                count: lastSeven.length
               };
               console.log('🏆 BEST FRAME updated (higher confidence):', currentLabel, `${currentConfidence.toFixed(1)}%`);
             }
@@ -230,42 +224,15 @@ export const CameraScreen = ({ navigation }) => {
                 height: photo.height,
                 label: currentLabel,
                 confidence: currentConfidence,
-                count: lastFive.length
+                count: lastSeven.length
               };
               console.log('🏆 BEST FRAME changed to:', currentLabel, `${currentConfidence.toFixed(1)}%`);
             }
           }
         }
 
-        // Update predictions with animations
-        const topPredictions = result.predictions.slice(0, TOP_N);
-
-        // Animate bars and positions smoothly
-        topPredictions.forEach((pred, index) => {
-          const key = pred.label;
-
-          // Initialize animated values if they don't exist
-          if (!animatedBars.current[key]) {
-            animatedBars.current[key] = new Animated.Value(0);
-          }
-          if (!animatedPositions.current[key]) {
-            animatedPositions.current[key] = new Animated.Value(index * 100);
-          }
-
-          // Animate bar width
-          Animated.timing(animatedBars.current[key], {
-            toValue: pred.percentage,
-            duration: 180, // Smoother transition
-            useNativeDriver: false,
-          }).start();
-
-          // Animate position (for smooth reordering)
-          Animated.timing(animatedPositions.current[key], {
-            toValue: index * 60, // Height of each row
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        });
+        // Update predictions — only the top result needed for the detection pill
+        const topPredictions = result.predictions.slice(0, 1);
 
         setPredictions(topPredictions);
         setProcessingTime(result.processingTime);
@@ -321,8 +288,6 @@ export const CameraScreen = ({ navigation }) => {
       recentPredictions.current = [];
       bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
       lastFrameUri.current = { uri: null, width: 0, height: 0 };
-      animatedBars.current = {};
-      animatedPositions.current = {};
     };
   }, [stopScanning]);
 
@@ -538,41 +503,30 @@ export const CameraScreen = ({ navigation }) => {
     );
   }
 
-  // Get color for confidence level
-  const getConfidenceColor = (percentage, isUncertain) => {
-    if (isUncertain) return '#9E9E9E'; // Gray for uncertain
-    if (percentage >= 70) return '#4CAF50'; // Green
-    if (percentage >= 40) return '#FFA500'; // Orange
-    return '#F44336'; // Red
-  };
-
-  // Render Main Result Card
-  const renderMainResult = () => {
+  // Render single Detection Pill — shows variety+confidence above threshold, 'Detecting...' below
+  const renderDetectionPill = () => {
     if (predictions.length === 0) return null;
 
     const top = predictions[0];
-    const isNotFlower = top.label === 'Not Flower';
-    const isLowConfidence = top.percentage < 70;
-    const color = getConfidenceColor(top.percentage, isNotFlower || isLowConfidence);
+    const isRejection = top.label === 'Not Flower' || top.label === 'Not Leaf';
+    const isAboveThreshold = top.percentage / 100 >= CONFIDENCE_THRESHOLD;
+    const showDetection = isAboveThreshold && !isRejection;
+    const color = showDetection ? '#4CAF50' : top.percentage >= 40 ? '#FFA500' : '#9E9E9E';
+    const statusText =
+      isStable && showDetection
+        ? 'Ready to capture'
+        : 'Point camera at a gourd flower or leaf';
 
     return (
-      <View style={styles.mainResultCard}>
-        <View style={[styles.iconContainer, { backgroundColor: isNotFlower ? 'rgba(158, 158, 158, 0.2)' : 'rgba(76, 175, 80, 0.2)' }]}>
-          <Ionicons
-            name={isNotFlower ? "help-circle" : "leaf"}
-            size={32}
-            color={color}
-          />
-        </View>
-        <View style={styles.mainResultTextContainer}>
-          <Text style={styles.mainResultLabel} numberOfLines={1}>
-            {top.label}
-          </Text>
-          <Text style={[styles.mainResultConfidence, { color }]}>
-            {top.percentage.toFixed(1)}% Confidence
+      <>
+        <View style={[styles.detectionPill, isStable && showDetection && styles.detectionPillActive]}>
+          <View style={[styles.pillDot, { backgroundColor: color }]} />
+          <Text style={[styles.pillText, { color }]} numberOfLines={1}>
+            {showDetection ? `${top.label}  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
           </Text>
         </View>
-      </View>
+        <Text style={styles.statusText}>{statusText}</Text>
+      </>
     );
   };
 
@@ -640,6 +594,15 @@ export const CameraScreen = ({ navigation }) => {
           animateShutter={false}
           onCameraReady={handleCameraReady}
         />
+        {/* Framing guide overlay — corner brackets to guide subject placement */}
+        <View style={styles.framingGuide} pointerEvents="none">
+          <View style={styles.framingRect}>
+            <View style={[styles.framingCorner, styles.cornerTL]} />
+            <View style={[styles.framingCorner, styles.cornerTR]} />
+            <View style={[styles.framingCorner, styles.cornerBL]} />
+            <View style={[styles.framingCorner, styles.cornerBR]} />
+          </View>
+        </View>
       </View>
 
       {/* 3. Predictions (Fills remaining space) */}
@@ -656,49 +619,8 @@ export const CameraScreen = ({ navigation }) => {
           </View>
         ) : (
           <>
-            <View style={styles.predictionsHeader}>
-              <Text style={styles.predictionsTitle}>
-                {isPaused ? 'Analysis Paused' : 'Real-time Analysis'}
-              </Text>
-              {isPaused && (
-                <View style={styles.pausedBadge}>
-                  <Text style={styles.pausedText}>PAUSED</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Main Result Card */}
-            {renderMainResult()}
-
-            {/* Secondary Predictions */}
-            <View style={styles.secondaryPredictions}>
-              <Text style={styles.secondaryTitle}>Other Possibilities</Text>
-              {predictions.slice(1, TOP_N).map((pred, index) => {
-                const key = pred.label;
-                const animatedWidth = animatedBars.current[key] || new Animated.Value(pred.percentage);
-
-                return (
-                  <View key={pred.label} style={styles.secondaryRow}>
-                    <Text style={styles.secondaryLabel} numberOfLines={1}>{pred.label}</Text>
-                    <View style={styles.secondaryBarContainer}>
-                      <Animated.View
-                        style={[
-                          styles.secondaryBar,
-                          {
-                            width: animatedWidth.interpolate({
-                              inputRange: [0, 100],
-                              outputRange: ['0%', '100%']
-                            }),
-                            backgroundColor: getConfidenceColor(pred.percentage, false)
-                          }
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.secondaryPercentage}>{pred.percentage.toFixed(1)}%</Text>
-                  </View>
-                );
-              })}
-            </View>
+            {/* Detection Pill */}
+            {renderDetectionPill()}
           </>
         )}
 
@@ -806,77 +728,62 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Main Result Card
-  mainResultCard: {
+  // Detection Pill
+  detectionPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  detectionPillActive: {
+    borderColor: '#4CAF50',
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
   },
-  mainResultTextContainer: {
-    flex: 1,
+  pillDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  mainResultLabel: {
-    color: '#FFFFFF',
-    fontSize: 20,
+  pillText: {
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
+    letterSpacing: 0.3,
   },
-  mainResultConfidence: {
-    fontSize: 14,
-    fontWeight: '600',
+  statusText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 8,
   },
 
-  // Secondary Predictions
-  secondaryPredictions: {
-    gap: 12,
-  },
-  secondaryTitle: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  secondaryRow: {
-    flexDirection: 'row',
+  // Framing guide corners
+  framingGuide: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  secondaryLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    width: '40%',
+  framingRect: {
+    width: SCREEN_WIDTH * 0.72,
+    height: SCREEN_WIDTH * 0.72,
   },
-  secondaryBarContainer: {
-    flex: 1,
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-    marginHorizontal: 12,
-    overflow: 'hidden',
+  framingCorner: {
+    position: 'absolute',
+    width: 26,
+    height: 26,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 3,
   },
-  secondaryBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  secondaryPercentage: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-    width: 45,
-    textAlign: 'right',
-    fontFamily: 'monospace',
-  },
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
 
   // Bottom Controls (Capture Button)
   bottomControls: {

@@ -22,7 +22,7 @@ console.log('🔧 Gemini Config:', {
 
 // Gemini configuration - using backend
 const GEMINI_CONFIG = {
-  model: 'gemini-2.5-flash', // Informational only
+  model: 'gemini-3-flash-preview', // Informational only
 };
 
 class GeminiService {
@@ -77,11 +77,11 @@ class GeminiService {
         console.log('💡 Using TM Context:', tmPrediction.label, `(${tmPrediction.confidence}%)`);
       }
 
-      // Optimize image before sending (resize to max 768px, reduce quality)
+      // Optimize image before sending (resize to max 640px, reduce quality)
       // Smaller payload reduces upload time; backend skips re-compression
       const manipulatedImage = await ImageManipulator.manipulateAsync(
         imageUri,
-        [{ resize: { width: 768 } }],
+        [{ resize: { width: 640 } }],
         { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       );
 
@@ -91,9 +91,9 @@ class GeminiService {
       // Get auth token
       const token = await authService.getToken(); // Use await to be safe
 
-      // Setup timeout controller (35s — backend retry budget is 25s)
+      // Setup timeout controller (26s — backend retry budget is 18s)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      const timeoutId = setTimeout(() => controller.abort(), 26000);
 
       // Call Backend API
       const response = await fetch(`${API_BASE_URL}/scans/analyze`, {
@@ -158,7 +158,7 @@ class GeminiService {
       // Optimize image
       const manipulatedImage = await ImageManipulator.manipulateAsync(
         imageUri,
-        [{ resize: { width: 768 } }],
+        [{ resize: { width: 640 } }],
         { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       );
 
@@ -167,9 +167,9 @@ class GeminiService {
       // Get auth token
       const token = await authService.getToken();
 
-      // Setup timeout controller (35s — backend retry budget is 25s)
+      // Setup timeout controller (26s — backend retry budget is 18s)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      const timeoutId = setTimeout(() => controller.abort(), 26000);
 
       // Call Backend API
       const response = await fetch(`${API_BASE_URL}/scans/analyze-leaf`, {
@@ -246,7 +246,7 @@ class GeminiService {
       rawScore: confidence,
       isNotLeaf,
       message: isNotLeaf ? 'Not a gourd leaf' : `${varietyDisplay} leaf (${confidencePercent}%)`,
-      modelType: 'Gemini 2.5 Flash',
+      modelType: 'Gemini 3 Flash',
       source: 'gemini',
       processingTime,
       timestamp: new Date().toISOString(),
@@ -344,11 +344,11 @@ class GeminiService {
       message,
 
       // Model metadata
-      modelType: 'Gemini 2.5 Flash',
+      modelType: 'Gemini 3 Flash',
       source: 'gemini',
       processingTime,
       timestamp: new Date().toISOString(),
-      modelVersion: 'gemini-2.5-flash',
+      modelVersion: 'gemini-3-flash-preview',
 
       // Gemini-specific data (enhanced with new fields)
       geminiData: {

@@ -2,7 +2,7 @@
  * Model Service (Consolidated)
  * Handles Multiple TFLite models from Teachable Machine
  * Supports Flower and Leaf scanning modes
- * 
+ *
  * @module modelService
  * @version 4.0.0-multimodel
  */
@@ -275,14 +275,16 @@ class ModelService {
       const outputs = await currentModel.run([imagePixels]);
       const outputTensor = outputs[0];
 
-      // Get raw probabilities (no smoothing - matches TM website behavior)
-      const probabilities = Array.from(outputTensor);
+      // Apply temperature scaling (T=1.5) to flatten overconfident distributions
+      const rawProbabilities = Array.from(outputTensor);
+      const probabilities = applySoftmaxWithTemperature(rawProbabilities, 1.5);
 
       // Build probability array using current mode labels
       const currentLabels = this.labels;
       const predictions = currentLabels.map((label, index) => {
         const probability = probabilities[index] || 0;
-        const percentage = probability * 100;
+        // Cap at 97% to prevent misleading "100%" display
+        const percentage = Math.min(probability * 100, 97);
 
         return {
           label,
@@ -390,6 +392,21 @@ class ModelService {
       inputSize: this.inputSize,
     };
   }
+}
+
+/**
+ * Apply temperature scaling to soften overconfident softmax outputs.
+ * T > 1 flattens the distribution; T < 1 sharpens it.
+ * @param {number[]} probs - Raw probability array from model
+ * @param {number} T - Temperature (default 1.5)
+ * @returns {number[]} Re-normalized probabilities
+ */
+function applySoftmaxWithTemperature(probs, T = 1.5) {
+  const logits = probs.map(p => Math.log(Math.max(p, 1e-7)) / T);
+  const maxLogit = Math.max(...logits);
+  const expValues = logits.map(l => Math.exp(l - maxLogit));
+  const sum = expValues.reduce((a, b) => a + b, 0);
+  return expValues.map(e => e / sum);
 }
 
 export const modelService = new ModelService();

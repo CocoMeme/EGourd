@@ -7,7 +7,7 @@ const sharp = require('sharp');
 
 // Configuration for memory-efficient processing
 const CONFIG = {
-  MAX_DIMENSION: 1024, // Max width/height for Gemini
+  MAX_DIMENSION: 768, // Max width/height for Gemini (768px is sufficient and faster to upload)
   JPEG_QUALITY: 80, // Good quality with compression
   MEMORY_LIMIT_MB: 50, // Sharp memory limit per operation
 };

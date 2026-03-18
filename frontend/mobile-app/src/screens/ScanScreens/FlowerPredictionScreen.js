@@ -2,7 +2,7 @@
  * ResultsScreen - Results screen for TM + Gemini combined analysis
  * Shows prediction results, quality metrics, harvest timeline, and charts
  * Handles loading state while analysis runs in background
- * 
+ *
  * Replaces previous ResultsScreen and ResultsScreenTM
  */
 
@@ -66,9 +66,10 @@ const MetricBar = ({ label, value, color }) => (
 );
 
 /**
- * Harvest Timeline Component
+ * Harvest Timeline Component (collapsible, collapsed by default)
  */
 const HarvestTimeline = ({ data, backendData }) => {
+  const [expanded, setExpanded] = useState(false);
   if (!data && !backendData) return null;
 
   const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'fruiting', 'harvest'];
@@ -86,81 +87,91 @@ const HarvestTimeline = ({ data, backendData }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Growth Timeline</Text>
+      <TouchableOpacity
+        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Growth Timeline</Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
+      </TouchableOpacity>
 
-      {currentStage && (
-        <View style={styles.timeline}>
-          {stages.map((stage, index) => (
-            <View key={stage} style={styles.timelineStep}>
-              <View style={[
-                styles.timelineDot,
-                index <= currentIndex && styles.timelineDotActive,
-                index === currentIndex && styles.timelineDotCurrent,
-              ]}>
-                {index === currentIndex && (
-                  <Ionicons name="checkmark" size={10} color="#FFF" />
-                )}
-              </View>
-              {index < stages.length - 1 && (
-                <View style={[
-                  styles.timelineLine,
-                  index < currentIndex && styles.timelineLineActive,
-                ]} />
-              )}
-              <Text style={[
-                styles.timelineLabel,
-                index <= currentIndex && styles.timelineLabelActive,
-                index === currentIndex && styles.timelineLabelCurrent,
-              ]}>
-                {stageLabels[stage]}
+      {expanded && (
+        <>
+          {currentStage && (
+            <View style={styles.timeline}>
+              {stages.map((stage, index) => (
+                <View key={stage} style={styles.timelineStep}>
+                  <View style={[
+                    styles.timelineDot,
+                    index <= currentIndex && styles.timelineDotActive,
+                    index === currentIndex && styles.timelineDotCurrent,
+                  ]}>
+                    {index === currentIndex && (
+                      <Ionicons name="checkmark" size={10} color="#FFF" />
+                    )}
+                  </View>
+                  {index < stages.length - 1 && (
+                    <View style={[
+                      styles.timelineLine,
+                      index < currentIndex && styles.timelineLineActive,
+                    ]} />
+                  )}
+                  <Text style={[
+                    styles.timelineLabel,
+                    index <= currentIndex && styles.timelineLabelActive,
+                    index === currentIndex && styles.timelineLabelCurrent,
+                  ]}>
+                    {stageLabels[stage]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.harvestInfo}>
+            <View style={styles.harvestRow}>
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.harvestText}>
+                Harvest: <Text style={styles.harvestHighlight}>{backendData?.daysToHarvest || data?.daysToHarvest || '--'} days</Text>
               </Text>
             </View>
-          ))}
-        </View>
+
+            {(backendData?.estimatedHarvestDate || data?.optimalHarvestWindow) && (
+              <View style={styles.harvestRow}>
+                <Ionicons name="time-outline" size={20} color={theme.colors.primary} />
+                <Text style={styles.harvestText}>
+                  Window: {backendData?.estimatedHarvestDate || data?.optimalHarvestWindow}
+                </Text>
+              </View>
+            )}
+
+            {backendData?.rationale && (
+              <View style={styles.rationaleContainer}>
+                <Text style={styles.rationaleTitle}>Rationale:</Text>
+                <Text style={styles.rationaleText}>{backendData.rationale}</Text>
+              </View>
+            )}
+
+            {backendData?.recommendations?.length > 0 && (
+              <View style={styles.backendRecsContainer}>
+                <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
+                {backendData.recommendations.map((rec, i) => (
+                  <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
+                ))}
+              </View>
+            )}
+
+            {data?.pollinationReady && (
+              <View style={[styles.harvestRow, styles.pollinationReady]}>
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                <Text style={[styles.harvestText, { color: '#4CAF50' }]}>
+                  Ready for pollination! Best time: {data.bestPollinationTime}
+                </Text>
+              </View>
+            )}
+          </View>
+        </>
       )}
-
-      <View style={styles.harvestInfo}>
-        <View style={styles.harvestRow}>
-          <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
-          <Text style={styles.harvestText}>
-            Harvest: <Text style={styles.harvestHighlight}>{backendData?.daysToHarvest || data?.daysToHarvest || '--'} days</Text>
-          </Text>
-        </View>
-
-        {(backendData?.estimatedHarvestDate || data?.optimalHarvestWindow) && (
-          <View style={styles.harvestRow}>
-            <Ionicons name="time-outline" size={20} color={theme.colors.primary} />
-            <Text style={styles.harvestText}>
-              Window: {backendData?.estimatedHarvestDate || data?.optimalHarvestWindow}
-            </Text>
-          </View>
-        )}
-
-        {backendData?.rationale && (
-          <View style={styles.rationaleContainer}>
-            <Text style={styles.rationaleTitle}>Rationale:</Text>
-            <Text style={styles.rationaleText}>{backendData.rationale}</Text>
-          </View>
-        )}
-
-        {backendData?.recommendations?.length > 0 && (
-          <View style={styles.backendRecsContainer}>
-            <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
-            {backendData.recommendations.map((rec, i) => (
-              <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
-            ))}
-          </View>
-        )}
-
-        {data?.pollinationReady && (
-          <View style={[styles.harvestRow, styles.pollinationReady]}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-            <Text style={[styles.harvestText, { color: '#4CAF50' }]}>
-              Ready for pollination! Best time: {data.bestPollinationTime}
-            </Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 };
@@ -220,9 +231,10 @@ const AnimatedMetricBar = ({ label, value }) => {
 };
 
 /**
- * Quality Metrics Chart Component
+ * Quality Metrics Chart Component (collapsible, collapsed by default)
  */
 const QualityMetricsChart = ({ metrics }) => {
+  const [expanded, setExpanded] = useState(false);
   if (!metrics) return null;
 
   const metricsList = [
@@ -235,16 +247,24 @@ const QualityMetricsChart = ({ metrics }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Quality Metrics</Text>
-      <View style={{ paddingVertical: 10 }}>
-        {metricsList.map((metric, i) => (
-          <AnimatedMetricBar
-            key={i}
-            label={metric.label}
-            value={metric.value}
-          />
-        ))}
-      </View>
+      <TouchableOpacity
+        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Quality Metrics</Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
+      </TouchableOpacity>
+      {expanded && (
+        <View style={{ paddingVertical: 10 }}>
+          {metricsList.map((metric, i) => (
+            <AnimatedMetricBar
+              key={i}
+              label={metric.label}
+              value={metric.value}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -417,42 +437,57 @@ const ObservationsCard = ({ observations }) => {
 };
 
 /**
- * Confidence Comparison Component
+ * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge
  */
-const ConfidenceComparison = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
-  return (
-    <View style={{ flex: 1, paddingLeft: 16, justifyContent: 'space-between' }}>
-      <Text style={{ fontSize: 12, color: '#888', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' }}>Confidence</Text>
+const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
+  const agree = comparisonResult?.agree;
+  const badgeColor = agree ? '#4CAF50' : '#FF9800';
+  const badgeIcon = agree ? 'checkmark-circle' : 'alert-circle';
+  const badgeLabel = agree ? 'AGREE' : 'DISAGREE';
 
-      <View style={{ marginBottom: 8 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-          <Text style={{ fontSize: 10, color: '#666' }}>TM</Text>
-          <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
+  return (
+    <View style={{ flex: 1, paddingLeft: 16 }}>
+      {/* Row: TM | badge | Gemini */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* TM column */}
+        <View style={{ alignItems: 'center', flex: 1 }}>
+          <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>TM Model</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#2196F3' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
         </View>
-        <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-          <View style={{ height: '100%', width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#2196F3' }} />
+
+        {/* Badge / divider */}
+        <View style={{ alignItems: 'center', paddingHorizontal: 4 }}>
+          {geminiPrediction ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: badgeColor + '18', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: badgeColor }}>
+              <Ionicons name={badgeIcon} size={12} color={badgeColor} />
+              <Text style={{ fontSize: 9, fontWeight: '700', color: badgeColor }}>{badgeLabel}</Text>
+            </View>
+          ) : isGeminiLoading ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <Text style={{ fontSize: 11, color: '#CCC', fontWeight: '600' }}>VS</Text>
+          )}
+        </View>
+
+        {/* Gemini column */}
+        <View style={{ alignItems: 'center', flex: 1 }}>
+          <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>Gemini AI</Text>
+          {geminiPrediction ? (
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#9C27B0' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+          ) : isGeminiLoading ? (
+            <SkeletonLoader width={40} height={20} style={{ borderRadius: 4 }} />
+          ) : (
+            <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
+          )}
         </View>
       </View>
 
-      {geminiPrediction ? (
-        <View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-            <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
-            <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
-          </View>
-          <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-            <View style={{ height: '100%', width: `${geminiPrediction.confidence}%`, backgroundColor: '#9C27B0' }} />
-          </View>
-        </View>
-      ) : isGeminiLoading ? (
-        <View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-            <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
-            <ActivityIndicator size={10} color="#9C27B0" />
-          </View>
-          <SkeletonLoader width="100%" height={10} style={{ borderRadius: 5 }} />
-        </View>
-      ) : null}
+      {/* Recommended source */}
+      {comparisonResult?.recommendedSource && (
+        <Text style={{ fontSize: 10, color: '#888', textAlign: 'center', marginTop: 6 }}>
+          Using: <Text style={{ fontWeight: '700', color: '#333' }}>{comparisonResult.recommendedSource === 'gemini' ? 'Gemini AI' : 'TM Model'}</Text>
+        </Text>
+      )}
     </View>
   );
 };
@@ -788,7 +823,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
     if (route.params.tmPrediction && route.params.tmPrediction.runs) {
       console.log('🔬 [DEV MODE] Using pre-computed prediction from CameraScreen.test');
       const preComputed = route.params.tmPrediction;
-      
+
       const tmPred = {
         variety: getVarietyFromLabel(preComputed.topPrediction.label),
         gender: getGenderFromLabel(preComputed.topPrediction.label),
@@ -801,7 +836,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         modelType: `Teachable Machine (Flower) - ${preComputed.runs} runs averaged`,
         processingTime: preComputed.processingTime,
       };
-      
+
       setTmPrediction(tmPred);
       setPrediction(tmPred);
       setIsTmComplete(true);
@@ -809,21 +844,21 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       setIsGeminiLoading(false);
       setAnalysisError(null);
       setBackendPrediction(null);
-      
+
       // Fade in results
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
-      
+
       // Still run Gemini analysis if available
       if (geminiService.isAvailable() && !tmPred.isNotFlower) {
         runGeminiAnalysisOnly(tmPred);
       }
       return;
     }
-    
+
     // Original logic - no dev mode check needed anymore
     // Update all states from route params
     setTmPrediction(route.params.tmPrediction || null);
@@ -1197,9 +1232,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
                     )}
                   </View>
 
-                  {/* Confidence Comparison */}
+                  {/* Final Verdict */}
                   <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
-                    <ConfidenceComparison
+                    <FinalVerdictCard
                       tmPrediction={tmPrediction}
                       geminiPrediction={geminiPrediction}
                       comparisonResult={comparisonResult}
@@ -1260,14 +1295,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               </>
             )}
 
-            {/* Skeleton Loaders while Gemini is loading */}
+            {/* Skeleton — only on the Gemini AI Insights card while loading */}
             {isGeminiLoading && !isNotFlower && (
-              <>
-                <SkeletonCard title="Growth Timeline" lines={4} />
-                <SkeletonCard title="Quality Metrics" lines={5} />
-                <SkeletonCard title="Flower Quality" lines={3} />
-                <SkeletonCard title="AI Observations" lines={4} />
-              </>
+              <SkeletonCard title="AI Insights" lines={4} />
             )}
 
             {/* TM Only Notice - Show only when Gemini finished but no data */}

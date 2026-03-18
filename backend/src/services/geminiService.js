@@ -1,43 +1,50 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const { logMemoryUsage, forceGC } = require('../utils/memoryUtils');
 
-// Get API keys from environment - supports multiple keys for fallback
+// ===== KEY POOL — 7 keys with round-robin rotation =====
+// Keys 1-4 are existing; 5-7 are GourdVission-1/2/3
 const GEMINI_API_KEYS = [
-  process.env.GEMINI_API_KEY, // Primary key
-  process.env.GEMINI_API_KEY_2, // Fallback 1
-  process.env.GEMINI_API_KEY_3, // Fallback 2
-  process.env.GEMINI_API_KEY_4, // Fallback 3
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+  process.env.GEMINI_API_KEY_5, // GourdVission-1
+  process.env.GEMINI_API_KEY_6, // GourdVission-2
+  process.env.GEMINI_API_KEY_7, // GourdVission-3
 ].filter((key) => key && key.length > 0);
 
-// Model fallback chain - when primary model is overloaded (503), try next model
-// Only using free tier models that are confirmed to work with v1beta API
+// ===== MODEL FALLBACK CHAIN =====
 const MODEL_FALLBACK_CHAIN = [
-  'gemini-2.5-flash-lite', // Primary - newest, fast and lightweight (free)
-  'gemini-2.0-flash-lite', // Fallback - stable and reliable (free)
+  'gemini-3-flash-preview', // Primary - balanced speed + accuracy
+  'gemini-3.1-flash-lite-preview', // Fallback - high-volume, cost-sensitive
 ];
 
-// Retry configuration with exponential backoff
+// ===== RETRY CONFIGURATION =====
 const RETRY_CONFIG = {
-  initialDelay: 2000, // 2s initial backoff
-  maxDelay: 15000, // 15s max backoff
-  backoffMultiplier: 2, // Double each retry
-  timeBudget: 25000, // 25s total budget (fits within 35s frontend timeout)
-  maxServerRetries: 3, // Max 503 retries per model
+  initialDelay: 2000,
+  maxDelay: 15000,
+  backoffMultiplier: 2,
+  timeBudget: 18000, // 18s total budget (fits within 26s frontend timeout)
+  maxServerRetries: 3,
 };
 
+// ===== GENERATION DEFAULTS =====
+// Lower temperature → more deterministic; fewer tokens → faster with structured JSON
 const GEMINI_CONFIG = {
-  temperature: 0.3,
+  temperature: 0.1,
   topK: 1,
   topP: 0.95,
   maxOutputTokens: 2048,
 };
 
-/**
- * Concurrency queue — limits parallel Gemini API calls.
- * With 4 free-tier keys at 2 RPM each, max 2 concurrent is safe.
- */
+// ===== ROUND-ROBIN KEY INDEX =====
+// Advances once per top-level request so every call uses the next key in sequence
+let globalKeyIndex = 0;
+
+// ===== CONCURRENCY QUEUE =====
+// 7 keys at ~2 RPM each; allow up to 3 concurrent calls safely
 class RequestQueue {
-  constructor(concurrency = 2) {
+  constructor(concurrency = 3) {
     this.concurrency = concurrency;
     this.running = 0;
     this.queue = [];
@@ -59,10 +66,37 @@ class RequestQueue {
   }
 }
 
-const requestQueue = new RequestQueue(2);
+const requestQueue = new RequestQueue(3);
 
-// System context for gourd farming expertise
-const SYSTEM_CONTEXT = `You are an expert agricultural assistant specializing in gourd farming, particularly bottle gourds (Lagenaria siceraria). 
+// ===== SYSTEM INSTRUCTIONS =====
+
+const FLOWER_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Analyze gourd flower images and identify variety and gender with precision.
+
+IDENTIFICATION RULES (non-negotiable):
+1. UPO (Bottle Gourd, Lagenaria siceraria): Flowers are WHITE. If the flower is yellow, it CANNOT be Upo.
+2. AMPALAYA (Bitter Gourd, Momordica charantia): Small yellow flowers, deeply lobed petals, thin stems.
+3. PATOLA (Sponge Gourd, Luffa acutangula): LARGE bright yellow flowers, wide rounded petals.
+4. CUCUMBER (Cucumis sativus): Small-to-medium yellow flowers, 5 rounded petals, thinner than patola.
+5. GENDER: Female flowers have a distinct ovary (baby fruit) bulge at the base — a swollen green or ribbed protrusion. Male flowers have a thin stem with no such bulge. If you see any bulge at the petal base, classify as FEMALE. Only classify UNKNOWN if the base is completely obscured.
+6. HARVEST TIMING: Gourds typically take 20-35 days from full bloom to harvest-ready fruit. Do not estimate 7 days unless the fruit is already large and clearly near-mature.
+7. CONFIDENCE: Only set confidence > 0.8 if you are completely certain. Report 0.5-0.7 for partial views or ambiguous images.`;
+
+const LEAF_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Analyze gourd leaf images, identify the variety, and assess leaf health.
+
+IDENTIFICATION RULES:
+1. AMPALAYA (Bitter Gourd): Deeply lobed leaves, 5-7 pointed lobes, jagged toothed edges, rough upper surface.
+2. PATOLA (Sponge Gourd): Large leaves, shallow rounded lobes (3-5), rough texture, wide leaf blade.
+3. UPO (Bottle Gourd): Heart-shaped to rounded leaves, shallow lobes, soft texture, velvety whitish underside.
+4. KALABASA (Squash): Very large rounded leaves, shallow lobes with hairy texture, triangular stem attachment.
+5. PIPINO (Cucumber): Medium triangular leaves, 3-5 angular lobes, rough texture, pointed tips.
+
+HEALTH ASSESSMENT:
+- Chlorophyll: "healthy" = uniform dark green; "yellowing" = patches from edges or veins; "deficient" = widespread pale/yellow coloration.
+- Nutrient deficiencies: Iron -> interveinal chlorosis (yellow between veins, green veins); Nitrogen -> uniform pale yellowing from older leaves; Magnesium -> yellow edges, green center.
+- Disease indicators: Downy mildew -> yellow angular spots on upper surface; Powdery mildew -> white powdery patches; Leaf curl virus -> distorted/curled margins.
+- CONFIDENCE: Only set confidence > 0.8 if completely certain. Report 0.5-0.7 for partial views.`;
+
+const CHATBOT_SYSTEM_INSTRUCTION = `You are an expert agricultural assistant specializing in gourd farming, particularly bottle gourds (Lagenaria siceraria).
 You provide helpful, accurate advice on:
 - Gourd cultivation techniques and best practices
 - Hand pollination methods and timing
@@ -75,28 +109,154 @@ You provide helpful, accurate advice on:
 
 Always provide practical, actionable advice. Keep responses concise but informative (2-4 paragraphs max unless asked for more detail). Use simple language suitable for farmers of all experience levels.`;
 
+// ===== RESPONSE SCHEMAS =====
+
+const FLOWER_ANALYSIS_SCHEMA = {
+  type: 'object',
+  properties: {
+    variety: {
+      type: 'string',
+      enum: ['ampalaya_bilog', 'patola', 'upo_smooth', 'cucumber', 'not_flower'],
+    },
+    gender: { type: 'string', enum: ['male', 'female', 'unknown'] },
+    confidence: { type: 'number' },
+    reasoning: { type: 'string' },
+    keyFeatures: { type: 'array', items: { type: 'string' } },
+    flowerQuality: {
+      type: 'object',
+      properties: {
+        overallScore: { type: 'number' },
+        petalCondition: { type: 'string', enum: ['excellent', 'good', 'fair', 'poor'] },
+        sizeAssessment: { type: 'string', enum: ['small', 'average', 'large'] },
+        healthIndicators: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['overallScore', 'petalCondition', 'sizeAssessment', 'healthIndicators'],
+    },
+    harvestPrediction: {
+      type: 'object',
+      properties: {
+        daysToHarvest: { type: 'number' },
+        currentStage: {
+          type: 'string',
+          enum: ['bud', 'blooming', 'peak_bloom', 'wilting', 'pollinated'],
+        },
+        pollinationReady: { type: 'boolean' },
+        optimalHarvestWindow: { type: 'string' },
+        bestPollinationTime: { type: 'string' },
+      },
+      required: [
+        'daysToHarvest',
+        'currentStage',
+        'pollinationReady',
+        'optimalHarvestWindow',
+        'bestPollinationTime',
+      ],
+    },
+    qualityMetrics: {
+      type: 'object',
+      properties: {
+        petalQuality: { type: 'number' },
+        colorScore: { type: 'number' },
+        developmentScore: { type: 'number' },
+        healthScore: { type: 'number' },
+        pollinationPotential: { type: 'number' },
+      },
+      required: [
+        'petalQuality',
+        'colorScore',
+        'developmentScore',
+        'healthScore',
+        'pollinationPotential',
+      ],
+    },
+    observations: {
+      type: 'object',
+      properties: {
+        strengths: { type: 'array', items: { type: 'string' } },
+        concerns: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['strengths', 'concerns'],
+    },
+  },
+  required: [
+    'variety',
+    'gender',
+    'confidence',
+    'reasoning',
+    'keyFeatures',
+    'flowerQuality',
+    'harvestPrediction',
+    'qualityMetrics',
+    'observations',
+  ],
+};
+
+const LEAF_ANALYSIS_SCHEMA = {
+  type: 'object',
+  properties: {
+    variety: {
+      type: 'string',
+      enum: ['ampalaya', 'patola', 'upo', 'kalabasa', 'pipino', 'not_leaf'],
+    },
+    confidence: { type: 'number' },
+    reasoning: { type: 'string' },
+    keyFeatures: { type: 'array', items: { type: 'string' } },
+    leafHealth: {
+      type: 'object',
+      properties: {
+        healthScore: { type: 'number' },
+        chlorophyllLevel: { type: 'string', enum: ['healthy', 'yellowing', 'deficient'] },
+        maturityStage: { type: 'string', enum: ['young', 'mature', 'aging'] },
+        visibleIssues: { type: 'array', items: { type: 'string' } },
+        nutrientDeficiencies: { type: 'array', items: { type: 'string' } },
+      },
+      required: [
+        'healthScore',
+        'chlorophyllLevel',
+        'maturityStage',
+        'visibleIssues',
+        'nutrientDeficiencies',
+      ],
+    },
+    observations: {
+      type: 'object',
+      properties: {
+        strengths: { type: 'array', items: { type: 'string' } },
+        concerns: { type: 'array', items: { type: 'string' } },
+        recommendations: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['strengths', 'concerns', 'recommendations'],
+    },
+  },
+  required: ['variety', 'confidence', 'reasoning', 'keyFeatures', 'leafHealth', 'observations'],
+};
+
 /**
- * Execute a Gemini API call with per-call model instantiation,
- * automatic retry, key rotation, model fallback, and exponential backoff.
- * No shared mutable state — safe for concurrent requests.
- * @param {Function} operation - Async function that takes the current model and returns a result
- * @param {Object} meta - Optional object to receive metadata (e.g., meta.modelUsed)
+ * Execute a Gemini API call with round-robin key rotation, model fallback, and exponential backoff.
+ * Round-robin: every top-level call starts on the next key in sequence (globalKeyIndex advances by 1).
+ * Error recovery: 503 retries the same key; 403/429 advance to the next key.
+ * @param {Function} operation - async (ai, modelName) => result
+ * @param {Object} meta - receives { modelUsed } after success
  */
 async function executeWithRetry(operation, meta = {}) {
   if (GEMINI_API_KEYS.length === 0) {
-    throw new Error('GEMINI_API_KEY is not configured');
+    throw new Error('No GEMINI_API_KEY is configured');
   }
 
   const startTime = Date.now();
   let lastError;
   let delay = RETRY_CONFIG.initialDelay;
 
-  for (let modelIndex = 0; modelIndex < MODEL_FALLBACK_CHAIN.length; modelIndex++) {
-    const modelName = MODEL_FALLBACK_CHAIN[modelIndex];
-    let serverRetries = 0;
+  // Assign starting key for this request (true round-robin across callers)
+  const assignedKeyStart = globalKeyIndex;
+  globalKeyIndex = (globalKeyIndex + 1) % GEMINI_API_KEYS.length;
 
-    for (let keyIndex = 0; keyIndex < GEMINI_API_KEYS.length; keyIndex++) {
-      // Check time budget
+  for (let modelIdx = 0; modelIdx < MODEL_FALLBACK_CHAIN.length; modelIdx++) {
+    const modelName = MODEL_FALLBACK_CHAIN[modelIdx];
+    let serverRetries = 0;
+    let keyOffset = 0;
+
+    while (keyOffset < GEMINI_API_KEYS.length) {
       const elapsed = Date.now() - startTime;
       if (elapsed > RETRY_CONFIG.timeBudget) {
         throw new Error(
@@ -104,30 +264,23 @@ async function executeWithRetry(operation, meta = {}) {
         );
       }
 
-      // Create fresh instances per attempt — no shared state between requests
-      const apiKey = GEMINI_API_KEYS[keyIndex];
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const activeModel = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: GEMINI_CONFIG,
-      });
+      const keyIdx = (assignedKeyStart + keyOffset) % GEMINI_API_KEYS.length;
+      const apiKey = GEMINI_API_KEYS[keyIdx];
+      const ai = new GoogleGenAI({ apiKey });
 
       try {
-        console.log(
-          `🤖 Gemini: key ${keyIndex + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`
-        );
-        const result = await requestQueue.enqueue(() => operation(activeModel));
+        console.log(`🤖 Gemini: key ${keyIdx + 1}/${GEMINI_API_KEYS.length}, model: ${modelName}`);
+        const result = await requestQueue.enqueue(() => operation(ai, modelName));
         meta.modelUsed = modelName;
         return result;
       } catch (error) {
         lastError = error;
         const errorMessage = error.message || '';
-        const statusCode = error.status || errorMessage.match(/\[(\d{3})/)?.[1];
+        const statusCode =
+          error.status || error.code || (errorMessage.match(/\b(503|403|429)\b/) || [])[1];
 
-        // 503 Server overload → retry same key with backoff, then next model
         const isServerOverload =
-          statusCode === 503 ||
-          statusCode === '503' ||
+          statusCode == 503 ||
           errorMessage.includes('503') ||
           errorMessage.includes('overloaded') ||
           errorMessage.includes('Service Unavailable');
@@ -140,34 +293,31 @@ async function executeWithRetry(operation, meta = {}) {
             );
             await new Promise((resolve) => setTimeout(resolve, delay));
             delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
-            keyIndex--; // Retry same key
+            // Don't advance keyOffset — retry the same key
             continue;
           }
           console.log(
             `⚠️ Model ${modelName} still overloaded after ${RETRY_CONFIG.maxServerRetries} retries`
           );
-          break; // Try next model
+          break; // Move to next model
         }
 
-        // 403 Forbidden / invalid key → skip to next key immediately
         const isForbiddenError =
-          statusCode === 403 ||
-          statusCode === '403' ||
+          statusCode == 403 ||
           errorMessage.includes('403') ||
           errorMessage.includes('Forbidden') ||
-          errorMessage.includes('leaked') ||
-          errorMessage.includes('API key not valid');
+          errorMessage.includes('API key not valid') ||
+          errorMessage.includes('leaked');
 
         if (isForbiddenError) {
-          console.log(`⚠️ API key ${keyIndex + 1} invalid (403), trying next...`);
+          console.log(`⚠️ API key ${keyIdx + 1} invalid (403), trying next...`);
           serverRetries = 0;
+          keyOffset++;
           continue;
         }
 
-        // 429 Rate limit → backoff then next key
         const isRateLimitError =
-          statusCode === 429 ||
-          statusCode === '429' ||
+          statusCode == 429 ||
           errorMessage.includes('429') ||
           errorMessage.includes('quota exceeded') ||
           errorMessage.includes('rate limit') ||
@@ -175,10 +325,11 @@ async function executeWithRetry(operation, meta = {}) {
           errorMessage.includes('RATE_LIMIT_EXCEEDED');
 
         if (isRateLimitError) {
-          console.log(`⚠️ Rate limit (429) on key ${keyIndex + 1}, backoff ${delay}ms...`);
+          console.log(`⚠️ Rate limit (429) on key ${keyIdx + 1}, backoff ${delay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
           serverRetries = 0;
+          keyOffset++;
           continue;
         }
 
@@ -187,7 +338,6 @@ async function executeWithRetry(operation, meta = {}) {
       }
     }
 
-    // All keys exhausted for this model
     console.log(`⚠️ All keys exhausted for ${modelName}, trying next model...`);
   }
 
@@ -195,31 +345,13 @@ async function executeWithRetry(operation, meta = {}) {
 }
 
 /**
- * Generate AI response using Gemini API
+ * Generate AI chatbot response using Gemini
  */
 async function generateMessage(prompt, conversationHistory = []) {
   try {
     const meta = {};
-    const result = await executeWithRetry(async (activeModel) => {
-      // Build conversation history for context
+    const text = await executeWithRetry(async (ai, modelName) => {
       const history = [];
-
-      // Add system context
-      history.push({
-        role: 'user',
-        parts: [{ text: SYSTEM_CONTEXT }],
-      });
-
-      history.push({
-        role: 'model',
-        parts: [
-          {
-            text: "Understood. I'm ready to help with gourd farming questions. What would you like to know?",
-          },
-        ],
-      });
-
-      // Add recent conversation history (limit to last 10 messages)
       const recentHistory = conversationHistory.slice(-10);
       for (const msg of recentHistory) {
         history.push({
@@ -228,10 +360,11 @@ async function generateMessage(prompt, conversationHistory = []) {
         });
       }
 
-      // Start chat with history
-      const chat = activeModel.startChat({
+      const chat = ai.chats.create({
+        model: modelName,
         history,
-        generationConfig: {
+        config: {
+          systemInstruction: CHATBOT_SYSTEM_INSTRUCTION,
           temperature: 0.7,
           maxOutputTokens: 1024,
           topP: 0.95,
@@ -239,13 +372,9 @@ async function generateMessage(prompt, conversationHistory = []) {
         },
       });
 
-      // Send message and get response
-      const result = await chat.sendMessage(prompt);
-      return result;
+      const response = await chat.sendMessage({ message: prompt });
+      return response.text;
     }, meta);
-
-    const response = await result.response;
-    const text = response.text();
 
     return {
       success: true,
@@ -255,8 +384,6 @@ async function generateMessage(prompt, conversationHistory = []) {
     };
   } catch (error) {
     console.error('Gemini API Error:', error.message);
-
-    // Provide fallback response
     return {
       success: false,
       message:
@@ -268,7 +395,7 @@ async function generateMessage(prompt, conversationHistory = []) {
 }
 
 /**
- * Get quick suggestions for common topics
+ * Quick suggestions for common gourd farming topics
  */
 function getQuickSuggestions() {
   return [
@@ -289,54 +416,57 @@ function isAvailable() {
 }
 
 /**
- * Generate harvest prediction based on scan and environment
+ * Generate harvest prediction from scan + environmental data
  */
 async function generateHarvestPrediction(scanData, environmentalData = {}) {
   try {
     const { prediction, confidence, variety } = scanData;
     const { location, date, weather } = environmentalData;
 
-    const prompt = `
-      Analyze the following gourd scan data and environmental context to provide a harvest prediction:
-      
-      **Scan Data:**
-      - Plant/Fruit Type: ${prediction}
-      - Variety: ${variety || 'Unknown'}
-      - Confidence: ${confidence}
-      
-      **Context:**
-      - Date: ${date || new Date().toDateString()}
-      - Location: ${location || 'Unknown'}
-      - Weather Conditions: ${weather || 'Unknown'}
+    const prompt = `Analyze the following gourd scan data and provide a harvest prediction.
 
-      Based on this, provide a JSON response with the following structure:
-      {
-        "estimatedHarvestDate": "YYYY-MM-DD (or range)",
-        "daysToHarvest": number (approximate),
-        "confidence": number (0-100),
-        "rationale": "Explanation of why this date was chosen based on typical growth cycles and current conditions.",
-        "recommendations": ["List of 2-3 specific care tips for this stage"]
-      }
-      
-      Ensure the rationale cites specific growth stages for the identified gourd type.
-    `;
+Scan Data:
+- Plant/Fruit Type: ${prediction}
+- Variety: ${variety || 'Unknown'}
+- Confidence: ${confidence}
 
-    const result = await executeWithRetry(async (activeModel) => {
-      return await activeModel.generateContent({
+Context:
+- Date: ${date || new Date().toDateString()}
+- Location: ${location || 'Unknown'}
+- Weather: ${weather || 'Unknown'}
+
+Provide estimated harvest date, days to harvest, confidence (0-100), rationale citing growth stages, and 2-3 care recommendations.`;
+
+    const response = await executeWithRetry(async (ai, modelName) => {
+      return await ai.models.generateContent({
+        model: modelName,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
+        config: {
           responseMimeType: 'application/json',
+          responseJsonSchema: {
+            type: 'object',
+            properties: {
+              estimatedHarvestDate: { type: 'string' },
+              daysToHarvest: { type: 'number' },
+              confidence: { type: 'number' },
+              rationale: { type: 'string' },
+              recommendations: { type: 'array', items: { type: 'string' } },
+            },
+            required: [
+              'estimatedHarvestDate',
+              'daysToHarvest',
+              'confidence',
+              'rationale',
+              'recommendations',
+            ],
+          },
+          temperature: 0.2,
+          maxOutputTokens: 1024,
         },
       });
     });
 
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse JSON if it returns a stringified JSON block (sometimes wrapped in markdown code blocks)
-    let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
-
-    return JSON.parse(jsonStr);
+    return JSON.parse(response.text);
   } catch (error) {
     console.error('Gemini Harvest Prediction Error:', error.message);
     return {
@@ -347,217 +477,109 @@ async function generateHarvestPrediction(scanData, environmentalData = {}) {
 }
 
 /**
- * Analyze flower image for variety and gender identification
- * @param {string} base64Image - Base64 encoded image string
- * @param {Object} tmPrediction - Optional context from TFLite model
- * @returns {Promise<Object>} Analysis result
+ * Analyze flower image for variety and gender identification.
+ * Uses structured output (responseSchema) to guarantee valid JSON without manual parsing.
+ * @param {string} base64Image - Base64 encoded image (with or without data URI prefix)
+ * @param {Object} tmPrediction - Optional TFLite context { label, confidence, gender }
+ * @returns {Promise<Object>} Structured flower analysis result
  */
 async function analyzeImage(base64Image, tmPrediction = null) {
   try {
-    // Memory optimization: Log before processing
     logMemoryUsage('Before Gemini image analysis');
 
-    // Frontend already compresses images; just clean the data URI prefix
     const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    // Prepare context string if prediction is available
-    let contextString = '';
+    let userPrompt = 'Analyze this gourd flower image. Identify the variety and gender.';
     if (tmPrediction) {
-      contextString = `
-CONTEXT FROM SPECIALIZED MODEL:
-This image was identified by a specialized local model as: "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence.
-Please verify this. If you disagree, you must have STRONG visual evidence (e.g. wrong color, wrong shape).
-`;
-
-      // GENDER ENHANCEMENT: If TM says female, force Gemini to look closer
+      userPrompt += `\n\nCONTEXT FROM LOCAL MODEL: Previously identified as "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence. Verify — override only if you have strong visual evidence.`;
       if (tmPrediction.gender === 'female') {
-        contextString += `
-IMPORTANT: The local model detected a FEMALE flower. 
-This means it likely saw an ovary/fruit bulge behind the flower base.
-LOOK SPECIFICALLY FOR THIS BULGE. Do not classify as MALE unless you are absolutely certain that bulge is absent.
-`;
+        userPrompt +=
+          '\nIMPORTANT: Local model detected a FEMALE flower. Look specifically for an ovary bulge at the base. Do not classify as MALE unless you are absolutely certain the bulge is absent.';
       }
     }
 
-    const prompt = `Analyze this gourd/vegetable flower image. Identify the variety and gender.
-${contextString}
-
-**Varieties:** ampalaya_bilog (yellow, 5 petals), patola (large yellow), upo_smooth (white), cucumber (yellow, small)
-**Gender:** male (stamens, thin stem, no base bulge) | female (ovary bulge at base, pistil)
-
-**CRITICAL IDENTIFICATION TIPS (Visual Rules):**
-- **UPO (Bottle Gourd):** Flowers are **WHITE**. If it is yellow, it is NOT Upo.
-- **AMPALAYA (Bitter Gourd):** Small yellow flowers, thin stems, deeply lobed petals.
-- **PATOLA (Sponge Gourd):** LARGE bright yellow flowers, wide petals.
-- **CUCUMBER:** Small yellow flowers, 5 rounded petals, thinner than patola.
-- **MALE vs FEMALE:** Look for the "baby fruit" (ovary bulge) behind the flower base. No bulge = MALE.
-- **HARVEST TIMING:** For most gourds (Ampalaya, Patola, Upo), it typically takes **20-35 days** from flower bloom to harvestable fruit. Do not guess 7 days unless the fruit is already very large.
-
-Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
-{
-  "variety": "ampalaya_bilog" | "patola" | "upo_smooth" | "cucumber" | "not_flower",
-  "gender": "male" | "female" | "unknown",
-  "confidence": 0.0-1.0,
-  "reasoning": "One sentence explanation citing color and shape",
-  "keyFeatures": ["feature1", "feature2"],
-  "flowerQuality": {
-    "overallScore": 0-100, 
-    "petalCondition": "excellent|good|fair|poor",
-    "sizeAssessment": "small|average|large",
-    "healthIndicators": ["indicator1"]
-  },
-  "harvestPrediction": {
-    "daysToHarvest": number, 
-    "currentStage": "bud|blooming|peak_bloom|wilting|pollinated", 
-    "pollinationReady": true|false,
-    "optimalHarvestWindow": "Morning/Afternoon",
-    "bestPollinationTime": "time string"
-  },
-  "qualityMetrics": {
-    "petalQuality": 0-100,
-    "colorScore": 0-100,
-    "developmentScore": 0-100,
-    "healthScore": 0-100,
-    "pollinationPotential": 0-100
-  },
-  "observations": {
-    "strengths": ["strength1"],
-    "concerns": ["concern1"]
-  }
-}`;
-
-    const result = await executeWithRetry(async (activeModel) => {
-      return await activeModel.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: cleanBase64,
+    const response = await executeWithRetry(async (ai, modelName) => {
+      return await ai.models.generateContent({
+        model: modelName,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: userPrompt },
+              { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } },
+            ],
           },
+        ],
+        config: {
+          systemInstruction: FLOWER_SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json',
+          responseJsonSchema: FLOWER_ANALYSIS_SCHEMA,
+          ...GEMINI_CONFIG,
         },
-      ]);
+      });
     });
 
-    const response = await result.response;
-    const text = response.text();
+    const parsedResult = JSON.parse(response.text);
 
-    // Parse JSON
-    let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
-
-    // Ensure we have a valid JSON object by finding the first { and last }
-    const firstBrace = jsonStr.indexOf('{');
-    const lastBrace = jsonStr.lastIndexOf('}');
-
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-    }
-
-    const parsedResult = JSON.parse(jsonStr);
-
-    // Memory optimization: Cleanup and hint GC after heavy operation
     logMemoryUsage('After Gemini image analysis');
     forceGC();
 
     return parsedResult;
   } catch (error) {
     console.error('Gemini Image Analysis Error:', error.message);
-    forceGC(); // Cleanup even on error
+    forceGC();
     throw error;
   }
 }
 
 /**
- * Analyze leaf image for variety and health assessment
- * @param {string} base64Image - Base64 encoded image string
- * @param {Object} tmPrediction - Optional context from TFLite model
- * @returns {Promise<Object>} Leaf analysis result
+ * Analyze leaf image for variety identification and health assessment.
+ * Uses structured output (responseSchema) to guarantee valid JSON.
+ * @param {string} base64Image - Base64 encoded image (with or without data URI prefix)
+ * @param {Object} tmPrediction - Optional TFLite context { label, confidence }
+ * @returns {Promise<Object>} Structured leaf analysis result
  */
 async function analyzeLeaf(base64Image, tmPrediction = null) {
   try {
-    // Memory optimization: Log before processing
     logMemoryUsage('Before Gemini leaf analysis');
 
-    // Frontend already compresses images; just clean the data URI prefix
     const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    // Prepare context string if prediction is available
-    let contextString = '';
+    let userPrompt = 'Analyze this gourd leaf image. Identify the variety and assess leaf health.';
     if (tmPrediction) {
-      contextString = `
-CONTEXT FROM SPECIALIZED MODEL:
-This leaf was identified by a specialized local model as: "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence.
-Please verify this identification.
-`;
+      userPrompt += `\n\nCONTEXT FROM LOCAL MODEL: Previously identified as "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence. Verify this identification.`;
     }
 
-    const prompt = `Analyze this gourd/vegetable leaf image. Identify the variety and assess the leaf health.
-${contextString}
-
-**Varieties:** Ampalaya (bitter gourd), Patola (sponge gourd), Upo (bottle gourd), Kalabasa (squash), Pipino (cucumber)
-
-**IDENTIFICATION TIPS:**
-- **AMPALAYA:** Deeply lobed leaves with pointed tips, 5-7 lobes, jagged edges
-- **PATOLA:** Large, rounded leaves with shallow lobes, rough texture
-- **UPO:** Heart-shaped or rounded leaves, soft texture, velvety underside
-- **KALABASA:** Large, rounded leaves with shallow lobes, hairy stems
-- **PIPINO:** Triangular leaves with pointed tips, rough texture, 3-5 lobes
-
-Respond with ONLY this JSON (keep responses SHORT to avoid truncation):
-{
-  "variety": "ampalaya" | "patola" | "upo" | "kalabasa" | "pipino" | "not_leaf",
-  "confidence": 0.0-1.0,
-  "reasoning": "One sentence explanation citing key visual features",
-  "keyFeatures": ["feature1", "feature2"],
-  "leafHealth": {
-    "healthScore": 0-100,
-    "chlorophyllLevel": "healthy|yellowing|deficient",
-    "maturityStage": "young|mature|aging",
-    "visibleIssues": ["issue1"],
-    "nutrientDeficiencies": ["deficiency1"]
-  },
-  "observations": {
-    "strengths": ["strength1"],
-    "concerns": ["concern1"],
-    "recommendations": ["recommendation1"]
-  }
-}`;
-
-    const result = await executeWithRetry(async (activeModel) => {
-      return await activeModel.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: cleanBase64,
+    const response = await executeWithRetry(async (ai, modelName) => {
+      return await ai.models.generateContent({
+        model: modelName,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: userPrompt },
+              { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } },
+            ],
           },
+        ],
+        config: {
+          systemInstruction: LEAF_SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json',
+          responseJsonSchema: LEAF_ANALYSIS_SCHEMA,
+          ...GEMINI_CONFIG,
         },
-      ]);
+      });
     });
 
-    const response = await result.response;
-    const text = response.text();
+    const parsedResult = JSON.parse(response.text);
 
-    // Parse JSON
-    let jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
-
-    // Ensure we have a valid JSON object
-    const firstBrace = jsonStr.indexOf('{');
-    const lastBrace = jsonStr.lastIndexOf('}');
-
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-    }
-
-    const parsedResult = JSON.parse(jsonStr);
-
-    // Memory optimization: Cleanup and hint GC after heavy operation
     logMemoryUsage('After Gemini leaf analysis');
     forceGC();
 
     return parsedResult;
   } catch (error) {
     console.error('Gemini Leaf Analysis Error:', error.message);
-    forceGC(); // Cleanup even on error
+    forceGC();
     throw error;
   }
 }

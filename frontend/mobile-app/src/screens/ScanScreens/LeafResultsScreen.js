@@ -51,35 +51,74 @@ const LEAF_SCIENTIFIC_NAMES = {
 };
 
 /**
- * Confidence Display Component
+ * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge
  */
-const ConfidenceDisplay = ({ tmPrediction, geminiPrediction }) => {
+const FinalVerdictCard = ({ tmPrediction, geminiPrediction }) => {
+    const agree = geminiPrediction && tmPrediction &&
+        geminiPrediction.variety === tmPrediction.variety;
+    const badgeColor = agree ? '#4CAF50' : '#FF9800';
+    const badgeIcon = agree ? 'checkmark-circle' : 'alert-circle';
+    const badgeLabel = agree ? 'AGREE' : 'DISAGREE';
+
     return (
-        <View style={{ flex: 1, paddingLeft: 16, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 12, color: '#888', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' }}>Confidence</Text>
-
-            {tmPrediction && (
-                <View style={{ marginBottom: 8 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#666' }}>TM Model</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
-                    </View>
-                    <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-                        <View style={{ height: '100%', width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#4CAF50' }} />
-                    </View>
+        <View style={{ flex: 1, paddingLeft: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                    <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>TM Model</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#4CAF50' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
                 </View>
-            )}
 
-            {geminiPrediction && (
-                <View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
-                    </View>
-                    <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-                        <View style={{ height: '100%', width: `${geminiPrediction.confidence}%`, backgroundColor: '#9C27B0' }} />
-                    </View>
+                <View style={{ alignItems: 'center', paddingHorizontal: 4 }}>
+                    {geminiPrediction ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: badgeColor + '18', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: badgeColor }}>
+                            <Ionicons name={badgeIcon} size={12} color={badgeColor} />
+                            <Text style={{ fontSize: 9, fontWeight: '700', color: badgeColor }}>{badgeLabel}</Text>
+                        </View>
+                    ) : (
+                        <Text style={{ fontSize: 11, color: '#CCC', fontWeight: '600' }}>VS</Text>
+                    )}
                 </View>
+
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                    <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>Gemini AI</Text>
+                    {geminiPrediction ? (
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#9C27B0' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+                    ) : (
+                        <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
+                    )}
+                </View>
+            </View>
+        </View>
+    );
+};
+
+/**
+ * Collapsible Health Section wrapping LeafHealthCard + LeafQualityMetrics
+ */
+const CollapsibleHealthSection = ({ geminiPrediction }) => {
+    const [expanded, setExpanded] = useState(false);
+    if (!geminiPrediction?.leaf) return null;
+
+    return (
+        <View style={{ marginBottom: 8 }}>
+            <TouchableOpacity
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFF', borderRadius: 12, marginHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0' }}
+                onPress={() => setExpanded(!expanded)}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="medkit-outline" size={18} color={theme.colors.primary} />
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#333' }}>Health Details</Text>
+                </View>
+                <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
+            </TouchableOpacity>
+            {expanded && (
+                <>
+                    <LeafHealthCard healthData={geminiPrediction.leaf} />
+                    <LeafQualityMetrics
+                        healthData={geminiPrediction.leaf}
+                        confidence={geminiPrediction.confidence}
+                    />
+                </>
             )}
         </View>
     );
@@ -262,7 +301,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                     </View>
 
                                     <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
-                                        <ConfidenceDisplay
+                                        <FinalVerdictCard
                                             tmPrediction={tmPrediction}
                                             geminiPrediction={geminiPrediction}
                                         />
@@ -290,13 +329,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                 </View>
 
                                 {geminiPrediction.leaf && (
-                                    <>
-                                        <LeafHealthCard healthData={geminiPrediction.leaf} />
-                                        <LeafQualityMetrics
-                                            healthData={geminiPrediction.leaf}
-                                            confidence={geminiPrediction.confidence}
-                                        />
-                                    </>
+                                    <CollapsibleHealthSection geminiPrediction={geminiPrediction} />
                                 )}
                             </>
                         )}

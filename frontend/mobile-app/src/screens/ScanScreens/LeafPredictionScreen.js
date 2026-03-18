@@ -117,43 +117,74 @@ const SkeletonCard = ({ title, lines = 3 }) => (
 // Internal components removed - using dedicated ones from ScanComponents
 
 /**
- * Confidence Display Component
+ * Final Verdict Card — side-by-side TM vs Gemini confidence with agree/disagree badge
  */
-const ConfidenceDisplay = ({ tmPrediction, geminiPrediction, isGeminiLoading }) => {
-    return (
-        <View style={{ flex: 1, paddingLeft: 16, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 12, color: '#888', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase' }}>Confidence</Text>
+const FinalVerdictCard = ({ tmPrediction, geminiPrediction, isGeminiLoading }) => {
+    const agree = geminiPrediction
+        ? geminiPrediction.variety === tmPrediction?.variety
+        : null;
+    const badgeColor = agree ? '#4CAF50' : '#FF9800';
+    const badgeIcon = agree ? 'checkmark-circle' : 'alert-circle';
+    const badgeLabel = agree ? 'AGREE' : 'DISAGREE';
 
-            <View style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <Text style={{ fontSize: 10, color: '#666' }}>TM Model</Text>
-                    <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
+    return (
+        <View style={{ flex: 1, paddingLeft: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                {/* TM column */}
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                    <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>TM Model</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#4CAF50' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
                 </View>
-                <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-                    <View style={{ height: '100%', width: `${tmPrediction?.confidence || 0}%`, backgroundColor: '#4CAF50' }} />
+
+                {/* Badge / divider */}
+                <View style={{ alignItems: 'center', paddingHorizontal: 4 }}>
+                    {geminiPrediction ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: badgeColor + '18', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: badgeColor }}>
+                            <Ionicons name={badgeIcon} size={12} color={badgeColor} />
+                            <Text style={{ fontSize: 9, fontWeight: '700', color: badgeColor }}>{badgeLabel}</Text>
+                        </View>
+                    ) : isGeminiLoading ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                    ) : (
+                        <Text style={{ fontSize: 11, color: '#CCC', fontWeight: '600' }}>VS</Text>
+                    )}
+                </View>
+
+                {/* Gemini column */}
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                    <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>Gemini AI</Text>
+                    {geminiPrediction ? (
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#9C27B0' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+                    ) : isGeminiLoading ? (
+                        <SkeletonLoader width={40} height={20} style={{ borderRadius: 4 }} />
+                    ) : (
+                        <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
+                    )}
                 </View>
             </View>
+        </View>
+    );
+};
 
-            {geminiPrediction && (
-                <View style={{ marginBottom: 8 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: '#333' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
-                    </View>
-                    <View style={{ height: 10, backgroundColor: '#E0E0E0', borderRadius: 5, overflow: 'hidden' }}>
-                        <View style={{ height: '100%', width: `${geminiPrediction.confidence || 0}%`, backgroundColor: '#9C27B0' }} />
-                    </View>
-                </View>
-            )}
-
-            {isGeminiLoading && (
-                <View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <Text style={{ fontSize: 10, color: '#666' }}>AI</Text>
-                        <ActivityIndicator size={10} color="#9C27B0" />
-                    </View>
-                    <SkeletonLoader width="100%" height={10} style={{ borderRadius: 5 }} />
-                </View>
+/**
+ * Collapsible wrapper for LeafHealthCard + LeafQualityMetrics (collapsed by default)
+ */
+const CollapsibleHealthSection = ({ healthData, confidence }) => {
+    const [expanded, setExpanded] = useState(false);
+    return (
+        <View style={styles.card}>
+            <TouchableOpacity
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
+                onPress={() => setExpanded(!expanded)}
+            >
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Leaf Health Details</Text>
+                <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
+            </TouchableOpacity>
+            {expanded && (
+                <>
+                    <LeafHealthCard healthData={healthData} />
+                    <LeafQualityMetrics healthData={healthData} confidence={confidence} />
+                </>
             )}
         </View>
     );
@@ -215,7 +246,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
         if (route.params.tmPrediction) {
             console.log('🔬 [DEV MODE] Using pre-computed prediction from CameraScreen.test');
             const preComputed = route.params.tmPrediction;
-            
+
             const tmPred = {
                 variety: getVarietyFromLabel(preComputed.topPrediction.label),
                 confidence: preComputed.topPrediction.percentage,
@@ -227,26 +258,26 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 modelType: `Teachable Machine (Leaf) - ${preComputed.runs} runs averaged`,
                 processingTime: preComputed.processingTime,
             };
-            
+
             setTmPrediction(tmPred);
             setPrediction(tmPred);
             setIsTmComplete(true);
             setIsAnalyzing(false);
-            
+
             // Fade in results
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 300,
                 useNativeDriver: true,
             }).start();
-            
+
             // Still run Gemini analysis if available
             if (geminiService.isAvailable() && !tmPred.isNotLeaf) {
                 runGeminiAnalysis(tmPred);
             }
             return;
         }
-        
+
         // Original logic - no dev mode check needed anymore
         setIsAnalyzing(route.params.isLoading || false);
         setIsTmComplete(false);
@@ -548,9 +579,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                                         )}
                                     </View>
 
-                                    {/* Confidence */}
+                                    {/* Final Verdict */}
                                     <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
-                                        <ConfidenceDisplay
+                                        <FinalVerdictCard
                                             tmPrediction={tmPrediction}
                                             geminiPrediction={geminiPrediction}
                                             isGeminiLoading={isGeminiLoading}
@@ -579,23 +610,17 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                                 </View>
 
                                 {geminiPrediction.geminiData?.leaf && (
-                                    <>
-                                        <LeafHealthCard healthData={geminiPrediction.geminiData.leaf} />
-                                        <LeafQualityMetrics
-                                            healthData={geminiPrediction.geminiData.leaf}
-                                            confidence={geminiPrediction.confidence}
-                                        />
-                                    </>
+                                    <CollapsibleHealthSection
+                                        healthData={geminiPrediction.geminiData.leaf}
+                                        confidence={geminiPrediction.confidence}
+                                    />
                                 )}
                             </>
                         )}
 
-                        {/* Skeleton for future Gemini health data */}
+                        {/* Skeleton — only on the AI Insights card while loading */}
                         {isGeminiLoading && !isNotLeaf && (
-                            <>
-                                <SkeletonCard title="Leaf Health" lines={4} />
-                                <SkeletonCard title="AI Observations" lines={3} />
-                            </>
+                            <SkeletonCard title="AI Insights" lines={4} />
                         )}
 
                         {/* TM Only Notice */}

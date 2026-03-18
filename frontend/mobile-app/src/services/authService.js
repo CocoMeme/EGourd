@@ -6,6 +6,7 @@ import nativeGoogleAuthService from './nativeGoogleAuth';
 // Configuration
 const TOKEN_KEY = 'userToken';
 const USER_KEY = 'user';
+const GOOGLE_AUTH_TIMEOUT_MS = 15000;
 
 class AuthService {
   constructor() {
@@ -38,7 +39,7 @@ class AuthService {
           }
         } catch (error) {
           console.error('Error fetching profile during initialization:', error);
-          // Don't logout here, maybe just network error. 
+          // Don't logout here, maybe just network error.
           // But without user data, app might be unstable.
         }
       }
@@ -206,15 +207,24 @@ class AuthService {
       }
 
       // Send ID Token to Backend for Verification
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken: googleResult.idToken,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), GOOGLE_AUTH_TIMEOUT_MS);
+
+      let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            idToken: googleResult.idToken,
+          }),
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const data = await response.json();
 
@@ -252,6 +262,15 @@ class AuthService {
       };
     } catch (error) {
       console.error('Google Sign-In error:', error);
+
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message:
+            'Google authentication timed out. Check that the backend is running and that EXPO_PUBLIC_API_URL uses http://<your-ip>:5000/api for local development.',
+        };
+      }
+
       return {
         success: false,
         message: error.message || 'Google Sign-In failed',
