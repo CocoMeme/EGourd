@@ -6,7 +6,7 @@ import nativeGoogleAuthService from './nativeGoogleAuth';
 // Configuration
 const TOKEN_KEY = 'userToken';
 const USER_KEY = 'user';
-const GOOGLE_AUTH_TIMEOUT_MS = 15000;
+const GOOGLE_AUTH_TIMEOUT_MS = 60000;
 
 class AuthService {
   constructor() {
@@ -267,7 +267,7 @@ class AuthService {
         return {
           success: false,
           message:
-            'Google authentication timed out. Check that the backend is running and that EXPO_PUBLIC_API_URL uses http://<your-ip>:5000/api for local development.',
+            'Sign-in timed out. The server may be waking up — please try again in a few seconds.',
         };
       }
 
