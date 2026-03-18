@@ -1,5 +1,4 @@
 import { authService } from './authService';
-import { authService } from './authService';
 
 class SupportService {
     /**
