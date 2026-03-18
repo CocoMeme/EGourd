@@ -4,6 +4,7 @@ import * as SplashScreenExpo from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 import { useAuth } from '../contexts/AuthContext';
 import { useDeveloperMode } from '../contexts/DeveloperModeContext';
+import { initApiUrl } from '../config/api';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
 SplashScreenExpo.preventAutoHideAsync();
@@ -11,7 +12,7 @@ SplashScreenExpo.preventAutoHideAsync();
 export const useAppResources = () => {
     // Status: 'idle' | 'checking' | 'downloading' | 'complete'
     const [updateStatus, setUpdateStatus] = useState(__DEV__ ? 'idle' : 'checking');
-    
+
     const [fontsLoaded] = useFonts({
         Poppins_400Regular,
         Poppins_500Medium,
@@ -21,6 +22,11 @@ export const useAppResources = () => {
 
     const { isLoading: authLoading } = useAuth();
     const { isLoading: devModeLoading } = useDeveloperMode();
+
+    useEffect(() => {
+        // Load any stored API URL override before the app makes network calls
+        initApiUrl();
+    }, []);
 
     useEffect(() => {
         // Separate update check to run only once on mount
@@ -36,7 +42,7 @@ export const useAppResources = () => {
                     setUpdateStatus('downloading');
                     await Updates.fetchUpdateAsync();
                     setUpdateStatus('complete');
-                    
+
                     // Small delay to let user see "Complete" before reload
                     setTimeout(async () => {
                         await Updates.reloadAsync();

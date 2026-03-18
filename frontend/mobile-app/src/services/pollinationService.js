@@ -1,16 +1,17 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { getActiveApiUrl } from '../config/api';
 
-// Create axios instance
+// Create axios instance (baseURL is updated per-request via interceptor for runtime override support)
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getActiveApiUrl(),
   timeout: 60000,
 });
 
-// Add auth token to requests
+// Add auth token to requests and refresh baseURL in case of runtime override
 api.interceptors.request.use(
   async (config) => {
+    config.baseURL = getActiveApiUrl();
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
@@ -53,11 +54,11 @@ class PollinationService {
   async getPollinations(filters = {}) {
     const maxRetries = 3;
     let lastError;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const queryParams = new URLSearchParams();
-        
+
         if (filters.status) queryParams.append('status', filters.status);
         if (filters.name) queryParams.append('name', filters.name);
         if (filters.sort) queryParams.append('sort', filters.sort);
@@ -66,27 +67,27 @@ class PollinationService {
 
         const queryString = queryParams.toString();
         const url = queryString ? `${this.baseURL}?${queryString}` : this.baseURL;
-        
+
         // Debug logging
         console.log(`🔍 Fetching pollinations (attempt ${attempt}/${maxRetries}) from:`, `${API_BASE_URL}${url}`);
-        
+
         // Check if token exists
         const token = await AsyncStorage.getItem('userToken');
         console.log('🎟️ Token exists:', !!token);
-        
+
         const response = await api.get(url);
         console.log('✅ Successfully fetched pollinations:', response.data);
         return response.data;
       } catch (error) {
         lastError = error;
         console.error(`❌ Attempt ${attempt} failed:`, error.message);
-        
+
         // Don't retry on 401/403 auth errors
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.error('❌ Auth error - not retrying');
           throw error;
         }
-        
+
         // Wait before retrying (exponential backoff)
         if (attempt < maxRetries) {
           const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
@@ -95,7 +96,7 @@ class PollinationService {
         }
       }
     }
-    
+
     console.error('❌ All retry attempts failed');
     throw lastError;
   }
@@ -104,7 +105,7 @@ class PollinationService {
   async getPollination(id) {
     const maxRetries = 3;
     let lastError;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const response = await api.get(`${this.baseURL}/${id}`);
@@ -112,18 +113,18 @@ class PollinationService {
       } catch (error) {
         lastError = error;
         console.error(`❌ Attempt ${attempt} failed getting pollination:`, error.message);
-        
+
         if (error.response?.status === 401 || error.response?.status === 403) {
           throw error;
         }
-        
+
         if (attempt < maxRetries) {
           const delay = Math.pow(2, attempt - 1) * 1000;
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
-    
+
     throw lastError;
   }
 
@@ -131,7 +132,7 @@ class PollinationService {
   async createPollination(data) {
     try {
       console.log('🌱 Creating pollination with data:', data);
-      
+
       // If there's an image, we need to create the plant first, then add the image
       let imageData = null;
       if (data.image) {
@@ -139,13 +140,13 @@ class PollinationService {
         console.log('🖼️ Image will be uploaded after plant creation:', imageData);
         delete data.image; // Remove image from initial data
       }
-      
+
       // Create the plant without image first
       console.log('🌱 Creating plant without image...');
       const response = await api.post(this.baseURL, data);
       const createdPlant = response.data.data;
       console.log('✅ Plant created:', createdPlant._id);
-      
+
       // If there was an image, add it now
       if (imageData && createdPlant._id) {
         try {
@@ -161,7 +162,7 @@ class PollinationService {
           throw new Error(`Plant created but image upload failed: ${imageError.message}`);
         }
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('❌ Error creating pollination:', error);
@@ -197,9 +198,9 @@ class PollinationService {
     try {
       console.log('🖼️ Adding image to plant:', id);
       console.log('🖼️ Image data:', imageData);
-      
+
       const formData = new FormData();
-      
+
       // Handle both file path and blob
       if (imageData.uri) {
         const imageObject = {
@@ -207,20 +208,20 @@ class PollinationService {
           type: imageData.type || 'image/jpeg',
           name: imageData.name || `image_${Date.now()}.jpg`,
         };
-        
+
         console.log('🖼️ Image object for FormData:', imageObject);
         formData.append('image', imageObject);
       } else if (imageData instanceof File || imageData instanceof Blob) {
         formData.append('image', imageData, `image_${Date.now()}.jpg`);
       }
-      
+
       if (caption) formData.append('caption', caption);
       if (imageType) formData.append('imageType', imageType);
 
       console.log('🖼️ Uploading to:', `${this.baseURL}/${id}/images`);
 
       const response = await api.post(
-        `${this.baseURL}/${id}/images`, 
+        `${this.baseURL}/${id}/images`,
         formData,
         {
           headers: {
@@ -228,7 +229,7 @@ class PollinationService {
           },
         }
       );
-      
+
       console.log('✅ Image upload response:', response.data);
       return response.data;
     } catch (error) {
@@ -367,7 +368,7 @@ class PollinationService {
     try {
       const url = `${this.baseURL}/plant-types`;
       console.log('🌱 Fetching plant types from:', `${API_BASE_URL}${url}`);
-      
+
       const response = await api.get(url);
       console.log('✅ Successfully fetched plant types:', response.data);
       return response.data;
@@ -432,19 +433,19 @@ class PollinationService {
   // Helper method to get pollination status
   getPollinationStatus(estimatedDates, datePollinated) {
     if (datePollinated) return { status: 'completed', color: '#4CAF50' };
-    
+
     const today = new Date();
     const earliest = new Date(estimatedDates?.pollinationWindow?.earliest);
     const latest = new Date(estimatedDates?.pollinationWindow?.latest);
-    
+
     if (today >= earliest && today <= latest) {
       return { status: 'ready', color: '#4CAF50' };
     }
-    
+
     if (today > latest) {
       return { status: 'overdue', color: '#F44336' };
     }
-    
+
     if (earliest && today < earliest) {
       const daysUntil = this.calculateDaysBetween(today, earliest);
       if (daysUntil <= 3) {
@@ -452,7 +453,7 @@ class PollinationService {
       }
       return { status: 'not_ready', color: '#757575' };
     }
-    
+
     return { status: 'unknown', color: '#757575' };
   }
 

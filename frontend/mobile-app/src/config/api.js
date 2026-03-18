@@ -5,8 +5,14 @@
 // Notes:
 // - The mobile app expects API routes to be under `/api`.
 // - You may provide either `https://host` or `https://host/api`; we normalize it.
+// - At runtime, a URL override stored in AsyncStorage takes priority over the env var.
+//   Use setApiUrlOverride() (e.g. from Settings) to persist a custom URL across restarts.
 
-const normalizeApiBaseUrl = (rawUrl) => {
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_URL_OVERRIDE_KEY = '@egourd_api_url_override';
+
+export const normalizeApiBaseUrl = (rawUrl) => {
   const trimmed = (rawUrl || '').trim();
   if (!trimmed) return '';
 
@@ -43,15 +49,61 @@ export const getApiUrl = () => {
   return productionFallback;
 };
 
-// Export for direct use
-export const API_BASE_URL = getApiUrl();
+// ── Runtime override ──────────────────────────────────────────────────────────
+// Starts as the env-baked value; replaced by initApiUrl() once AsyncStorage loads.
+let _activeUrl = getApiUrl();
 
-// Also export as BACKEND_URL for compatibility
+/**
+ * Returns the currently active API base URL.
+ * Always call this at request time (not at module-load time) so runtime overrides apply.
+ */
+export const getActiveApiUrl = () => _activeUrl;
+
+/**
+ * Persist a custom API URL and apply it immediately for the current session.
+ * Pass null / empty string to clear the override and revert to the env value.
+ */
+export const setApiUrlOverride = async (url) => {
+  if (url && url.trim()) {
+    const normalized = normalizeApiBaseUrl(url.trim());
+    _activeUrl = normalized;
+    await AsyncStorage.setItem(API_URL_OVERRIDE_KEY, url.trim());
+  } else {
+    _activeUrl = getApiUrl();
+    await AsyncStorage.removeItem(API_URL_OVERRIDE_KEY);
+  }
+  console.log('📡 API URL updated to:', _activeUrl);
+};
+
+/** Read a stored override from AsyncStorage and apply it. Call once at app startup. */
+export const initApiUrl = async () => {
+  try {
+    const stored = await AsyncStorage.getItem(API_URL_OVERRIDE_KEY);
+    if (stored && stored.trim()) {
+      _activeUrl = normalizeApiBaseUrl(stored.trim());
+      console.log('📡 Using stored API URL override:', _activeUrl);
+    }
+  } catch {
+    // Non-fatal — fall back to env value
+  }
+};
+
+/** Returns the raw stored override string (not normalized), or null if none is set. */
+export const getStoredApiUrlOverride = async () => {
+  try {
+    return await AsyncStorage.getItem(API_URL_OVERRIDE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+// Backward-compat static exports (value frozen at bundle time — use getActiveApiUrl() for dynamic use)
+export const API_BASE_URL = getApiUrl();
 export const BACKEND_URL = API_BASE_URL;
 
 // Log the API URL in development
 if (__DEV__) {
-  console.log('📡 API Base URL:', API_BASE_URL);
+  console.log('📡 API Base URL (env):', API_BASE_URL);
 }
 
 export default API_BASE_URL;

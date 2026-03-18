@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { getActiveApiUrl } from '../config/api';
 // Native Google Auth will be imported dynamically or we can import here
 import nativeGoogleAuthService from './nativeGoogleAuth';
 
@@ -60,7 +60,7 @@ class AuthService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/local/me`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/local/me`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -89,7 +89,7 @@ class AuthService {
    */
   async login(email, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/local/login`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/local/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ class AuthService {
    */
   async register(userData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/local/register`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/local/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -212,7 +212,7 @@ class AuthService {
 
       let response;
       try {
-        response = await fetch(`${API_BASE_URL}/auth/google`, {
+        response = await fetch(`${getActiveApiUrl()}/auth/google`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -285,7 +285,7 @@ class AuthService {
     try {
       // Call logout endpoint if token exists
       if (this.token) {
-        await fetch(`${API_BASE_URL}/auth/local/logout`, {
+        await fetch(`${getActiveApiUrl()}/auth/local/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.token}`,
@@ -354,7 +354,7 @@ class AuthService {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ class AuthService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/local/profile`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/local/profile`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(profileData),
@@ -430,7 +430,7 @@ class AuthService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/local/password`, {
+      const response = await fetch(`${getActiveApiUrl()}/auth/local/password`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({
@@ -487,7 +487,7 @@ class AuthService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(`${getActiveApiUrl()}${endpoint}`, {
         ...options,
         headers: {
           ...this.getAuthHeaders(),
@@ -503,7 +503,7 @@ class AuthService {
         }
 
         // Retry with new token
-        return fetch(`${API_BASE_URL}${endpoint}`, {
+        return fetch(`${getActiveApiUrl()}${endpoint}`, {
           ...options,
           headers: {
             ...this.getAuthHeaders(),
@@ -543,7 +543,7 @@ class AuthService {
     try {
       console.log('[AuthService] sendVerificationPin called with email:', JSON.stringify(email));
 
-      const response = await fetch(`${API_BASE_URL}/verification/send-pin`, {
+      const response = await fetch(`${getActiveApiUrl()}/verification/send-pin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -576,7 +576,7 @@ class AuthService {
    */
   async verifyEmailWithPin(email, pin) {
     try {
-      const response = await fetch(`${API_BASE_URL}/verification/verify-email`, {
+      const response = await fetch(`${getActiveApiUrl()}/verification/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -615,7 +615,7 @@ class AuthService {
    */
   async checkVerificationStatus(email) {
     try {
-      const response = await fetch(`${API_BASE_URL}/verification/status?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`${getActiveApiUrl()}/verification/status?email=${encodeURIComponent(email)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

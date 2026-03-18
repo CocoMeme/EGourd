@@ -24,6 +24,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { ProfileItem, ProfileSection } from './shared';
 import { buildConfig } from '../../config/build';
+import {
+    getActiveApiUrl,
+    setApiUrlOverride,
+    getStoredApiUrlOverride,
+    getApiUrl,
+} from '../../config/api';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +40,13 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
+
+    // API URL state
+    const [apiUrlModalVisible, setApiUrlModalVisible] = useState(false);
+    const [apiUrlInput, setApiUrlInput] = useState('');
+    const [apiUrlTesting, setApiUrlTesting] = useState(false);
+    const [apiUrlTestResult, setApiUrlTestResult] = useState(null); // null | 'ok' | 'fail'
+    const [hasApiUrlOverride, setHasApiUrlOverride] = useState(false);
 
     // Support Modal State
     const [supportModalVisible, setSupportModalVisible] = useState(false);
@@ -47,7 +60,62 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
     useEffect(() => {
         calculateStorageUsage();
+        // Check if there's a stored API URL override
+        getStoredApiUrlOverride().then((stored) => {
+            setHasApiUrlOverride(!!stored);
+        });
     }, []);
+
+    // --- API URL helpers ---
+    const handleOpenApiUrlModal = async () => {
+        const stored = await getStoredApiUrlOverride();
+        setApiUrlInput(stored || getActiveApiUrl());
+        setApiUrlTestResult(null);
+        setApiUrlModalVisible(true);
+    };
+
+    const handleTestApiUrl = async () => {
+        const url = apiUrlInput.trim();
+        if (!url) return;
+        setApiUrlTesting(true);
+        setApiUrlTestResult(null);
+        try {
+            const normalized = url.endsWith('/api') ? url : url.replace(/\/+$/, '') + '/api';
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(`${normalized}/health`, { signal: controller.signal });
+            clearTimeout(timeout);
+            setApiUrlTestResult(res.ok ? 'ok' : 'fail');
+        } catch {
+            setApiUrlTestResult('fail');
+        } finally {
+            setApiUrlTesting(false);
+        }
+    };
+
+    const handleSaveApiUrl = async () => {
+        const url = apiUrlInput.trim();
+        await setApiUrlOverride(url || null);
+        setHasApiUrlOverride(!!url);
+        setApiUrlModalVisible(false);
+        Alert.alert(
+            'API URL Updated',
+            url
+                ? 'The new API URL is saved and active. Restart the app to ensure all connections use it.'
+                : 'API URL reset to the default.',
+            [
+                { text: 'Later', style: 'cancel' },
+                { text: 'Restart Now', onPress: () => Updates.reloadAsync() },
+            ]
+        );
+    };
+
+    const handleResetApiUrl = async () => {
+        await setApiUrlOverride(null);
+        setApiUrlInput(getApiUrl());
+        setHasApiUrlOverride(false);
+        setApiUrlTestResult(null);
+    };
 
     // --- OTA Update helpers ---
     const getUpdateId = () => {
@@ -344,6 +412,27 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* API Server */}
+                <ProfileSection title="API Server">
+                    <ProfileItem
+                        icon="server-outline"
+                        title="Backend URL"
+                        description={getActiveApiUrl()}
+                        value={hasApiUrlOverride ? 'Custom' : 'Default'}
+                        valueStyle={hasApiUrlOverride ? { color: '#FF9800', fontFamily: theme.fonts.bold } : undefined}
+                        onPress={handleOpenApiUrlModal}
+                        isLast={true}
+                    />
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={handleOpenApiUrlModal}
+                    >
+                        <Text style={styles.actionButtonText}>
+                            {hasApiUrlOverride ? 'Edit / Reset URL' : 'Set Custom URL'}
+                        </Text>
+                    </TouchableOpacity>
+                </ProfileSection>
+
                 <ProfileSection title="Preferences">
                     {preferenceItems.map((item, index) => (
                         <ProfileItem
@@ -524,6 +613,95 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                         )}
                                     </TouchableOpacity>
                                 </ScrollView>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+
+            {/* API URL Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={apiUrlModalVisible}
+                onRequestClose={() => setApiUrlModalVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={styles.modalKeyboardAvoid}
+                        >
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>API Server URL</Text>
+                                    <TouchableOpacity onPress={() => setApiUrlModalVisible(false)} style={styles.closeButton}>
+                                        <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={styles.inputLabel}>Backend URL</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="https://egourd.onrender.com/api"
+                                    placeholderTextColor={theme.colors.text.hint}
+                                    value={apiUrlInput}
+                                    onChangeText={(text) => {
+                                        setApiUrlInput(text);
+                                        setApiUrlTestResult(null);
+                                    }}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    keyboardType="url"
+                                />
+
+                                {/* Test result indicator */}
+                                {apiUrlTestResult && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
+                                        <Ionicons
+                                            name={apiUrlTestResult === 'ok' ? 'checkmark-circle' : 'close-circle'}
+                                            size={16}
+                                            color={apiUrlTestResult === 'ok' ? '#4CAF50' : '#F44336'}
+                                        />
+                                        <Text style={{ fontSize: 13, color: apiUrlTestResult === 'ok' ? '#4CAF50' : '#F44336' }}>
+                                            {apiUrlTestResult === 'ok' ? 'Server reachable' : 'Could not reach server'}
+                                        </Text>
+                                    </View>
+                                )}
+
+                                <Text style={[styles.inputLabel, { marginTop: 16, fontSize: 12, color: theme.colors.text.hint }]}>
+                                    Current active: {getActiveApiUrl()}
+                                </Text>
+
+                                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, { flex: 1, marginTop: 0 }]}
+                                        onPress={handleTestApiUrl}
+                                        disabled={apiUrlTesting}
+                                    >
+                                        {apiUrlTesting ? (
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        ) : (
+                                            <Text style={styles.actionButtonText}>Test</Text>
+                                        )}
+                                    </TouchableOpacity>
+
+                                    {hasApiUrlOverride && (
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, { flex: 1, marginTop: 0, borderColor: 'rgba(244,67,54,0.3)', backgroundColor: 'rgba(244,67,54,0.06)' }]}
+                                            onPress={handleResetApiUrl}
+                                        >
+                                            <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>Reset to Default</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.submitButton, { marginTop: 16, marginBottom: insets.bottom || 20 }]}
+                                    onPress={handleSaveApiUrl}
+                                >
+                                    <Text style={styles.submitButtonText}>Save &amp; Restart</Text>
+                                </TouchableOpacity>
                             </View>
                         </KeyboardAvoidingView>
                     </View>

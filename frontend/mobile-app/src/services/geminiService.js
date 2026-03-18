@@ -5,7 +5,7 @@
  * Supports multiple API keys with automatic fallback (handled by backend)
  */
 
-import { API_BASE_URL } from '../config/api';
+import { getActiveApiUrl } from '../config/api';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { authService } from './authService';
@@ -96,7 +96,7 @@ class GeminiService {
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
       // Call Backend API
-      const response = await fetch(`${API_BASE_URL}/scans/analyze`, {
+      const response = await fetch(`${getActiveApiUrl()}/scans/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ class GeminiService {
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
       // Call Backend API
-      const response = await fetch(`${API_BASE_URL}/scans/analyze-leaf`, {
+      const response = await fetch(`${getActiveApiUrl()}/scans/analyze-leaf`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

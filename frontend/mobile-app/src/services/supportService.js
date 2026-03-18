@@ -1,5 +1,5 @@
 import { authService } from './authService';
-import { API_BASE_URL } from '../config/api';
+import { authService } from './authService';
 
 class SupportService {
     /**

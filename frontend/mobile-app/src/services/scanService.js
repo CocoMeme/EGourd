@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api';
+import { getActiveApiUrl } from '../config/api';
 import { authService } from './authService';
 import * as ImageManipulator from 'expo-image-manipulator';
 
@@ -58,7 +58,7 @@ class ScanService {
         type: 'image/jpeg',
       });
 
-      const response = await fetch(`${API_BASE_URL}/uploads/image`, {
+      const response = await fetch(`${getActiveApiUrl()}/uploads/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
