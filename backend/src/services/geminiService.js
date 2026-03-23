@@ -29,12 +29,12 @@ const RETRY_CONFIG = {
 };
 
 // ===== GENERATION DEFAULTS =====
-// Lower temperature → more deterministic; fewer tokens → faster with structured JSON
+// Lower temperature → more deterministic; higher token budget prevents truncated JSON
 const GEMINI_CONFIG = {
   temperature: 0.1,
   topK: 1,
   topP: 0.95,
-  maxOutputTokens: 2048,
+  maxOutputTokens: 8192,
 };
 
 // ===== ROUND-ROBIN KEY INDEX =====
@@ -70,31 +70,90 @@ const requestQueue = new RequestQueue(3);
 
 // ===== SYSTEM INSTRUCTIONS =====
 
-const FLOWER_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Analyze gourd flower images and identify variety and gender with precision.
+const FLOWER_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Your role is to independently analyze gourd flower images and determine variety and gender based solely on visual evidence.
 
-IDENTIFICATION RULES (non-negotiable):
-1. UPO (Bottle Gourd, Lagenaria siceraria): Flowers are WHITE. If the flower is yellow, it CANNOT be Upo.
-2. AMPALAYA (Bitter Gourd, Momordica charantia): Small yellow flowers, deeply lobed petals, thin stems.
-3. PATOLA (Sponge Gourd, Luffa acutangula): LARGE bright yellow flowers, wide rounded petals.
-4. CUCUMBER (Cucumis sativus): Small-to-medium yellow flowers, 5 rounded petals, thinner than patola.
-5. GENDER: Female flowers have a distinct ovary (baby fruit) bulge at the base — a swollen green or ribbed protrusion. Male flowers have a thin stem with no such bulge. If you see any bulge at the petal base, classify as FEMALE. Only classify UNKNOWN if the base is completely obscured.
-6. HARVEST TIMING: Gourds typically take 20-35 days from full bloom to harvest-ready fruit. Do not estimate 7 days unless the fruit is already large and clearly near-mature.
-7. CONFIDENCE: Only set confidence > 0.8 if you are completely certain. Report 0.5-0.7 for partial views or ambiguous images.`;
+CRITICAL — INDEPENDENT ANALYSIS:
+Always form your own assessment from the image first. If context from an external model is provided, treat it as a secondary reference only — never let it bias or override your visual analysis. Your confidence must reflect YOUR certainty from the image, not agreement with any external prediction.
 
-const LEAF_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Analyze gourd leaf images, identify the variety, and assess leaf health.
+VARIETY IDENTIFICATION (key distinguishing features):
+1. UPO (Bottle Gourd, Lagenaria siceraria):
+   - Flowers are always WHITE or cream — never yellow
+   - Large funnel-shaped petals with prominent veining
+   - Thick, hairy calyx and peduncle (flower stalk)
+   - Blooms open primarily in the evening/night
+   - RULE: If the flower is yellow, it CANNOT be Upo
+2. AMPALAYA (Bitter Gourd, Momordica charantia):
+   - Small YELLOW flowers (1.5-2cm diameter)
+   - 5 deeply separated, rounded petals with visible venation
+   - Thin, wiry stems; calyx is small and star-shaped
+   - Petals appear delicate, almost translucent at edges
+3. PATOLA (Sponge Gourd, Luffa acutangula):
+   - LARGE bright yellow flowers (5-8cm diameter) — noticeably bigger than ampalaya or cucumber
+   - 5 wide, overlapping rounded petals forming a broad face
+   - Prominent yellow stamens clustered at center
+   - Thick, angular ridged stem; flower base may show ridges
+4. CUCUMBER (Cucumis sativus):
+   - Small-to-medium YELLOW flowers (2-3cm diameter)
+   - 5 pointed, star-shaped petals (more angular than patola)
+   - Lighter yellow than patola; petals thinner and more deeply divided
+   - Short peduncle; flowers cluster near leaf axils
 
-IDENTIFICATION RULES:
-1. AMPALAYA (Bitter Gourd): Deeply lobed leaves, 5-7 pointed lobes, jagged toothed edges, rough upper surface.
-2. PATOLA (Sponge Gourd): Large leaves, shallow rounded lobes (3-5), rough texture, wide leaf blade.
-3. UPO (Bottle Gourd): Heart-shaped to rounded leaves, shallow lobes, soft texture, velvety whitish underside.
-4. KALABASA (Squash): Very large rounded leaves, shallow lobes with hairy texture, triangular stem attachment.
-5. PIPINO (Cucumber): Medium triangular leaves, 3-5 angular lobes, rough texture, pointed tips.
+GENDER IDENTIFICATION:
+- FEMALE: A swollen ovary (miniature fruit shape) is visible at the base below the petals. This bulge is green, sometimes ridged or elongated depending on species. The ovary is the single most reliable gender indicator.
+- MALE: Thin, straight stem below the flower with NO basal swelling. Stamens are prominent inside the flower.
+- UNKNOWN: Only use when the flower base is completely obscured or the image is too blurry to determine.
+
+HARVEST TIMING:
+- Gourds typically take 20-35 days from full bloom to harvest-ready fruit.
+- Do not estimate less than 14 days unless a developing fruit is already clearly visible and near-mature.
+
+CONFIDENCE CALIBRATION (anchor to visual evidence only):
+- 0.85-1.0: Crystal-clear image, textbook features visible, zero ambiguity.
+- 0.70-0.84: Good image quality, most key features visible, minor uncertainty.
+- 0.50-0.69: Partial view, some features obscured, or atypical presentation.
+- Below 0.50: Poor image, heavily obscured, or genuinely ambiguous.`;
+
+const LEAF_SYSTEM_INSTRUCTION = `You are an expert plant scientist specializing in tropical gourd identification (Cucurbitaceae family). Your role is to independently analyze gourd leaf images, identify the variety, and assess leaf health based solely on visual evidence.
+
+CRITICAL — INDEPENDENT ANALYSIS:
+Always form your own assessment from the image first. If context from an external model is provided, treat it as a secondary reference only — never let it bias or override your visual analysis. Your confidence must reflect YOUR certainty from the image, not agreement with any external prediction.
+
+VARIETY IDENTIFICATION (key distinguishing features):
+1. AMPALAYA (Bitter Gourd, Momordica charantia):
+   - Deeply palmately lobed (5-7 pointed lobes), each lobe narrow and elongated
+   - Margins are irregularly serrated/toothed with sharp edges
+   - Upper surface rough to touch; dark green when healthy; leaf size 8-15cm
+   - KEY DIFFERENTIATOR: Most deeply cut lobes of all gourd leaves — sinuses reach close to the petiole
+2. PATOLA (Sponge Gourd, Luffa acutangula):
+   - Large palmately lobed leaves (3-5 shallow to moderate lobes)
+   - Rough sandpaper-like texture on upper surface
+   - Wide leaf blade (15-25cm); broader than deep
+   - KEY DIFFERENTIATOR: Lobes are rounded (not pointed like ampalaya); rough texture is distinctive
+3. UPO (Bottle Gourd, Lagenaria siceraria):
+   - Heart-shaped to kidney-shaped with very shallow lobes or nearly entire margin
+   - Soft, velvety texture; underside has whitish pubescence (fine hairs)
+   - Light to medium green color
+   - KEY DIFFERENTIATOR: Velvety soft feel and whitish underside distinguish from all other gourds
+4. KALABASA (Squash, Cucurbita spp.):
+   - Very large rounded leaves (20-40cm), the largest among common gourds
+   - Shallow lobes with broadly triangular shape
+   - Surface covered with stiff, prickly hairs (hispid)
+   - KEY DIFFERENTIATOR: Massive size and prickly/hairy texture; triangular petiole attachment area often has white mottling
+5. PIPINO (Cucumber, Cucumis sativus):
+   - Medium triangular leaves with 3-5 angular, pointed lobes
+   - Rough texture with small bristly hairs; thinner leaf blade than kalabasa or patola
+   - KEY DIFFERENTIATOR: Angular pointed lobes (vs. rounded in patola) and medium size (vs. large in kalabasa)
 
 HEALTH ASSESSMENT:
-- Chlorophyll: "healthy" = uniform dark green; "yellowing" = patches from edges or veins; "deficient" = widespread pale/yellow coloration.
-- Nutrient deficiencies: Iron -> interveinal chlorosis (yellow between veins, green veins); Nitrogen -> uniform pale yellowing from older leaves; Magnesium -> yellow edges, green center.
-- Disease indicators: Downy mildew -> yellow angular spots on upper surface; Powdery mildew -> white powdery patches; Leaf curl virus -> distorted/curled margins.
-- CONFIDENCE: Only set confidence > 0.8 if completely certain. Report 0.5-0.7 for partial views.`;
+- Chlorophyll: "healthy" = uniform dark green; "yellowing" = patches spreading from edges or veins; "deficient" = widespread pale/yellow coloration.
+- Nutrient deficiencies: Iron -> interveinal chlorosis (yellow between veins, green veins remain); Nitrogen -> uniform pale yellowing starting from older/lower leaves; Magnesium -> yellow margins with green center persisting.
+- Disease indicators: Downy mildew -> yellow angular spots bounded by leaf veins on upper surface; Powdery mildew -> white powdery coating on upper/lower surfaces; Leaf curl virus -> upward/downward curling and distortion of leaf margins.
+
+CONFIDENCE CALIBRATION (anchor to visual evidence only):
+- 0.85-1.0: Crystal-clear image, textbook features visible, zero ambiguity.
+- 0.70-0.84: Good image quality, most key features visible, minor uncertainty.
+- 0.50-0.69: Partial view, some features obscured, or atypical presentation.
+- Below 0.50: Poor image, heavily obscured, or genuinely ambiguous.`;
 
 const CHATBOT_SYSTEM_INSTRUCTION = `You are an expert agricultural assistant specializing in gourd farming, particularly bottle gourds (Lagenaria siceraria).
 You provide helpful, accurate advice on:
@@ -125,7 +184,7 @@ const FLOWER_ANALYSIS_SCHEMA = {
     flowerQuality: {
       type: 'object',
       properties: {
-        overallScore: { type: 'number' },
+        overallScore: { type: 'number', minimum: 0, maximum: 100 },
         petalCondition: { type: 'string', enum: ['excellent', 'good', 'fair', 'poor'] },
         sizeAssessment: { type: 'string', enum: ['small', 'average', 'large'] },
         healthIndicators: { type: 'array', items: { type: 'string' } },
@@ -155,11 +214,11 @@ const FLOWER_ANALYSIS_SCHEMA = {
     qualityMetrics: {
       type: 'object',
       properties: {
-        petalQuality: { type: 'number' },
-        colorScore: { type: 'number' },
-        developmentScore: { type: 'number' },
-        healthScore: { type: 'number' },
-        pollinationPotential: { type: 'number' },
+        petalQuality: { type: 'number', minimum: 0, maximum: 100 },
+        colorScore: { type: 'number', minimum: 0, maximum: 100 },
+        developmentScore: { type: 'number', minimum: 0, maximum: 100 },
+        healthScore: { type: 'number', minimum: 0, maximum: 100 },
+        pollinationPotential: { type: 'number', minimum: 0, maximum: 100 },
       },
       required: [
         'petalQuality',
@@ -176,6 +235,39 @@ const FLOWER_ANALYSIS_SCHEMA = {
         concerns: { type: 'array', items: { type: 'string' } },
       },
       required: ['strengths', 'concerns'],
+    },
+    tfliteComparison: {
+      type: 'object',
+      description:
+        'Comparison with on-device TFLite model prediction. Populate only when TFLite context is provided.',
+      properties: {
+        agrees: { type: 'boolean', description: 'Whether Gemini overall agrees with TFLite' },
+        varietyAgreement: {
+          type: 'boolean',
+          description: 'Whether variety predictions match',
+        },
+        genderAgreement: {
+          type: 'boolean',
+          description: 'Whether gender predictions match',
+        },
+        overrideReason: {
+          type: 'string',
+          description:
+            'If Gemini disagrees, explain which visual evidence contradicts the TFLite prediction',
+        },
+        confidenceAssessment: {
+          type: 'string',
+          description:
+            'Assessment of whether the TFLite confidence level seems justified given the image',
+        },
+      },
+      required: [
+        'agrees',
+        'varietyAgreement',
+        'genderAgreement',
+        'overrideReason',
+        'confidenceAssessment',
+      ],
     },
   },
   required: [
@@ -204,7 +296,7 @@ const LEAF_ANALYSIS_SCHEMA = {
     leafHealth: {
       type: 'object',
       properties: {
-        healthScore: { type: 'number' },
+        healthScore: { type: 'number', minimum: 0, maximum: 100 },
         chlorophyllLevel: { type: 'string', enum: ['healthy', 'yellowing', 'deficient'] },
         maturityStage: { type: 'string', enum: ['young', 'mature', 'aging'] },
         visibleIssues: { type: 'array', items: { type: 'string' } },
@@ -226,6 +318,29 @@ const LEAF_ANALYSIS_SCHEMA = {
         recommendations: { type: 'array', items: { type: 'string' } },
       },
       required: ['strengths', 'concerns', 'recommendations'],
+    },
+    tfliteComparison: {
+      type: 'object',
+      description:
+        'Comparison with on-device TFLite model prediction. Populate only when TFLite context is provided.',
+      properties: {
+        agrees: { type: 'boolean', description: 'Whether Gemini overall agrees with TFLite' },
+        varietyAgreement: {
+          type: 'boolean',
+          description: 'Whether variety predictions match',
+        },
+        overrideReason: {
+          type: 'string',
+          description:
+            'If Gemini disagrees, explain which visual evidence contradicts the TFLite prediction',
+        },
+        confidenceAssessment: {
+          type: 'string',
+          description:
+            'Assessment of whether the TFLite confidence level seems justified given the image',
+        },
+      },
+      required: ['agrees', 'varietyAgreement', 'overrideReason', 'confidenceAssessment'],
     },
   },
   required: ['variety', 'confidence', 'reasoning', 'keyFeatures', 'leafHealth', 'observations'],
@@ -345,6 +460,27 @@ async function executeWithRetry(operation, meta = {}) {
 }
 
 /**
+ * Parse Gemini JSON response safely.
+ * If the text is truncated (unterminated string/object), throws a descriptive error
+ * rather than a cryptic SyntaxError so callers can retry or return a fallback.
+ */
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Attempt to detect truncation vs. genuinely malformed JSON
+    const trimmed = (text || '').trim();
+    const isTruncated = trimmed.length > 0 && !trimmed.endsWith('}') && !trimmed.endsWith(']');
+    if (isTruncated) {
+      throw new Error(
+        `Gemini response was truncated (${trimmed.length} chars). The model hit its output token limit mid-JSON. Original error: ${e.message}`
+      );
+    }
+    throw new Error(`Gemini returned invalid JSON: ${e.message}`);
+  }
+}
+
+/**
  * Generate AI chatbot response using Gemini
  */
 async function generateMessage(prompt, conversationHistory = []) {
@@ -461,12 +597,12 @@ Provide estimated harvest date, days to harvest, confidence (0-100), rationale c
             ],
           },
           temperature: 0.2,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048,
         },
       });
     });
 
-    return JSON.parse(response.text);
+    return safeJsonParse(response.text);
   } catch (error) {
     console.error('Gemini Harvest Prediction Error:', error.message);
     return {
@@ -489,13 +625,14 @@ async function analyzeImage(base64Image, tmPrediction = null) {
 
     const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    let userPrompt = 'Analyze this gourd flower image. Identify the variety and gender.';
+    let userPrompt =
+      'Analyze this gourd flower image. First, form your own independent assessment of the variety and gender based solely on what you see in the image.';
     if (tmPrediction) {
-      userPrompt += `\n\nCONTEXT FROM LOCAL MODEL: Previously identified as "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence. Verify — override only if you have strong visual evidence.`;
-      if (tmPrediction.gender === 'female') {
-        userPrompt +=
-          '\nIMPORTANT: Local model detected a FEMALE flower. Look specifically for an ovary bulge at the base. Do not classify as MALE unless you are absolutely certain the bulge is absent.';
-      }
+      userPrompt += `\n\nAFTER completing your independent analysis, compare it with this on-device model prediction:
+- Variety: "${tmPrediction.label}"
+- Confidence: ${tmPrediction.confidence}%${tmPrediction.gender ? `\n- Gender: ${tmPrediction.gender}` : ''}
+
+Note: The on-device model may be overconfident due to overfitting. Do NOT anchor your confidence to its score. Populate the tfliteComparison field with your honest assessment of agreement/disagreement and explain any differences with specific visual evidence.`;
     }
 
     const response = await executeWithRetry(async (ai, modelName) => {
@@ -519,7 +656,7 @@ async function analyzeImage(base64Image, tmPrediction = null) {
       });
     });
 
-    const parsedResult = JSON.parse(response.text);
+    const parsedResult = safeJsonParse(response.text);
 
     logMemoryUsage('After Gemini image analysis');
     forceGC();
@@ -545,9 +682,14 @@ async function analyzeLeaf(base64Image, tmPrediction = null) {
 
     const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    let userPrompt = 'Analyze this gourd leaf image. Identify the variety and assess leaf health.';
+    let userPrompt =
+      'Analyze this gourd leaf image. First, form your own independent assessment of the variety and leaf health based solely on what you see in the image.';
     if (tmPrediction) {
-      userPrompt += `\n\nCONTEXT FROM LOCAL MODEL: Previously identified as "${tmPrediction.label}" with ${tmPrediction.confidence}% confidence. Verify this identification.`;
+      userPrompt += `\n\nAFTER completing your independent analysis, compare it with this on-device model prediction:
+- Variety: "${tmPrediction.label}"
+- Confidence: ${tmPrediction.confidence}%
+
+Note: The on-device model may be overconfident due to overfitting. Do NOT anchor your confidence to its score. Populate the tfliteComparison field with your honest assessment of agreement/disagreement and explain any differences with specific visual evidence.`;
     }
 
     const response = await executeWithRetry(async (ai, modelName) => {
@@ -571,7 +713,7 @@ async function analyzeLeaf(base64Image, tmPrediction = null) {
       });
     });
 
-    const parsedResult = JSON.parse(response.text);
+    const parsedResult = safeJsonParse(response.text);
 
     logMemoryUsage('After Gemini leaf analysis');
     forceGC();

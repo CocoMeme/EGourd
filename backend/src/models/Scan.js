@@ -123,6 +123,13 @@ const scanSchema = new mongoose.Schema(
           concerns: [String],
           recommendations: [String],
         },
+        tfliteComparison: {
+          agrees: Boolean,
+          varietyAgreement: Boolean,
+          genderAgreement: Boolean,
+          overrideReason: String,
+          confidenceAssessment: String,
+        },
       },
 
       // Comparison result when both models ran

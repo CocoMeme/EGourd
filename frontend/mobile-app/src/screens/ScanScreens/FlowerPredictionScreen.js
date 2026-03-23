@@ -191,16 +191,20 @@ const getScoreColor = (score) => {
  * Animated Metric Bar Component
  */
 const AnimatedMetricBar = ({ label, value }) => {
+  // Normalize: Gemini sometimes returns 0-1 floats instead of 0-100 integers
+  const normalizedValue = value != null && value > 0 && value <= 1
+    ? Math.round(value * 100)
+    : Math.round(value || 0);
   const animatedWidth = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(animatedWidth, {
-      toValue: value,
+      toValue: normalizedValue,
       duration: 1000,
       delay: 300,
       useNativeDriver: false, // width doesn't support native driver
     }).start();
-  }, [value]);
+  }, [normalizedValue]);
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
@@ -217,14 +221,14 @@ const AnimatedMetricBar = ({ label, value }) => {
             outputRange: ['0%', '100%'],
           }),
           height: '100%',
-          backgroundColor: getScoreColor(value),
+          backgroundColor: getScoreColor(normalizedValue),
           borderRadius: 5,
         }} />
       </View>
 
       {/* Value on right */}
       <Text style={{ width: 35, fontSize: 13, fontWeight: '600', color: '#333', textAlign: 'right', marginLeft: 8 }}>
-        {value}
+        {normalizedValue}
       </Text>
     </View>
   );
@@ -276,7 +280,9 @@ const FlowerQualityCard = ({ quality }) => {
   if (!quality) return null;
 
   const animatedScore = useRef(new Animated.Value(0)).current;
-  const score = quality.overallScore || 0;
+  const rawScore = quality.overallScore || 0;
+  // Normalize: Gemini sometimes returns 0-1 floats instead of 0-100 integers
+  const score = rawScore > 0 && rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
 
   useEffect(() => {
     Animated.timing(animatedScore, {
@@ -437,13 +443,72 @@ const ObservationsCard = ({ observations }) => {
 };
 
 /**
- * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge
+ * Circular Progress Ring — pure RN, no SVG dependency
+ */
+const CircularProgress = ({ value, color, size = 60, backgroundColor = '#FFF', children }) => {
+  const clamped = Math.max(0, Math.min(100, value || 0));
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedProgress, {
+      toValue: clamped,
+      duration: 1000,
+      delay: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [clamped]);
+
+  const bw = Math.max(5, Math.round(size * 0.09));
+  const innerSize = size - bw * 2;
+
+  const rightRotate = animatedProgress.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '0deg', '0deg'],
+  });
+  const leftRotate = animatedProgress.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: ['-180deg', '-180deg', '0deg'],
+  });
+
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, justifyContent: 'center', alignItems: 'center' }}>
+      {/* Track */}
+      <View style={{ position: 'absolute', width: size, height: size, borderWidth: bw, borderColor: '#E8E8E8', borderRadius: size / 2 }} />
+      {/* Right half */}
+      <View style={{ position: 'absolute', width: size / 2, height: size, right: 0, overflow: 'hidden' }}>
+        <Animated.View style={{
+          width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
+          position: 'absolute', right: 0,
+          transform: [{ rotate: rightRotate }],
+        }} />
+      </View>
+      {/* Left half */}
+      <View style={{ position: 'absolute', width: size / 2, height: size, left: 0, overflow: 'hidden' }}>
+        <Animated.View style={{
+          width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
+          position: 'absolute', left: 0,
+          transform: [{ rotate: leftRotate }],
+        }} />
+      </View>
+      {/* Inner circle */}
+      <View style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2, backgroundColor, justifyContent: 'center', alignItems: 'center' }}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+/**
+ * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge + circular progress rings
  */
 const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
   const agree = comparisonResult?.agree;
   const badgeColor = agree ? '#4CAF50' : '#FF9800';
   const badgeIcon = agree ? 'checkmark-circle' : 'alert-circle';
   const badgeLabel = agree ? 'AGREE' : 'DISAGREE';
+
+  const tmConfidence = Math.round(tmPrediction?.confidence || 0);
+  const geminiConfidence = Math.round(geminiPrediction?.confidence || 0);
 
   return (
     <View style={{ flex: 1, paddingLeft: 16 }}>
@@ -452,7 +517,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult, is
         {/* TM column */}
         <View style={{ alignItems: 'center', flex: 1 }}>
           <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>TM Model</Text>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#2196F3' }}>{tmPrediction?.confidence?.toFixed(0)}%</Text>
+          <CircularProgress value={tmConfidence} color="#2196F3" size={60}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#2196F3' }}>{tmConfidence}%</Text>
+          </CircularProgress>
         </View>
 
         {/* Badge / divider */}
@@ -473,18 +540,22 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult, is
         <View style={{ alignItems: 'center', flex: 1 }}>
           <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>Gemini AI</Text>
           {geminiPrediction ? (
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#9C27B0' }}>{geminiPrediction.confidence?.toFixed(0)}%</Text>
+            <CircularProgress value={geminiConfidence} color="#9C27B0" size={60}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
+            </CircularProgress>
           ) : isGeminiLoading ? (
-            <SkeletonLoader width={40} height={20} style={{ borderRadius: 4 }} />
+            <SkeletonLoader width={60} height={60} style={{ borderRadius: 30 }} />
           ) : (
-            <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', borderWidth: 5, borderColor: '#E8E8E8' }}>
+              <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
+            </View>
           )}
         </View>
       </View>
 
       {/* Recommended source */}
       {comparisonResult?.recommendedSource && (
-        <Text style={{ fontSize: 10, color: '#888', textAlign: 'center', marginTop: 6 }}>
+        <Text style={{ fontSize: 10, color: '#888', textAlign: 'center', marginTop: 8 }}>
           Using: <Text style={{ fontWeight: '700', color: '#333' }}>{comparisonResult.recommendedSource === 'gemini' ? 'Gemini AI' : 'TM Model'}</Text>
         </Text>
       )}
