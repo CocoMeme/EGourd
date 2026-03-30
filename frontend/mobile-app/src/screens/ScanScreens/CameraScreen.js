@@ -458,14 +458,40 @@ export const CameraScreen = ({ navigation }) => {
     console.log('🟢 CAPTURE:', selectionReason);
     console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
 
-    // Navigate IMMEDIATELY - no waiting!
+    // Re-capture at higher quality for accurate final prediction
+    // The scanning loop uses quality 0.5 for speed — upgrade the selected frame
+    let finalUri = imageUri;
+    let finalWidth = imageWidth;
+    let finalHeight = imageHeight;
+    try {
+      if (cameraRef.current) {
+        const hqPhoto = await cameraRef.current.takePictureAsync({
+          quality: 0.9,
+          skipProcessing: true,
+          base64: false,
+          exif: false,
+          shutterSound: false,
+        });
+        if (hqPhoto?.uri) {
+          finalUri = hqPhoto.uri;
+          finalWidth = hqPhoto.width;
+          finalHeight = hqPhoto.height;
+          console.log('📸 HQ re-capture successful:', hqPhoto.width, 'x', hqPhoto.height);
+        }
+      }
+    } catch (hqErr) {
+      console.warn('⚠️ HQ re-capture failed, using scan frame:', hqErr.message);
+      // Fall through — use the original scanning frame
+    }
+
+    // Navigate with the best available image
     // Logic Preservation: Passing width and height to fix distortion
     navigation.navigate(
       scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
       {
-        imageUri: imageUri,
-        width: imageWidth,
-        height: imageHeight,
+        imageUri: finalUri,
+        width: finalWidth,
+        height: finalHeight,
         isLoading: true,
         returnTo: 'CameraMain',
         scanMode: scanMode,

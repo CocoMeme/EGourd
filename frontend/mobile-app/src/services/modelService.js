@@ -268,7 +268,7 @@ class ModelService {
 
     try {
       // Preprocess
-      const imagePixels = await this.preprocessImage(imageUri, sourceWidth, sourceHeight, 0.8);
+      const imagePixels = await this.preprocessImage(imageUri, sourceWidth, sourceHeight, 0.95);
 
       // Run inference
       const currentModel = this.model;
