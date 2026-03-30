@@ -1158,7 +1158,63 @@ const getLifecyclePrediction = async (req, res) => {
       leaf_count: plant.leafCount || 40,
     };
 
-    const prediction = await pollinationMLService.getLifecyclePredictions(predictionData);
+    let prediction;
+    try {
+      prediction = await pollinationMLService.getLifecyclePredictions(predictionData);
+    } catch (mlError) {
+      console.warn('ML lifecycle prediction failed, using rule-based fallback:', mlError.message);
+      // Rule-based fallback using GOURD_CONFIGS
+      const { GOURD_CONFIGS } = require('../models/Plant');
+      const config = GOURD_CONFIGS[plant.gourdType];
+      if (!config) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error getting lifecycle prediction',
+          error: mlError.message,
+        });
+      }
+      const plantingDate = plant.datePlanted ? new Date(plant.datePlanted) : new Date();
+      const daysToFlower = Math.round((config.daysToFlower.min + config.daysToFlower.max) / 2);
+      const daysToMaturity = Math.round((config.daysToMaturity.min + config.daysToMaturity.max) / 2);
+      const totalDays = daysToFlower + daysToMaturity;
+      const expectedFloweringDate = new Date(plantingDate);
+      expectedFloweringDate.setDate(expectedFloweringDate.getDate() + daysToFlower);
+      const expectedHarvestDate = new Date(plantingDate);
+      expectedHarvestDate.setDate(expectedHarvestDate.getDate() + totalDays);
+
+      prediction = {
+        flowering: {
+          predictedDaysToFlower: daysToFlower,
+          floweringRange: { min: config.daysToFlower.min, max: config.daysToFlower.max },
+          confidence: 0.6,
+          source: 'rule-based',
+        },
+        pollination: {
+          successRate: 0.75,
+          successRatePercentage: 75,
+          expectedSuccessfulPollinations: 5,
+          daysUntilResultVisible: config.daysToResultVisible.average,
+          confidence: 0.6,
+          source: 'rule-based',
+        },
+        maturity: {
+          daysToMaturity: daysToMaturity,
+          expectedYieldKg: 0,
+          confidence: 0.6,
+          source: 'rule-based',
+        },
+        summary: {
+          plantingToFlowering: daysToFlower,
+          floweringToHarvest: daysToMaturity,
+          totalDaysToHarvest: totalDays,
+          expectedPollinationSuccess: 75,
+          expectedYieldKg: 0,
+          expectedFloweringDate: expectedFloweringDate.toISOString(),
+          expectedHarvestDate: expectedHarvestDate.toISOString(),
+          source: 'rule-based',
+        },
+      };
+    }
 
     // Update plant's flowering field with predicted dates for consistency
     if (prediction.summary) {
@@ -1244,12 +1300,13 @@ const getSeasonalPollinationStats = async (req, res) => {
     ]);
 
     // Transform into a more usable format
-    const gourdTypes = ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber'];
+    const gourdTypes = ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber', 'kalabasa'];
     const gourdLabels = {
       bitter_gourd: 'Ampalaya',
       bottle_gourd: 'Upo',
       sponge_gourd: 'Patola',
       cucumber: 'Pipino',
+      kalabasa: 'Kalabasa',
     };
 
     // Initialize data structure

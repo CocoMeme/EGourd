@@ -98,7 +98,7 @@ class MLYieldPredictionService {
     });
 
     // Validate plant type
-    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'];
+    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber', 'kalabasa'];
     if (data.plant_type && !validPlantTypes.includes(data.plant_type)) {
       errors.push(`plant_type must be one of: ${validPlantTypes.join(', ')}`);
     }
@@ -161,6 +161,7 @@ class MLYieldPredictionService {
       upo_smooth: { min: 2.0, max: 8.0, average: 4.5 },
       patola: { min: 0.8, max: 4.0, average: 2.0 },
       cucumber: { min: 1.5, max: 6.0, average: 3.0 },
+      kalabasa: { min: 2.0, max: 7.0, average: 4.0 },
     };
 
     return yieldRanges[plantType] || { min: 0, max: 10, average: 3.0 };

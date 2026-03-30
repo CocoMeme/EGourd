@@ -169,6 +169,7 @@ export const PlantForm = ({
     { value: 'bottle_gourd', label: 'Bottle Gourd', tagalog: 'Upo', icon: '🫛' },
     { value: 'sponge_gourd', label: 'Sponge Gourd', tagalog: 'Patola', icon: '🌿' },
     { value: 'cucumber', label: 'Cucumber', tagalog: 'Pipino', icon: '🥒' },
+    { value: 'kalabasa', label: 'Squash', tagalog: 'Kalabasa', icon: '🎃' },
   ];
 
   // Removed soilTypes, climateTypes, seasons as they are now auto-determined

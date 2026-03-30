@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-01-04T00:22:09.339085",
+  "generated_at": "2026-03-30T21:35:03.241886",
   "version": "1.0",
   "plant_types": [
     "ampalaya_bilog",
     "upo_smooth",
     "patola",
-    "cucumber"
+    "cucumber",
+    "kalabasa"
   ],
   "features": {
     "categorical": [
@@ -123,6 +124,29 @@
       "height_range": [
         100,
         250
+      ]
+    },
+    "kalabasa": {
+      "optimal_age": [
+        40,
+        65
+      ],
+      "male_flowers": {
+        "base": 22,
+        "std": 5
+      },
+      "female_flowers": {
+        "base": 8,
+        "std": 3
+      },
+      "male_female_ratio": 2.5,
+      "temp_preference": [
+        24,
+        32
+      ],
+      "height_range": [
+        200,
+        500
       ]
     }
   }

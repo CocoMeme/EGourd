@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-01-02T00:15:46.959285",
+  "generated_at": "2026-03-30T21:35:11.692999",
   "version": "1.0",
   "plant_types": [
     "ampalaya_bilog",
     "upo_smooth",
     "patola",
-    "cucumber"
+    "cucumber",
+    "kalabasa"
   ],
   "features": [
     "plant_age_days",
@@ -73,6 +74,20 @@
       ],
       "vine_length_factor": 0.006,
       "node_factor": 0.06
+    },
+    "kalabasa": {
+      "base_yield_kg": 4.0,
+      "optimal_age": [
+        50,
+        75
+      ],
+      "yield_per_female_flower": 0.45,
+      "optimal_temp": [
+        24,
+        32
+      ],
+      "vine_length_factor": 0.01,
+      "node_factor": 0.07
     }
   }
 }

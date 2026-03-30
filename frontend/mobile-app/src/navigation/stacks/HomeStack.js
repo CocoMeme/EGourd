@@ -9,6 +9,7 @@ import {
     CommunityScreen,
     CreatePostScreen,
     PostDetailScreen,
+    SeasonalInsightsScreen,
 } from '../../screens';
 import { theme } from '../../styles';
 
@@ -89,6 +90,11 @@ export const HomeStack = ({ route }) => {
             <Stack.Screen
                 name="PostDetail"
                 component={PostDetailScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SeasonalInsights"
+                component={SeasonalInsightsScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

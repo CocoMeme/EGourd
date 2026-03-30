@@ -1,5 +1,5 @@
 {
-  "generated_date": "2026-01-04T01:01:58.836140",
+  "generated_date": "2026-03-30T21:35:21.881108",
   "datasets": {
     "main": {
       "file": "gourd_lifecycle_comprehensive.csv",
@@ -13,12 +13,12 @@
     },
     "pollination": {
       "file": "pollination_success_dataset.csv",
-      "records": 4220,
+      "records": 4184,
       "description": "Data for predicting pollination success rates"
     },
     "maturity": {
       "file": "fruit_maturity_dataset.csv",
-      "records": 1813,
+      "records": 1691,
       "description": "Data for predicting fruit development and yield"
     }
   },
@@ -26,7 +26,8 @@
     "bitter_gourd",
     "bottle_gourd",
     "sponge_gourd",
-    "cucumber"
+    "cucumber",
+    "squash"
   ],
   "features": {
     "environmental": [

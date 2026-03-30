@@ -1,13 +1,13 @@
 {
-  "trained_at": "2026-01-10T15:02:27.813125",
+  "trained_at": "2026-03-30T21:36:47.149347",
   "models": {
     "flowering_prediction": {
       "description": "Predicts days until first flower appears",
       "algorithm": "Random Forest Regressor",
       "metrics": {
-        "mae": 1.6351599321052426,
-        "rmse": 2.0380564496624256,
-        "r2": 0.8588733084360083
+        "mae": 1.7409521868789848,
+        "rmse": 2.1570786979791685,
+        "r2": 0.8344687351375288
       },
       "files": [
         "flowering_model.joblib",
@@ -19,9 +19,9 @@
       "description": "Predicts pollination success rate (0-1)",
       "algorithm": "Gradient Boosting Regressor",
       "metrics": {
-        "mae": 0.04147770837401173,
-        "rmse": 0.05221616671457798,
-        "r2": 0.7591062019946483
+        "mae": 0.04109956857638197,
+        "rmse": 0.05235369599520074,
+        "r2": 0.7432417361776615
       },
       "files": [
         "pollination_success_model.joblib",
@@ -34,14 +34,14 @@
       "algorithm": "Random Forest Regressor",
       "metrics": {
         "maturity": {
-          "mae": 2.5564174477965804,
-          "rmse": 3.1856375688304746,
-          "r2": 0.7777782516659917
+          "mae": 2.368689831407005,
+          "rmse": 3.000984881654442,
+          "r2": 0.8131433054357475
         },
         "yield": {
-          "mae": 2.096589129778296,
-          "rmse": 4.096201327577553,
-          "r2": 0.8247570579277119
+          "mae": 3.6824537738206216,
+          "rmse": 6.831630134947212,
+          "r2": 0.8477972107186723
         }
       },
       "files": [

@@ -25,6 +25,7 @@ const GOURD_COLORS = {
   bottle_gourd: '#3498DB',
   sponge_gourd: '#F39C12',
   cucumber: '#8BC34A',
+  kalabasa: '#E67E22',
 };
 
 // Month abbreviations

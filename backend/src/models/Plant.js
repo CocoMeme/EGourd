@@ -51,6 +51,13 @@ const GOURD_CONFIGS = {
     // Days to know if pollination was successful (fruit visible)
     daysToResultVisible: { min: 3, max: 5, average: 4 },
   },
+  kalabasa: {
+    displayName: { english: 'Squash', tagalog: 'Kalabasa' },
+    daysToFlower: { min: 35, max: 50 },
+    daysToMaturity: { min: 45, max: 60 },
+    pollinationHours: { start: 6, end: 9 },
+    daysToResultVisible: { min: 5, max: 8, average: 6 },
+  },
 };
 
 // Export GOURD_CONFIGS for use in other modules
@@ -63,8 +70,8 @@ const plantSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Gourd type is required'],
       enum: {
-        values: ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber'],
-        message: 'Gourd type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber',
+        values: ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber', 'kalabasa'],
+        message: 'Gourd type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber, kalabasa',
       },
     },
 

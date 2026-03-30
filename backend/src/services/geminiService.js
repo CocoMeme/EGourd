@@ -175,7 +175,7 @@ const FLOWER_ANALYSIS_SCHEMA = {
   properties: {
     variety: {
       type: 'string',
-      enum: ['ampalaya_bilog', 'patola', 'upo_smooth', 'cucumber', 'not_flower'],
+      enum: ['ampalaya_bilog', 'patola', 'upo_smooth', 'cucumber', 'kalabasa', 'not_flower'],
     },
     gender: { type: 'string', enum: ['male', 'female', 'unknown'] },
     confidence: { type: 'number' },

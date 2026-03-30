@@ -45,6 +45,13 @@ class FlowerPredictionService {
       optimalAge: { min: 35, max: 55 },
       maleToFemaleRatio: 1.8, // Slightly lower male to female ratio
     },
+    kalabasa: {
+      // Squash (Kalabasa) - monoecious
+      maleFlowers: { min: 15, max: 30, optimal: 22 },
+      femaleFlowers: { min: 5, max: 12, optimal: 8 },
+      optimalAge: { min: 40, max: 60 },
+      maleToFemaleRatio: 2.5, // Higher male to female ratio
+    },
   };
 
   /**

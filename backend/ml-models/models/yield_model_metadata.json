@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-01-02T00:17:57.592526",
+  "trained_at": "2026-03-30T21:36:22.242798",
   "version": "1.0",
   "feature_names": [
     "plant_type",
@@ -13,17 +13,17 @@
   ],
   "performance_metrics": {
     "train": {
-      "mae": 0.2815983723840321,
-      "rmse": 0.3845164467751364,
-      "r2": 0.9832600680391762
+      "mae": 0.3600968529780636,
+      "rmse": 0.5190776328988015,
+      "r2": 0.9848030466460261
     },
     "test": {
-      "mae": 0.6080745086295657,
-      "rmse": 0.8378720191700957,
-      "r2": 0.9208887487899019
+      "mae": 0.7549054977469154,
+      "rmse": 1.0627906611047706,
+      "r2": 0.9316689642393666
     },
-    "cv_mae": 0.6168506445761214,
-    "cv_mae_std": 0.019427510660907192
+    "cv_mae": 0.7942736879923873,
+    "cv_mae_std": 0.027142157232431158
   },
   "model_params": {
     "n_estimators": 200,
@@ -34,13 +34,15 @@
   "plant_types": [
     "ampalaya_bilog",
     "cucumber",
+    "kalabasa",
     "patola",
     "upo_smooth"
   ],
   "label_encodings": {
     "0": "ampalaya_bilog",
     "1": "cucumber",
-    "2": "patola",
-    "3": "upo_smooth"
+    "2": "kalabasa",
+    "3": "patola",
+    "4": "upo_smooth"
   }
 }

@@ -59,6 +59,14 @@ PLANT_YIELD_SPECS = {
         'optimal_temp': (20, 28),
         'vine_length_factor': 0.006,
         'node_factor': 0.06
+    },
+    'kalabasa': {
+        'base_yield_kg': 4.0,
+        'optimal_age': (50, 75),
+        'yield_per_female_flower': 0.45,
+        'optimal_temp': (24, 32),
+        'vine_length_factor': 0.010,
+        'node_factor': 0.07
     }
 }
 

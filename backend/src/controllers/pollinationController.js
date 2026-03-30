@@ -860,7 +860,7 @@ const predictFlowerProduction = async (req, res) => {
     }
 
     // Validate plant type
-    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'];
+    const validPlantTypes = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber', 'kalabasa'];
     if (!validPlantTypes.includes(plantType)) {
       return res.status(400).json({
         success: false,

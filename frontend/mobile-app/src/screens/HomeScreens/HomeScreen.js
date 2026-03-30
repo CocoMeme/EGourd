@@ -10,7 +10,6 @@ import {
   CustomAlert,
   NewsCard,
   NewsModal,
-  SeasonalInsightsCard,
 } from '../../components';
 import { theme } from '../../styles';
 import { getAllNews, getPopupNews, markNewsAsRead } from '../../services/newsService';
@@ -472,7 +471,38 @@ export const HomeScreen = ({ navigation, route }) => {
           </View>
 
           {/* Seasonal Pollination Insights */}
-          <SeasonalInsightsCard />
+          <TouchableOpacity
+            style={{
+              backgroundColor: theme.colors.background.primary,
+              borderRadius: 12,
+              marginHorizontal: 16,
+              marginVertical: 8,
+              padding: 16,
+              elevation: 2,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SeasonalInsights')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Ionicons name="calendar-outline" size={22} color={theme.colors.primary} />
+              <View>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: theme.colors.text.primary }}>
+                  Gourd Season Insights
+                </Text>
+                <Text style={{ fontSize: 12, color: theme.colors.text.secondary, marginTop: 2 }}>
+                  Seasonal trends, analysis & growing tips
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+          </TouchableOpacity>
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>

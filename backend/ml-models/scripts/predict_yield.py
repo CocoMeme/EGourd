@@ -47,7 +47,7 @@ def validate_input(data):
         return False, f"Missing required fields: {', '.join(missing_fields)}"
     
     # Validate plant type
-    valid_plant_types = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber']
+    valid_plant_types = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber', 'kalabasa']
     if data['plant_type'] not in valid_plant_types:
         return False, f"Invalid plant_type. Must be one of: {', '.join(valid_plant_types)}"
     

@@ -1,7 +1,7 @@
 # Python ML Dependencies for Render Deployment
 # These packages are required for the ML prediction services
 
-pandas==2.3.3
-numpy==1.26.4
+pandas==2.2.3
+numpy==2.2.4
 scikit-learn==1.6.1
 joblib==1.4.2

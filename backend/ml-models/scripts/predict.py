@@ -45,7 +45,7 @@ class FlowerPredictor:
                 raise ValueError(f"Missing required field: {field}")
         
         # Validate plant type
-        valid_plants = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber']
+        valid_plants = ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber', 'kalabasa']
         if data['plantType'] not in valid_plants:
             raise ValueError(f"Invalid plant type. Must be one of: {valid_plants}")
         

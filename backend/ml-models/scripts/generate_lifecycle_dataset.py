@@ -89,6 +89,18 @@ GOURD_CONFIGS = {
         'optimal_temp': (24, 30),
         'optimal_humidity': (60, 75),
         'pollination_window_hours': (6, 11),
+    },
+    'squash': {
+        'varieties': ['kalabasa', 'kalabasa_native', 'kalabasa_hybrid'],
+        'days_to_flower_range': (35, 50),
+        'days_to_flower_optimal': 42,
+        'male_female_ratio': (2.5, 4.0),
+        'fruit_weight_kg': (1.5, 5.0),
+        'days_to_maturity': (45, 60),
+        'vine_growth_rate_cm': (5, 10),
+        'optimal_temp': (24, 32),
+        'optimal_humidity': (65, 80),
+        'pollination_window_hours': (6, 9),
     }
 }
 

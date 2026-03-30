@@ -4,6 +4,7 @@ export { NewsScreen } from './HomeScreens/NewsScreen';
 export { ChatbotScreen } from './HomeScreens/ChatbotScreen';
 export { default as HowToUseScreen } from './HomeScreens/HowToUseScreen';
 export { default as EducationalScreen } from './HomeScreens/EducationalScreen';
+export { SeasonalInsightsScreen } from './HomeScreens/SeasonalInsightsScreen';
 
 // Scan Screens - Flower
 export { CameraScreen } from './ScanScreens/CameraScreen';

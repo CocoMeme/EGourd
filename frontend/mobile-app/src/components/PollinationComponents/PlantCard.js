@@ -24,7 +24,8 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
       bitter_gourd: '🥒',
       bottle_gourd: '🫛',
       sponge_gourd: '🌿',
-      cucumber: '🥒'
+      cucumber: '🥒',
+      kalabasa: '🎃'
     };
     return emojis[gourdType] || '🌱';
   };
@@ -35,7 +36,8 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
       bitter_gourd: 'Bitter Gourd / Ampalaya',
       bottle_gourd: 'Bottle Gourd / Upo',
       sponge_gourd: 'Sponge Gourd / Patola',
-      cucumber: 'Cucumber / Pipino'
+      cucumber: 'Cucumber / Pipino',
+      kalabasa: 'Squash / Kalabasa'
     };
     return names[gourdType] || formatLabel(gourdType);
   };

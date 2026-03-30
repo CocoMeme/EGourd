@@ -130,13 +130,14 @@ class PollinationMLService {
     };
 
     // Map frontend field names to ML model field names
+    const rawGourdType = plantData.gourdType || plantData.gourd_type;
     const inputData = {
       prediction_type: 'flowering',
-      gourd_type: plantData.gourdType || plantData.gourd_type,
+      gourd_type: this._mapGourdType(rawGourdType),
       variety_name:
         plantData.variety ||
         plantData.variety_name ||
-        this._getDefaultVariety(plantData.gourdType || plantData.gourd_type),
+        this._getDefaultVariety(rawGourdType),
       season: plantData.season || this._getCurrentSeason(),
       region_climate: plantData.region || plantData.region_climate || 'tropical_lowland',
       avg_temperature: plantData.avgTemperature || plantData.avg_temperature || 28,
@@ -175,13 +176,14 @@ class PollinationMLService {
       throw new Error('Gourd type is required');
     }
 
+    const rawGourdType = pollinationData.gourdType || pollinationData.gourd_type;
     const inputData = {
       prediction_type: 'pollination_success',
-      gourd_type: pollinationData.gourdType || pollinationData.gourd_type,
+      gourd_type: this._mapGourdType(rawGourdType),
       variety_name:
         pollinationData.variety ||
         pollinationData.variety_name ||
-        this._getDefaultVariety(pollinationData.gourdType || pollinationData.gourd_type),
+        this._getDefaultVariety(rawGourdType),
       season: pollinationData.season || this._getCurrentSeason(),
       avg_temperature: pollinationData.avgTemperature || pollinationData.avg_temperature || 28,
       avg_humidity: pollinationData.avgHumidity || pollinationData.avg_humidity || 70,
@@ -226,13 +228,14 @@ class PollinationMLService {
       throw new Error('Gourd type is required');
     }
 
+    const rawGourdType = maturityData.gourdType || maturityData.gourd_type;
     const inputData = {
       prediction_type: 'fruit_maturity',
-      gourd_type: maturityData.gourdType || maturityData.gourd_type,
+      gourd_type: this._mapGourdType(rawGourdType),
       variety_name:
         maturityData.variety ||
         maturityData.variety_name ||
-        this._getDefaultVariety(maturityData.gourdType || maturityData.gourd_type),
+        this._getDefaultVariety(rawGourdType),
       season: maturityData.season || this._getCurrentSeason(),
       avg_temperature: maturityData.avgTemperature || maturityData.avg_temperature || 28,
       avg_humidity: maturityData.avgHumidity || maturityData.avg_humidity || 70,
@@ -336,6 +339,17 @@ class PollinationMLService {
    */
   _getDefaultVariety(gourdType) {
     return gourdType;
+  }
+
+  /**
+   * Map frontend gourd type to ML model gourd type
+   * The ML models use different naming (e.g. 'squash' instead of 'kalabasa')
+   */
+  _mapGourdType(gourdType) {
+    const mapping = {
+      kalabasa: 'squash',
+    };
+    return mapping[gourdType] || gourdType;
   }
 }
 

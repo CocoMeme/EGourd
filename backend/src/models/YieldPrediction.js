@@ -18,7 +18,7 @@ const yieldPredictionSchema = new mongoose.Schema(
     plantType: {
       type: String,
       required: true,
-      enum: ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber'],
+      enum: ['ampalaya_bilog', 'upo_smooth', 'patola', 'cucumber', 'kalabasa'],
       index: true,
     },
     plantAgedays: {

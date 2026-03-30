@@ -63,6 +63,14 @@ PLANT_SPECS = {
         'male_female_ratio': 1.8,
         'temp_preference': (20, 28),
         'height_range': (100, 250),
+    },
+    'kalabasa': {
+        'optimal_age': (40, 65),
+        'male_flowers': {'base': 22, 'std': 5},
+        'female_flowers': {'base': 8, 'std': 3},
+        'male_female_ratio': 2.5,
+        'temp_preference': (24, 32),
+        'height_range': (200, 500),
     }
 }
 
