@@ -15,7 +15,8 @@ const flowerPredictionSchema = new mongoose.Schema(
       required: [true, 'Plant type is required'],
       enum: {
         values: ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber', 'kalabasa'],
-        message: 'Plant type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber, kalabasa',
+        message:
+          'Plant type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber, kalabasa',
       },
     },
 

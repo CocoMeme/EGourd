@@ -71,7 +71,8 @@ const plantSchema = new mongoose.Schema(
       required: [true, 'Gourd type is required'],
       enum: {
         values: ['bitter_gourd', 'bottle_gourd', 'sponge_gourd', 'cucumber', 'kalabasa'],
-        message: 'Gourd type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber, kalabasa',
+        message:
+          'Gourd type must be one of: bitter_gourd, bottle_gourd, sponge_gourd, cucumber, kalabasa',
       },
     },
 

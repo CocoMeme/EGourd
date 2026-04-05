@@ -1175,7 +1175,9 @@ const getLifecyclePrediction = async (req, res) => {
       }
       const plantingDate = plant.datePlanted ? new Date(plant.datePlanted) : new Date();
       const daysToFlower = Math.round((config.daysToFlower.min + config.daysToFlower.max) / 2);
-      const daysToMaturity = Math.round((config.daysToMaturity.min + config.daysToMaturity.max) / 2);
+      const daysToMaturity = Math.round(
+        (config.daysToMaturity.min + config.daysToMaturity.max) / 2
+      );
       const totalDays = daysToFlower + daysToMaturity;
       const expectedFloweringDate = new Date(plantingDate);
       expectedFloweringDate.setDate(expectedFloweringDate.getDate() + daysToFlower);

@@ -135,9 +135,7 @@ class PollinationMLService {
       prediction_type: 'flowering',
       gourd_type: this._mapGourdType(rawGourdType),
       variety_name:
-        plantData.variety ||
-        plantData.variety_name ||
-        this._getDefaultVariety(rawGourdType),
+        plantData.variety || plantData.variety_name || this._getDefaultVariety(rawGourdType),
       season: plantData.season || this._getCurrentSeason(),
       region_climate: plantData.region || plantData.region_climate || 'tropical_lowland',
       avg_temperature: plantData.avgTemperature || plantData.avg_temperature || 28,
@@ -233,9 +231,7 @@ class PollinationMLService {
       prediction_type: 'fruit_maturity',
       gourd_type: this._mapGourdType(rawGourdType),
       variety_name:
-        maturityData.variety ||
-        maturityData.variety_name ||
-        this._getDefaultVariety(rawGourdType),
+        maturityData.variety || maturityData.variety_name || this._getDefaultVariety(rawGourdType),
       season: maturityData.season || this._getCurrentSeason(),
       avg_temperature: maturityData.avgTemperature || maturityData.avg_temperature || 28,
       avg_humidity: maturityData.avgHumidity || maturityData.avg_humidity || 70,
