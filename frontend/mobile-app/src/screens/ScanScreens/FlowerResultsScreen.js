@@ -388,6 +388,7 @@ const ObservationsCard = ({ observations }) => {
       >
         <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Observations</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
+      </TouchableOpacity>
 
       {expanded && (
         <View style={{ gap: 12 }}>
