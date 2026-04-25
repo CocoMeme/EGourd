@@ -32,8 +32,6 @@ const { width } = Dimensions.get('window');
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
 import { LeafQualityMetrics } from '../../components/ScanComponents/LeafQualityMetrics';
 
-const { width } = Dimensions.get('window');
-
 // Leaf Variety colors
 const LEAF_VARIETY_COLORS = {
     'Ampalaya': '#27AE60',
@@ -1058,11 +1056,6 @@ const styles = StyleSheet.create({
         color: '#0066CC',
         fontWeight: '600',
         fontFamily: 'Poppins_600SemiBold',
-    },
-});
-
-export default LeafPredictionScreen;
-',
     },
 });
 
