@@ -39,6 +39,7 @@ const scanSchema = new mongoose.Schema(
         'Patola',
         'Upo (Smooth)',
         'Cucumber',
+        'Kalabasa',
         // Leaf varieties
         'Ampalaya',
         'Patola',
@@ -177,6 +178,27 @@ const scanSchema = new mongoose.Schema(
     notes: {
       type: String,
       default: '',
+    },
+    // Gemini Embedding 2 vector (768-dim). Hidden from normal API responses.
+    embedding: {
+      type: [Number],
+      default: undefined,
+      select: false,
+    },
+    // User feedback for predictions, particularly Gemini
+    userFeedback: {
+      isCorrect: {
+        type: Boolean,
+        default: null,
+      },
+      correctVariety: {
+        type: String,
+        default: null,
+      },
+      correctGender: {
+        type: String,
+        default: null,
+      }
     },
   },
   {

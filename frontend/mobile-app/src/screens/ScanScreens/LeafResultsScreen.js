@@ -29,6 +29,7 @@ import { scanService } from '../../services/scanService';
 // Dedicated Leaf Components
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
 import { LeafQualityMetrics } from '../../components/ScanComponents/LeafQualityMetrics';
+import CircularProgress from '../../components/ScanComponents/CircularProgress';
 
 const { width } = Dimensions.get('window');
 
@@ -53,62 +54,6 @@ const LEAF_SCIENTIFIC_NAMES = {
 /**
  * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge
  */
-/**
- * Circular Progress Ring — pure RN, no SVG dependency
- */
-const CircularProgress = ({ value, color, size = 60, backgroundColor = '#FFF', children }) => {
-    const clamped = Math.max(0, Math.min(100, value || 0));
-    const animatedProgress = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(animatedProgress, {
-            toValue: clamped,
-            duration: 1000,
-            delay: 300,
-            useNativeDriver: false,
-        }).start();
-    }, [clamped]);
-
-    const bw = Math.max(5, Math.round(size * 0.09));
-    const innerSize = size - bw * 2;
-
-    const rightRotate = animatedProgress.interpolate({
-        inputRange: [0, 50, 100],
-        outputRange: ['-180deg', '0deg', '0deg'],
-    });
-    const leftRotate = animatedProgress.interpolate({
-        inputRange: [0, 50, 100],
-        outputRange: ['-180deg', '-180deg', '0deg'],
-    });
-
-    return (
-        <View style={{ width: size, height: size, borderRadius: size / 2, justifyContent: 'center', alignItems: 'center' }}>
-            {/* Track */}
-            <View style={{ position: 'absolute', width: size, height: size, borderWidth: bw, borderColor: '#E8E8E8', borderRadius: size / 2 }} />
-            {/* Right half */}
-            <View style={{ position: 'absolute', width: size / 2, height: size, right: 0, overflow: 'hidden' }}>
-                <Animated.View style={{
-                    width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
-                    position: 'absolute', right: 0,
-                    transform: [{ rotate: rightRotate }],
-                }} />
-            </View>
-            {/* Left half */}
-            <View style={{ position: 'absolute', width: size / 2, height: size, left: 0, overflow: 'hidden' }}>
-                <Animated.View style={{
-                    width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
-                    position: 'absolute', left: 0,
-                    transform: [{ rotate: leftRotate }],
-                }} />
-            </View>
-            {/* Inner circle */}
-            <View style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2, backgroundColor, justifyContent: 'center', alignItems: 'center' }}>
-                {children}
-            </View>
-        </View>
-    );
-};
-
 const FinalVerdictCard = ({ tmPrediction, geminiPrediction }) => {
     const agree = geminiPrediction && tmPrediction &&
         geminiPrediction.variety === tmPrediction.variety;
@@ -119,6 +64,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction }) => {
     const tmConfidence = Math.round(tmPrediction?.confidence || 0);
     const geminiConfidence = Math.round(geminiPrediction?.confidence || 0);
 
+    const tmLabel = tmPrediction?.variety || null;
+    const geminiLabel = geminiPrediction?.variety || null;
+
     return (
         <View style={{ flex: 1, paddingLeft: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -128,6 +76,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction }) => {
                     <CircularProgress value={tmConfidence} color="#4CAF50" size={60}>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#4CAF50' }}>{tmConfidence}%</Text>
                     </CircularProgress>
+                    {tmLabel ? (
+                        <Text style={{ fontSize: 10, color: '#555', marginTop: 4, textAlign: 'center' }} numberOfLines={2}>{tmLabel}</Text>
+                    ) : null}
                 </View>
 
                 {/* Badge / divider */}
@@ -154,6 +105,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction }) => {
                             <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
                         </View>
                     )}
+                    {geminiLabel ? (
+                        <Text style={{ fontSize: 10, color: '#555', marginTop: 4, textAlign: 'center' }} numberOfLines={2}>{geminiLabel}</Text>
+                    ) : null}
                 </View>
             </View>
         </View>
@@ -378,6 +332,45 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             )}
                         </View>
 
+                        {/* Scan Metadata Row */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginHorizontal: 16, marginBottom: 8 }}>
+                            {/* Scan type badge */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
+                                <Ionicons name="leaf-outline" size={11} color="#2E7D32" />
+                                <Text style={{ fontSize: 11, color: '#2E7D32', fontWeight: '600', marginLeft: 3 }}>Leaf</Text>
+                            </View>
+                            {/* Validation status badge */}
+                            {currentScan?.validationStatus && (
+                                <View style={{
+                                    flexDirection: 'row', alignItems: 'center',
+                                    backgroundColor: currentScan.validationStatus === 'validated' ? '#E8F5E9' : currentScan.validationStatus === 'conflict' ? '#FFF3E0' : '#F5F5F5',
+                                    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10,
+                                }}>
+                                    <Ionicons
+                                        name={currentScan.validationStatus === 'validated' ? 'checkmark-circle' : currentScan.validationStatus === 'conflict' ? 'alert-circle' : 'phone-portrait-outline'}
+                                        size={11}
+                                        color={currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575'}
+                                    />
+                                    <Text style={{
+                                        fontSize: 11, fontWeight: '600', marginLeft: 3,
+                                        color: currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575',
+                                    }}>
+                                        {currentScan.validationStatus === 'tflite_only' ? 'TFLite Only'
+                                            : currentScan.validationStatus === 'validated' ? 'Validated'
+                                            : currentScan.validationStatus === 'manual_override' ? 'Manual Override'
+                                            : 'Conflict'}
+                                    </Text>
+                                </View>
+                            )}
+                            {/* Date */}
+                            {(currentScan?.date || currentScan?.createdAt) && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Ionicons name="time-outline" size={11} color="#999" />
+                                    <Text style={{ fontSize: 11, color: '#999', marginLeft: 3 }}>{formatDate(currentScan.date || currentScan.createdAt)}</Text>
+                                </View>
+                            )}
+                        </View>
+
                         {/* Gemini Analysis Results */}
                         {geminiPrediction && !isNotLeaf && (
                             <>
@@ -388,8 +381,8 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                     {geminiPrediction.keyFeatures?.length > 0 && (
                                         <View style={styles.featuresList}>
                                             {geminiPrediction.keyFeatures.map((feature, i) => (
-                                                <View key={i} style={styles.featureBadge}>
-                                                    <Text style={styles.featureText}>{feature}</Text>
+                                                <View key={i} style={[styles.featureBadge, { backgroundColor: varietyColor + '18', borderColor: varietyColor + '55', borderWidth: 1 }]}>
+                                                    <Text style={[styles.featureText, { color: varietyColor }]}>{feature}</Text>
                                                 </View>
                                             ))}
                                         </View>

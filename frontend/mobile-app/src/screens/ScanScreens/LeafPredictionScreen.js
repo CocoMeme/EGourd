@@ -24,9 +24,11 @@ import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
 import { guestStorageService } from '../../services/guestStorageService';
+import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
+import { PredictionFeedbackModal } from '../../components/ScanComponents/PredictionFeedbackModal';
 
-// Dedicated Leaf Components
+const { width } = Dimensions.get('window');
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
 import { LeafQualityMetrics } from '../../components/ScanComponents/LeafQualityMetrics';
 
@@ -729,6 +731,14 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            <PredictionFeedbackModal
+                visible={showFeedbackModal}
+                scanType="leaf"
+                originalVariety={prediction?.variety || tmPrediction?.variety}
+                originalGender={null}
+                onSubmit={handleFeedbackSubmit}
+            />
         </View>
     );
 };
@@ -1048,6 +1058,11 @@ const styles = StyleSheet.create({
         color: '#0066CC',
         fontWeight: '600',
         fontFamily: 'Poppins_600SemiBold',
+    },
+});
+
+export default LeafPredictionScreen;
+',
     },
 });
 

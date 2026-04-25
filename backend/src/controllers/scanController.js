@@ -1,5 +1,6 @@
 const Scan = require('../models/Scan');
 const geminiService = require('../services/geminiService');
+const embeddingService = require('../services/embeddingService');
 
 // Save a new scan
 exports.saveScan = async (req, res) => {
@@ -54,18 +55,79 @@ exports.saveScan = async (req, res) => {
   }
 };
 
+// Add feedback to a scan
+exports.addFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isCorrect, correctVariety, correctGender } = req.body;
+
+    const scan = await Scan.findById(id);
+    if (!scan) {
+      return res.status(404).json({ success: false, message: 'Scan not found' });
+    }
+
+    scan.userFeedback = {
+      isCorrect,
+      correctVariety,
+      correctGender,
+    };
+
+    // If corrected, we could also update the main prediction to reflect the correct value, 
+    // but saving in userFeedback is safer. We'll update the embedding regardless.
+    if (!isCorrect) {
+       scan.variety = correctVariety || scan.variety;
+       if (scan.aiPrediction && scan.aiPrediction.gemini) {
+         scan.aiPrediction.gemini.variety = correctVariety || scan.aiPrediction.gemini.variety;
+         scan.aiPrediction.gemini.gender = correctGender || scan.aiPrediction.gemini.gender;
+       }
+    }
+
+    const updatedScan = await scan.save();
+
+    // Now generate and store embedding with the verified data
+    setImmediate(() => {
+      const scanText = embeddingService.buildScanText(updatedScan);
+      embeddingService.generateAndStore(updatedScan._id, scanText);
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Feedback saved and embedding updated',
+      scan: updatedScan,
+    });
+  } catch (error) {
+    console.error('Error adding feedback:', error);
+    res.status(500).json({ message: 'Server error while adding feedback', error: error.message });
+  }
+};
+
 // Get scan history for a user
 exports.getScanHistory = async (req, res) => {
   try {
     const { userId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
     }
 
-    const scans = await Scan.find({ userId }).sort({ date: -1 });
+    const [scans, total] = await Promise.all([
+      Scan.find({ userId }).sort({ date: -1 }).skip(skip).limit(limit),
+      Scan.countDocuments({ userId }),
+    ]);
 
-    res.status(200).json(scans);
+    res.status(200).json({
+      data: scans,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+    });
   } catch (error) {
     console.error('Error fetching scan history:', error);
     res.status(500).json({ message: 'Server error while fetching history', error: error.message });
@@ -134,6 +196,85 @@ exports.updateScan = async (req, res) => {
   }
 };
 
+// Re-run Gemini analysis on an existing scan
+exports.reanalyzeScan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const scan = await Scan.findById(id);
+    if (!scan) {
+      return res.status(404).json({ success: false, message: 'Scan not found' });
+    }
+
+    if (!scan.imageUrl) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Scan has no image URL to re-analyze' });
+    }
+
+    // Fetch the image and convert to base64
+    const https = require('https');
+    const http = require('http');
+    const { URL } = require('url');
+
+    const imageBase64 = await new Promise((resolve, reject) => {
+      const parsedUrl = new URL(scan.imageUrl);
+      const client = parsedUrl.protocol === 'https:' ? https : http;
+      client
+        .get(scan.imageUrl, (response) => {
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
+          response.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+          response.on('error', reject);
+        })
+        .on('error', reject);
+    });
+
+    const tmPrediction = scan.aiPrediction?.tflite
+      ? {
+          label: scan.aiPrediction.tflite.variety,
+          confidence: scan.aiPrediction.tflite.confidence,
+          gender: scan.aiPrediction.tflite.gender,
+        }
+      : null;
+
+    let geminiResult;
+    if (scan.scanType === 'leaf') {
+      geminiResult = await geminiService.analyzeLeaf(imageBase64, tmPrediction);
+    } else {
+      geminiResult = await geminiService.analyzeImage(imageBase64, tmPrediction);
+    }
+
+    const geminiUpdate = {
+      variety: geminiResult.variety,
+      confidence: geminiResult.confidence,
+      reasoning: geminiResult.reasoning,
+      keyFeatures: geminiResult.keyFeatures,
+      gender: geminiResult.gender,
+      flowerQuality: geminiResult.flowerQuality,
+      observations: geminiResult.observations,
+      tfliteComparison: geminiResult.tfliteComparison,
+      harvestPrediction: geminiResult.harvestPrediction,
+      leaf: geminiResult.leaf,
+    };
+
+    const updatedScan = await Scan.findByIdAndUpdate(
+      id,
+      { $set: { 'aiPrediction.gemini': geminiUpdate, updatedAt: new Date() } },
+      { new: true }
+    );
+
+    res
+      .status(200)
+      .json({ success: true, message: 'Scan re-analyzed successfully', data: updatedScan });
+  } catch (error) {
+    console.error('Error re-analyzing scan:', error);
+    res
+      .status(500)
+      .json({ success: false, message: 'Server error during re-analysis', error: error.message });
+  }
+};
+
 // Get harvest prediction from Gemini
 exports.getHarvestPrediction = async (req, res) => {
   try {
@@ -164,14 +305,34 @@ exports.getHarvestPrediction = async (req, res) => {
 // Analyze image with Gemini (Variety & Gender validation)
 exports.analyzeImage = async (req, res) => {
   try {
-    const { image, tmPrediction } = req.body;
+    const { image, tmPrediction, userId } = req.body;
 
     if (!image) {
       return res.status(400).json({ message: 'Missing image data' });
     }
 
-    // Call service
-    const result = await geminiService.analyzeImage(image, tmPrediction);
+    // Fetch similar past scans as few-shot context (best-effort, non-blocking)
+    let similarScans = [];
+    if (userId) {
+      try {
+        const descriptionText = tmPrediction
+          ? `Flower scan. Variety: ${tmPrediction.label}. Confidence: ${tmPrediction.confidence}%. Gender: ${tmPrediction.gender || 'unknown'}.`
+          : 'Flower scan.';
+        const queryEmbedding = await embeddingService.generateEmbedding(descriptionText);
+        similarScans = await embeddingService.findSimilarScans(
+          userId,
+          queryEmbedding,
+          'flower',
+          null,
+          3
+        );
+      } catch (_e) {
+        // Context injection is best-effort — silently skip on failure
+      }
+    }
+
+    const contextBlock = embeddingService.buildContextBlock(similarScans);
+    const result = await geminiService.analyzeImage(image, tmPrediction, contextBlock);
 
     res.json(result);
   } catch (error) {
@@ -186,14 +347,34 @@ exports.analyzeImage = async (req, res) => {
 // Analyze leaf image with Gemini (Variety & Health assessment)
 exports.analyzeLeaf = async (req, res) => {
   try {
-    const { image, tmPrediction } = req.body;
+    const { image, tmPrediction, userId } = req.body;
 
     if (!image) {
       return res.status(400).json({ message: 'Missing image data' });
     }
 
-    // Call leaf analysis service
-    const result = await geminiService.analyzeLeaf(image, tmPrediction);
+    // Fetch similar past scans as few-shot context (best-effort, non-blocking)
+    let similarScans = [];
+    if (userId) {
+      try {
+        const descriptionText = tmPrediction
+          ? `Leaf scan. Variety: ${tmPrediction.label}. Confidence: ${tmPrediction.confidence}%.`
+          : 'Leaf scan.';
+        const queryEmbedding = await embeddingService.generateEmbedding(descriptionText);
+        similarScans = await embeddingService.findSimilarScans(
+          userId,
+          queryEmbedding,
+          'leaf',
+          null,
+          3
+        );
+      } catch (_e) {
+        // Context injection is best-effort — silently skip on failure
+      }
+    }
+
+    const contextBlock = embeddingService.buildContextBlock(similarScans);
+    const result = await geminiService.analyzeLeaf(image, tmPrediction, contextBlock);
 
     res.json(result);
   } catch (error) {

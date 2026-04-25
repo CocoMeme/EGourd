@@ -97,6 +97,12 @@ VARIETY IDENTIFICATION (key distinguishing features):
    - 5 pointed, star-shaped petals (more angular than patola)
    - Lighter yellow than patola; petals thinner and more deeply divided
    - Short peduncle; flowers cluster near leaf axils
+5. KALABASA (Squash, Cucurbita spp.):
+   - Large bright YELLOW-ORANGE flowers (8-12cm diameter) — the largest gourd flowers
+   - 5 fused petals forming a deep bell or trumpet shape (not flat-faced like patola)
+   - Thick, fleshy petals with prominent ridges along the corolla
+   - Stout, angular, hairy/prickly stem (pentagonal cross-section)
+   - KEY DIFFERENTIATOR: Bell-shaped fused corolla and massive size distinguish from all others
 
 GENDER IDENTIFICATION:
 - FEMALE: A swollen ovary (miniature fruit shape) is visible at the base below the petals. This bulge is green, sometimes ridged or elongated depending on species. The ovary is the single most reliable gender indicator.
@@ -233,8 +239,9 @@ const FLOWER_ANALYSIS_SCHEMA = {
       properties: {
         strengths: { type: 'array', items: { type: 'string' } },
         concerns: { type: 'array', items: { type: 'string' } },
+        recommendations: { type: 'array', items: { type: 'string' } },
       },
-      required: ['strengths', 'concerns'],
+      required: ['strengths', 'concerns', 'recommendations'],
     },
     tfliteComparison: {
       type: 'object',
@@ -559,12 +566,18 @@ async function generateHarvestPrediction(scanData, environmentalData = {}) {
     const { prediction, confidence, variety } = scanData;
     const { location, date, weather } = environmentalData;
 
+    // Include Gemini flower stage data if available for richer context
+    const currentStage = scanData.aiPrediction?.gemini?.harvestPrediction?.currentStage || null;
+    const pollinationReady =
+      scanData.aiPrediction?.gemini?.harvestPrediction?.pollinationReady ?? null;
+    const flowerHealthScore = scanData.aiPrediction?.gemini?.flowerQuality?.overallScore || null;
+
     const prompt = `Analyze the following gourd scan data and provide a harvest prediction.
 
 Scan Data:
 - Plant/Fruit Type: ${prediction}
 - Variety: ${variety || 'Unknown'}
-- Confidence: ${confidence}
+- Confidence: ${confidence}%${currentStage ? `\n- Current Growth Stage: ${currentStage}` : ''}${pollinationReady !== null ? `\n- Pollination Ready: ${pollinationReady}` : ''}${flowerHealthScore !== null ? `\n- Flower Health Score: ${flowerHealthScore}/100` : ''}
 
 Context:
 - Date: ${date || new Date().toDateString()}
@@ -619,7 +632,7 @@ Provide estimated harvest date, days to harvest, confidence (0-100), rationale c
  * @param {Object} tmPrediction - Optional TFLite context { label, confidence, gender }
  * @returns {Promise<Object>} Structured flower analysis result
  */
-async function analyzeImage(base64Image, tmPrediction = null) {
+async function analyzeImage(base64Image, tmPrediction = null, contextBlock = '') {
   try {
     logMemoryUsage('Before Gemini image analysis');
 
@@ -633,6 +646,9 @@ async function analyzeImage(base64Image, tmPrediction = null) {
 - Confidence: ${tmPrediction.confidence}%${tmPrediction.gender ? `\n- Gender: ${tmPrediction.gender}` : ''}
 
 Note: The on-device model may be overconfident due to overfitting. Do NOT anchor your confidence to its score. Populate the tfliteComparison field with your honest assessment of agreement/disagreement and explain any differences with specific visual evidence.`;
+    }
+    if (contextBlock) {
+      userPrompt += contextBlock;
     }
 
     const response = await executeWithRetry(async (ai, modelName) => {
@@ -676,7 +692,7 @@ Note: The on-device model may be overconfident due to overfitting. Do NOT anchor
  * @param {Object} tmPrediction - Optional TFLite context { label, confidence }
  * @returns {Promise<Object>} Structured leaf analysis result
  */
-async function analyzeLeaf(base64Image, tmPrediction = null) {
+async function analyzeLeaf(base64Image, tmPrediction = null, contextBlock = '') {
   try {
     logMemoryUsage('Before Gemini leaf analysis');
 
@@ -690,6 +706,9 @@ async function analyzeLeaf(base64Image, tmPrediction = null) {
 - Confidence: ${tmPrediction.confidence}%
 
 Note: The on-device model may be overconfident due to overfitting. Do NOT anchor your confidence to its score. Populate the tfliteComparison field with your honest assessment of agreement/disagreement and explain any differences with specific visual evidence.`;
+    }
+    if (contextBlock) {
+      userPrompt += contextBlock;
     }
 
     const response = await executeWithRetry(async (ai, modelName) => {

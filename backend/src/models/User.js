@@ -98,6 +98,10 @@ const userSchema = new mongoose.Schema(
         default: 'en',
         enum: ['en', 'es', 'fr', 'de'], // Add more languages as needed
       },
+      geminiEmbeddingEnabled: {
+        type: Boolean,
+        default: null, // null means user hasn't opted in or out yet
+      },
       notifications: {
         push: { type: Boolean, default: true },
         email: { type: Boolean, default: false },

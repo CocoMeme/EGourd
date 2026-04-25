@@ -29,3 +29,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [ ] Track: Deployment Readiness Audit (Backend & Mobile)
 *Link: [./conductor/tracks/deployment_readiness_20251229/](./conductor/tracks/deployment_readiness_20251229/)*
+
+---
+
+## [ ] Track: Gemini Embedding User Feedback & Opt-in
+*Link: [./conductor/tracks/gemini_embedding_feedback/](./conductor/tracks/gemini_embedding_feedback/)*

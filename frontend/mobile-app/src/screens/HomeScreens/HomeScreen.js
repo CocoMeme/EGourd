@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, RefreshControl, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -30,6 +30,7 @@ export const HomeScreen = ({ navigation, route }) => {
 
   // User state
   const [user, setUser] = useState(null);
+  const [showOptInModal, setShowOptInModal] = useState(false);
 
   // Load user data
   useEffect(() => {
@@ -44,8 +45,36 @@ export const HomeScreen = ({ navigation, route }) => {
       }
       const userData = await authService.getCurrentUser();
       setUser(userData);
+      
+      // Check if user needs to be prompted for Gemini Embedding
+      if (userData && (userData.preferences?.geminiEmbeddingEnabled === undefined || userData.preferences?.geminiEmbeddingEnabled === null)) {
+        setShowOptInModal(true);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
+    }
+  };
+
+  const handleOptIn = async (value) => {
+    try {
+      const updatedProfile = await authService.updateProfile({
+        preferences: {
+          ...user?.preferences,
+          geminiEmbeddingEnabled: value,
+        }
+      });
+      setUser(prev => ({ 
+        ...prev, 
+        preferences: { 
+          ...prev.preferences, 
+          geminiEmbeddingEnabled: value 
+        }
+      }));
+      setShowOptInModal(false);
+      Alert.alert('Saved', value ? 'Gemini Embedding turned on. Thank you!' : 'Settings saved. You can always change this in your profile settings.');
+    } catch (error) {
+      console.error('Failed to save opt-in choice:', error);
+      Alert.alert('Error', 'Failed to save your preference.');
     }
   };
 

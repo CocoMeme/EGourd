@@ -29,6 +29,7 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
+import CircularProgress from '../../components/ScanComponents/CircularProgress';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +39,7 @@ const VARIETY_COLORS = {
   'Patola': '#F39C12',
   'Upo (Smooth)': '#3498DB',
   'Cucumber': '#8BC34A',
+  'Kalabasa': '#E67E22',
 };
 
 // Scientific names
@@ -46,6 +48,7 @@ const SCIENTIFIC_NAMES = {
   'Patola': 'Luffa acutangula',
   'Upo (Smooth)': 'Lagenaria siceraria',
   'Cucumber': 'Cucumis sativus',
+  'Kalabasa': 'Cucurbita moschata',
 };
 
 // Gender colors
@@ -383,9 +386,8 @@ const ObservationsCard = ({ observations }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
-        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
-      </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Observations</Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
 
       {expanded && (
         <View style={{ gap: 12 }}>
@@ -433,62 +435,6 @@ const ObservationsCard = ({ observations }) => {
 /**
  * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge
  */
-/**
- * Circular Progress Ring — pure RN, no SVG dependency
- */
-const CircularProgress = ({ value, color, size = 60, backgroundColor = '#FFF', children }) => {
-  const clamped = Math.max(0, Math.min(100, value || 0));
-  const animatedProgress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(animatedProgress, {
-      toValue: clamped,
-      duration: 1000,
-      delay: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [clamped]);
-
-  const bw = Math.max(5, Math.round(size * 0.09));
-  const innerSize = size - bw * 2;
-
-  const rightRotate = animatedProgress.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: ['-180deg', '0deg', '0deg'],
-  });
-  const leftRotate = animatedProgress.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: ['-180deg', '-180deg', '0deg'],
-  });
-
-  return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Track */}
-      <View style={{ position: 'absolute', width: size, height: size, borderWidth: bw, borderColor: '#E8E8E8', borderRadius: size / 2 }} />
-      {/* Right half */}
-      <View style={{ position: 'absolute', width: size / 2, height: size, right: 0, overflow: 'hidden' }}>
-        <Animated.View style={{
-          width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
-          position: 'absolute', right: 0,
-          transform: [{ rotate: rightRotate }],
-        }} />
-      </View>
-      {/* Left half */}
-      <View style={{ position: 'absolute', width: size / 2, height: size, left: 0, overflow: 'hidden' }}>
-        <Animated.View style={{
-          width: size, height: size, borderRadius: size / 2, borderWidth: bw, borderColor: color,
-          position: 'absolute', left: 0,
-          transform: [{ rotate: leftRotate }],
-        }} />
-      </View>
-      {/* Inner circle */}
-      <View style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2, backgroundColor, justifyContent: 'center', alignItems: 'center' }}>
-        {children}
-      </View>
-    </View>
-  );
-};
-
 const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult }) => {
   const agree = comparisonResult?.agree;
   const badgeColor = agree ? '#4CAF50' : '#FF9800';
@@ -497,6 +443,13 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult }) 
 
   const tmConfidence = Math.round(tmPrediction?.confidence || 0);
   const geminiConfidence = Math.round(geminiPrediction?.confidence || 0);
+
+  const tmLabel = tmPrediction
+    ? `${tmPrediction.gender ? tmPrediction.gender.charAt(0).toUpperCase() + tmPrediction.gender.slice(1) + ' ' : ''}${tmPrediction.variety || ''}`.trim()
+    : null;
+  const geminiLabel = geminiPrediction
+    ? `${geminiPrediction.gender ? geminiPrediction.gender.charAt(0).toUpperCase() + geminiPrediction.gender.slice(1) + ' ' : ''}${geminiPrediction.variety || ''}`.trim()
+    : null;
 
   return (
     <View style={{ flex: 1, paddingLeft: 16 }}>
@@ -507,6 +460,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult }) 
           <CircularProgress value={tmConfidence} color="#2196F3" size={60}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#2196F3' }}>{tmConfidence}%</Text>
           </CircularProgress>
+          {tmLabel ? (
+            <Text style={{ fontSize: 10, color: '#555', marginTop: 4, textAlign: 'center' }} numberOfLines={2}>{tmLabel}</Text>
+          ) : null}
         </View>
 
         {/* Badge / divider */}
@@ -533,6 +489,9 @@ const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult }) 
               <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
             </View>
           )}
+          {geminiLabel ? (
+            <Text style={{ fontSize: 10, color: '#555', marginTop: 4, textAlign: 'center' }} numberOfLines={2}>{geminiLabel}</Text>
+          ) : null}
         </View>
       </View>
 
@@ -777,6 +736,45 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               )}
             </View>
 
+            {/* Scan Metadata Row */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginHorizontal: 16, marginBottom: 8 }}>
+              {/* Scan type badge */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
+                <Ionicons name="flower-outline" size={11} color="#1565C0" />
+                <Text style={{ fontSize: 11, color: '#1565C0', fontWeight: '600', marginLeft: 3 }}>Flower</Text>
+              </View>
+              {/* Validation status badge */}
+              {currentScan?.validationStatus && (
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: currentScan.validationStatus === 'validated' ? '#E8F5E9' : currentScan.validationStatus === 'conflict' ? '#FFF3E0' : '#F5F5F5',
+                  paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10,
+                }}>
+                  <Ionicons
+                    name={currentScan.validationStatus === 'validated' ? 'checkmark-circle' : currentScan.validationStatus === 'conflict' ? 'alert-circle' : 'phone-portrait-outline'}
+                    size={11}
+                    color={currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575'}
+                  />
+                  <Text style={{
+                    fontSize: 11, fontWeight: '600', marginLeft: 3,
+                    color: currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575',
+                  }}>
+                    {currentScan.validationStatus === 'tflite_only' ? 'TFLite Only'
+                      : currentScan.validationStatus === 'validated' ? 'Validated'
+                      : currentScan.validationStatus === 'manual_override' ? 'Manual Override'
+                      : 'Conflict'}
+                  </Text>
+                </View>
+              )}
+              {/* Date */}
+              {currentScan?.date && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="time-outline" size={11} color="#999" />
+                  <Text style={{ fontSize: 11, color: '#999', marginLeft: 3 }}>{formatDate(currentScan.date)}</Text>
+                </View>
+              )}
+            </View>
+
             {/* Gemini Enhanced Data (only show if flower detected) */}
             {hasGeminiData && !isNotFlower && (
               <>
@@ -814,8 +812,8 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
                         {geminiData.keyFeatures?.length > 0 && (
                           <View style={styles.tagsContainer}>
                             {geminiData.keyFeatures.map((feature, i) => (
-                              <View key={i} style={styles.featureTag}>
-                                <Text style={styles.featureTagText}>{feature}</Text>
+                              <View key={i} style={[styles.featureTag, { backgroundColor: varietyColor + '18', borderColor: varietyColor + '55', borderWidth: 1 }]}>
+                                <Text style={[styles.featureTagText, { color: varietyColor }]}>{feature}</Text>
                               </View>
                             ))}
                           </View>

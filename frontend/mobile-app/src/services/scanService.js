@@ -139,9 +139,10 @@ class ScanService {
 
   /**
    * Get scan history for the current user
-   * @returns {Promise<Array>} List of scans
+   * @param {{ page?: number, limit?: number }} options - Pagination options
+   * @returns {Promise<Array>} List of scans (array, backward-compatible)
    */
-  async getScanHistory() {
+  async getScanHistory({ page = 1, limit = 50 } = {}) {
     try {
       let user = authService.getCurrentUser();
 
@@ -158,9 +159,10 @@ class ScanService {
       }
 
       const userId = user.id || user._id;
-      const response = await authService.authenticatedRequest(`/scans/history/${userId}`, {
-        method: 'GET',
-      });
+      const response = await authService.authenticatedRequest(
+        `/scans/history/${userId}?page=${page}&limit=${limit}`,
+        { method: 'GET' }
+      );
 
       const data = await response.json();
 
@@ -168,7 +170,8 @@ class ScanService {
         throw new Error(data.message || 'Failed to fetch scan history');
       }
 
-      return data;
+      // Support both old array response and new paginated response
+      return Array.isArray(data) ? data : (data.data || []);
     } catch (error) {
       console.error('Error fetching scan history:', error);
       throw error;

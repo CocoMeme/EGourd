@@ -40,6 +40,8 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
+    const [user, setUser] = useState(null);
+    const [geminiEmbeddingEnabled, setGeminiEmbeddingEnabled] = useState(false);
 
     // API URL state
     const [apiUrlModalVisible, setApiUrlModalVisible] = useState(false);
@@ -64,7 +66,20 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
         getStoredApiUrlOverride().then((stored) => {
             setHasApiUrlOverride(!!stored);
         });
+        loadUserData();
     }, []);
+
+    const loadUserData = async () => {
+        try {
+            if (!isGuest) {
+                const userData = await authService.getCurrentUser();
+                setUser(userData);
+                setGeminiEmbeddingEnabled(userData?.preferences?.geminiEmbeddingEnabled || false);
+            }
+        } catch (error) {
+            console.error('Error loading user data in settings:', error);
+        }
+    };
 
     // --- API URL helpers ---
     const handleOpenApiUrlModal = async () => {

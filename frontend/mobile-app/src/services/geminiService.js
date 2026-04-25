@@ -22,7 +22,7 @@ console.log('🔧 Gemini Config:', {
 
 // Gemini configuration - using backend
 const GEMINI_CONFIG = {
-  model: 'gemini-3-flash-preview', // Informational only
+  model: 'gemini-3.1-flash-preview', // new model: 'gemini-3.1-flash-preview' and 'gemini-3.1-pro-preview' - to switch when ready
 };
 
 class GeminiService {
@@ -57,9 +57,10 @@ class GeminiService {
    * Analyze flower image using Gemini AI via Backend
    * @param {string} imageUri - Local image URI
    * @param {Object} tmPrediction - Optional context from TFLite model
+   * @param {string} userId - Optional user ID for embedding context injection
    * @returns {Promise<Object>} Prediction object matching modelService format
    */
-  async analyzeFlower(imageUri, tmPrediction = null) {
+  async analyzeFlower(imageUri, tmPrediction = null, userId = null) {
     const startTime = Date.now();
 
     try {
@@ -105,7 +106,8 @@ class GeminiService {
         signal: controller.signal,
         body: JSON.stringify({
           image: base64Image,
-          tmPrediction: tmPrediction
+          tmPrediction: tmPrediction,
+          userId: userId || undefined,
         })
       });
 
@@ -138,9 +140,10 @@ class GeminiService {
    * Analyze leaf image using Gemini AI via Backend
    * @param {string} imageUri - Local image URI
    * @param {Object} tmPrediction - Optional context from TFLite model
+   * @param {string} userId - Optional user ID for embedding context injection
    * @returns {Promise<Object>} Formatted leaf prediction
    */
-  async analyzeLeaf(imageUri, tmPrediction = null) {
+  async analyzeLeaf(imageUri, tmPrediction = null, userId = null) {
     const startTime = Date.now();
 
     try {
@@ -181,7 +184,8 @@ class GeminiService {
         signal: controller.signal,
         body: JSON.stringify({
           image: base64Image,
-          tmPrediction: tmPrediction
+          tmPrediction: tmPrediction,
+          userId: userId || undefined,
         })
       });
 
@@ -288,6 +292,7 @@ class GeminiService {
       'bottle_gourd': 'Upo',
       'sponge_gourd': 'Patola',
       'cucumber': 'Cucumber',
+      'kalabasa': 'Kalabasa',
       // Legacy support
       'ampalaya_bilog': 'Ampalaya',
       'upo_smooth': 'Upo',
@@ -378,6 +383,8 @@ class GeminiService {
       'bottle_gourd_male',
       'cucumber_female',
       'cucumber_male',
+      'kalabasa_female',
+      'kalabasa_male',
       'not_flower',
     ];
 

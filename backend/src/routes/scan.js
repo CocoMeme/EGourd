@@ -48,6 +48,12 @@ router.get('/:id', authenticate, scanController.getScanById);
 // Route to update a scan (name, notes, etc.) - requires auth
 router.put('/:id', authenticate, scanController.updateScan);
 
+// Route to add feedback to a scan - requires auth
+router.post('/:id/feedback', authenticate, scanController.addFeedback);
+
+// Route to re-run Gemini analysis on an existing scan - requires auth
+router.post('/:id/reanalyze', authenticate, scanController.reanalyzeScan);
+
 // Route to delete a scan - requires auth
 router.delete('/:id', authenticate, scanController.deleteScan);
 
