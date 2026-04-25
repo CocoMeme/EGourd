@@ -493,7 +493,7 @@ const getCurrentUser = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { user } = req;
-    const { firstName, lastName, profilePicture } = req.body;
+    const { firstName, lastName, profilePicture, preferences } = req.body;
 
     if (!user) {
       return res.status(404).json({
@@ -506,6 +506,12 @@ const updateProfile = async (req, res) => {
     if (firstName !== undefined) user.firstName = firstName.trim();
     if (lastName !== undefined) user.lastName = lastName.trim();
     if (profilePicture !== undefined) user.profilePicture = profilePicture;
+    
+    // Update preferences if provided
+    if (preferences !== undefined && preferences.geminiEmbeddingEnabled !== undefined) {
+      if (!user.preferences) user.preferences = {};
+      user.preferences.geminiEmbeddingEnabled = preferences.geminiEmbeddingEnabled;
+    }
 
     user.updatedAt = new Date();
     await user.save();
@@ -524,6 +530,7 @@ const updateProfile = async (req, res) => {
         provider: user.provider,
         role: user.role,
         updatedAt: user.updatedAt,
+        preferences: user.preferences,
       },
     });
   } catch (error) {

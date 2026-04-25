@@ -283,6 +283,25 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
     const preferenceItems = [
         {
+            id: 'geminiEmbedding',
+            icon: 'share-social-outline',
+            title: 'Contribute to AI',
+            description: 'Help improve our model by securely sharing your validated scans',
+            toggleValue: geminiEmbeddingEnabled,
+            onToggle: async (value) => {
+                setGeminiEmbeddingEnabled(value);
+                try {
+                    await authService.updateProfile({
+                        preferences: { ...user?.preferences, geminiEmbeddingEnabled: value }
+                    });
+                } catch (error) {
+                    console.error('Failed to update embedding preference', error);
+                    setGeminiEmbeddingEnabled(!value);
+                    Alert.alert('Error', 'Failed to update preference.');
+                }
+            },
+        },
+        {
             id: 'developerMode',
             icon: 'flask-outline',
             title: 'Developer Mode',
