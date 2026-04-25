@@ -72,14 +72,14 @@ exports.addFeedback = async (req, res) => {
       correctGender,
     };
 
-    // If corrected, we could also update the main prediction to reflect the correct value, 
+    // If corrected, we could also update the main prediction to reflect the correct value,
     // but saving in userFeedback is safer. We'll update the embedding regardless.
     if (!isCorrect) {
-       scan.variety = correctVariety || scan.variety;
-       if (scan.aiPrediction && scan.aiPrediction.gemini) {
-         scan.aiPrediction.gemini.variety = correctVariety || scan.aiPrediction.gemini.variety;
-         scan.aiPrediction.gemini.gender = correctGender || scan.aiPrediction.gemini.gender;
-       }
+      scan.variety = correctVariety || scan.variety;
+      if (scan.aiPrediction && scan.aiPrediction.gemini) {
+        scan.aiPrediction.gemini.variety = correctVariety || scan.aiPrediction.gemini.variety;
+        scan.aiPrediction.gemini.gender = correctGender || scan.aiPrediction.gemini.gender;
+      }
     }
 
     const updatedScan = await scan.save();

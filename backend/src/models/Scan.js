@@ -198,7 +198,7 @@ const scanSchema = new mongoose.Schema(
       correctGender: {
         type: String,
         default: null,
-      }
+      },
     },
   },
   {
