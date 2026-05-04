@@ -123,6 +123,15 @@ const login = async (req, res) => {
 
     console.log(`👤 User found: ${user.email} | Role: ${user.role} | Active: ${user.isActive}`);
 
+    // Users created with social auth may not have a local password
+    if (!user.password) {
+      console.log(`❌ Login failed: No local password set - ${email}`);
+      return res.status(401).json({
+        success: false,
+        message: 'This account does not have a password set. Please use your social login provider.',
+      });
+    }
+
     // Check if account is deactivated
     if (!user.isActive) {
       console.log(`❌ Login failed: Account deactivated - ${email}`);
@@ -520,6 +529,15 @@ const loginWithUsername = async (req, res) => {
     }
 
     console.log(`👤 User found: ${user.username} | Role: ${user.role} | Active: ${user.isActive}`);
+
+    // Users created with social auth may not have a local password
+    if (!user.password) {
+      console.log(`❌ Login failed: No local password set - ${username}`);
+      return res.status(401).json({
+        success: false,
+        message: 'This account does not have a password set. Please use your social login provider.',
+      });
+    }
 
     // Check if account is deactivated
     if (!user.isActive) {

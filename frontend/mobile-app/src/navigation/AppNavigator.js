@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, View } from 'react-native';
+import * as Linking from 'expo-linking';
 import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,6 +20,26 @@ import {
 import { theme } from '../styles';
 
 const TAB_BAR_HEIGHT = 70;
+
+// Deep linking configuration for handling egourd:// URLs
+const prefix = Linking.createURL('/');
+const linking = {
+  prefixes: [prefix, 'egourd://', 'egourd://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Camera: {
+            screens: {
+              'camera-capture': 'camera-capture',
+              'camera': 'camera',
+            },
+          },
+        },
+      },
+    },
+  },
+};
 
 const navigationTheme = {
   ...DefaultTheme,

@@ -33,7 +33,6 @@ const heroCarouselImages = [
 
 const LandingPage = () => {
   const { isAuthenticated, isEmailVerified, user } = useUserAuth();
-  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -68,19 +67,7 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Redirect logged-in users to user home (not landing page anymore)
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (isEmailVerified) {
-        navigate('/user/home', { replace: true });
-      } else {
-        navigate('/user/verify-email', {
-          state: { email: user?.email, sendPin: true },
-          replace: true,
-        });
-      }
-    }
-  }, [isAuthenticated, isEmailVerified, user, navigate]);
+  const isSignedInMemberView = isAuthenticated && isEmailVerified;
 
   // Features data
   const features = [
@@ -177,6 +164,215 @@ const LandingPage = () => {
   const toggleAccordion = (index) => {
     setActiveAccordion(activeAccordion === index ? null : index);
   };
+
+  if (isSignedInMemberView) {
+    return (
+      <div className="landing-page member-landing-page">
+        <header className="member-header">
+          <div className="member-header-inner">
+            <Link to="/user/home" className="member-brand">
+              <img src={logoIcon} alt="GourdVision" className="member-brand-logo" />
+              <div className="member-brand-copy">
+                <span className="member-brand-name">GourdVision</span>
+                <span className="member-brand-tag">Member portal</span>
+              </div>
+            </Link>
+
+            <div className="member-header-actions">
+              <span className="member-status-pill">Signed in as {user?.firstName || 'Farmer'}</span>
+              <Link to="/user/dashboard" className="member-header-link">
+                Dashboard
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <main className="member-hero-shell">
+          <section className="member-launch-card">
+            <div className="member-launch-copy">
+              <span className="member-eyebrow">Signed in</span>
+              <h1>Member launcher</h1>
+              <p>
+                This is a simplified entry screen for logged-in users. It keeps the experience
+                separate from the full home dashboard.
+              </p>
+
+              <div className="member-hero-actions">
+                <Link to="/user/scan" className="member-primary-action">
+                  Start Scan
+                </Link>
+                <Link to="/user/dashboard" className="member-secondary-action">
+                  View Dashboard
+                </Link>
+              </div>
+            </div>
+
+            <div className="member-launch-panel">
+              <div className="member-launch-note">
+                <span>Current user</span>
+                <strong>{user?.firstName || 'Farmer'}</strong>
+                <small>{user?.email || 'Verified account'}</small>
+              </div>
+
+              <div className="member-launch-links">
+                <Link to="/user/home">Open Home</Link>
+                <Link to="/user/history">History</Link>
+                <Link to="/user/forum">Forum</Link>
+                <Link to="/user/profile">Profile</Link>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isSignedInMemberView) {
+    return (
+      <div className="landing-page landing-page-screenshot">
+        <div className="landing-screenshot-background">
+          <div className="screenshot-orb orb-one" />
+          <div className="screenshot-orb orb-two" />
+          <div className="screenshot-orb orb-three" />
+        </div>
+
+        <div className="landing-screenshot-shell">
+          <div className="landing-screenshot-card">
+            <header className="screenshot-topbar">
+              <Link to="/" className="screenshot-brand">
+                <img src={logoTransparent} alt="GourdVision" />
+              </Link>
+
+              <nav className="screenshot-nav">
+                <a href="#services">Services</a>
+                <a href="#about">About Us</a>
+              </nav>
+
+              <div className="screenshot-auth-actions">
+                <Link to="/user/register" className="screenshot-signup-btn">
+                  Sign Up
+                </Link>
+                <Link to="/user/login" className="screenshot-login-btn">
+                  Sign In
+                </Link>
+              </div>
+            </header>
+
+            <main className="screenshot-hero">
+              <section className="screenshot-copy">
+                <span className="screenshot-kicker">Farm Landscape</span>
+                <h1>
+                  Smarter farming
+                  <span>with AI guidance</span>
+                </h1>
+                <p>
+                  Analyze crops, track growth, and make confident decisions with a clean, modern
+                  workspace built for farmers.
+                </p>
+
+                <div className="screenshot-actions">
+                  <Link to="/user/login" className="screenshot-secondary-cta">
+                    Sign In
+                  </Link>
+                  <Link to="/user/register" className="screenshot-primary-cta">
+                    Get Started
+                  </Link>
+                </div>
+
+                <div className="screenshot-dots" aria-hidden="true">
+                  <span className="active" />
+                  <span />
+                  <span />
+                </div>
+              </section>
+
+              <section className="screenshot-visual">
+                <div className="screenshot-carousel">
+                  {heroCarouselImages.map((img, index) => (
+                    <div
+                      key={img.id}
+                      className={`screenshot-carousel-slide ${index === currentHeroSlide ? 'active' : ''}`}
+                    >
+                      <img src={img.src} alt={img.alt} className="screenshot-visual-image" />
+                    </div>
+                  ))}
+
+                  <button className="screenshot-carousel-btn screenshot-prev" onClick={prevHeroSlide}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <button className="screenshot-carousel-btn screenshot-next" onClick={nextHeroSlide}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+
+                  <div className="screenshot-carousel-dots">
+                    {heroCarouselImages.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`screenshot-carousel-dot ${index === currentHeroSlide ? 'active' : ''}`}
+                        onClick={() => setCurrentHeroSlide(index)}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </main>
+
+            <section id="about" className="screenshot-info-section">
+              <div className="screenshot-info-card">
+                <span className="screenshot-info-label">About Us</span>
+                <h2>Built for farmers who want clarity, speed, and confidence.</h2>
+                <p>
+                  GourdVision helps you classify flowers and leaves, monitor planting and
+                  pollination progress, and keep your farming workflow organized across web and
+                  mobile.
+                </p>
+              </div>
+              <div className="screenshot-info-card accent">
+                <span className="screenshot-info-label">What we support</span>
+                <ul>
+                  <li>Flower and leaf scanning</li>
+                  <li>Pollination and plant tracking</li>
+                  <li>Yield and harvest insights</li>
+                  <li>Mobile-friendly farm tools</li>
+                </ul>
+              </div>
+            </section>
+
+            <section id="services" className="screenshot-services-section">
+              <div className="screenshot-section-head">
+                <span className="screenshot-info-label">Services</span>
+                <h2>Tools that support the full growing cycle.</h2>
+              </div>
+
+              <div className="screenshot-services-grid">
+                <article className="screenshot-service-card">
+                  <h3>AI Scan</h3>
+                  <p>Quick flower and leaf classification powered by the scan workflow used in the app.</p>
+                </article>
+                <article className="screenshot-service-card">
+                  <h3>Pollination Tracking</h3>
+                  <p>Track planting stages, flowering, and pollination progress from one place.</p>
+                </article>
+                <article className="screenshot-service-card">
+                  <h3>Yield Prediction</h3>
+                  <p>Use scan and farm data to estimate harvest readiness and production outcomes.</p>
+                </article>
+                <article className="screenshot-service-card">
+                  <h3>Community & News</h3>
+                  <p>Stay connected with farmer updates, educational content, and community posts.</p>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="landing-page">

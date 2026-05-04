@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const ForumPost = require('../models/ForumPost');
 const News = require('../models/News');
+const Scan = require('../models/Scan');
 const mongoose = require('mongoose');
 
 /**
@@ -77,6 +78,45 @@ exports.getDashboardOverview = async (req, res) => {
     const draftNews = await News.countDocuments({ status: 'draft' });
     const archivedNews = await News.countDocuments({ status: 'archived' });
 
+    // Get scan statistics
+    const totalScans = await Scan.countDocuments();
+    const scans7Days = await Scan.countDocuments({
+      createdAt: { $gte: sevenDaysAgo },
+    });
+    const scans30Days = await Scan.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo },
+    });
+
+    // Get scans by variety
+    const scansByVariety = await Scan.aggregate([
+      {
+        $group: {
+          _id: '$variety',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+    ]);
+
+    // Get scans by prediction (male/female)
+    const scansByPrediction = await Scan.aggregate([
+      {
+        $group: {
+          _id: '$prediction',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Recent scans (last 10)
+    const recentScans = await Scan.find()
+      .select('userId imageUrl prediction variety confidence createdAt')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('userId', 'email firstName lastName');
+
     // Get recent registrations (last 10)
     const recentRegistrations = await User.find()
       .select('username email firstName lastName createdAt provider isActive')
@@ -95,6 +135,11 @@ exports.getDashboardOverview = async (req, res) => {
           unverifiedUsers,
           newUsers30Days,
           newUsers7Days,
+        },
+        scanStats: {
+          totalScans,
+          scans7Days,
+          scans30Days,
         },
         forumStats: {
           totalPosts,
@@ -120,6 +165,15 @@ exports.getDashboardOverview = async (req, res) => {
           return acc;
         }, {}),
         recentRegistrations,
+        recentScans,
+        scansByVariety: scansByVariety.reduce((acc, item) => {
+          acc[item._id || 'unknown'] = item.count;
+          return acc;
+        }, {}),
+        scansByPrediction: scansByPrediction.reduce((acc, item) => {
+          acc[item._id || 'unknown'] = item.count;
+          return acc;
+        }, {}),
       },
     });
   } catch (error) {
