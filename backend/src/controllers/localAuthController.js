@@ -128,7 +128,8 @@ const login = async (req, res) => {
       console.log(`❌ Login failed: No local password set - ${email}`);
       return res.status(401).json({
         success: false,
-        message: 'This account does not have a password set. Please use your social login provider.',
+        message:
+          'This account does not have a password set. Please use your social login provider.',
       });
     }
 
@@ -258,7 +259,7 @@ const updateProfile = async (req, res) => {
     if (firstName !== undefined) user.firstName = firstName.trim();
     if (lastName !== undefined) user.lastName = lastName.trim();
     if (profilePicture !== undefined) user.profilePicture = profilePicture;
-    
+
     // Update preferences if provided
     if (preferences !== undefined && preferences.geminiEmbeddingEnabled !== undefined) {
       if (!user.preferences) user.preferences = {};
@@ -535,7 +536,8 @@ const loginWithUsername = async (req, res) => {
       console.log(`❌ Login failed: No local password set - ${username}`);
       return res.status(401).json({
         success: false,
-        message: 'This account does not have a password set. Please use your social login provider.',
+        message:
+          'This account does not have a password set. Please use your social login provider.',
       });
     }
 

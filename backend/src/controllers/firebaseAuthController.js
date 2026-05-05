@@ -506,7 +506,7 @@ const updateProfile = async (req, res) => {
     if (firstName !== undefined) user.firstName = firstName.trim();
     if (lastName !== undefined) user.lastName = lastName.trim();
     if (profilePicture !== undefined) user.profilePicture = profilePicture;
-    
+
     // Update preferences if provided
     if (preferences !== undefined && preferences.geminiEmbeddingEnabled !== undefined) {
       if (!user.preferences) user.preferences = {};
