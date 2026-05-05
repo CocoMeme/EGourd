@@ -66,8 +66,8 @@ class EmailService {
       },
       body: JSON.stringify({
         sender: {
-          name: process.env.EMAIL_FROM_NAME || 'eGourd',
-          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@egourd.com',
+          name: process.env.EMAIL_FROM_NAME || 'GourdVision',
+          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gourdvision.com',
         },
         to: [{ email: mailOptions.to }],
         ...(mailOptions.replyTo ? { replyTo: { email: mailOptions.replyTo } } : {}),
@@ -144,9 +144,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'eGourd'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'GourdVision'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gourdvision.com'}>`,
       to: email,
-      subject: 'Verify Your Email - eGourd',
+      subject: 'Verify Your Email - GourdVision',
       html: this.getVerificationEmailTemplate(pin, userName),
       text: this.getVerificationEmailText(pin, userName),
     };
@@ -189,9 +189,9 @@ class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:19006'}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'EGourd'}" <${process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'GourdVision'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gourdvision.com'}>`,
       to: email,
-      subject: 'Password Reset Request - EGourd',
+      subject: 'Password Reset Request - GourdVision',
       html: this.getPasswordResetEmailTemplate(resetUrl, userName),
       text: this.getPasswordResetEmailText(resetUrl, userName),
     };
@@ -220,9 +220,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'EGourd'}" <${process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'GourdVision'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gourdvision.com'}>`,
       to: email,
-      subject: 'Welcome to EGourd!',
+      subject: 'Welcome to GourdVision!',
       html: this.getWelcomeEmailTemplate(userName),
       text: this.getWelcomeEmailText(userName),
     };
@@ -275,8 +275,8 @@ class EmailService {
           </div>
           <div class="content">
             <h2>Hello ${userName}!</h2>
-            <p>Thank you for registering with EGourd. To complete your registration, please verify your email address.</p>
-            
+            <p>Thank you for registering with GourdVision. To complete your registration, please verify your email address.</p>
+
             <div class="pin-box">
               <p style="margin: 0; color: #666;">Your Verification PIN:</p>
               <div class="pin">${pin}</div>
@@ -292,7 +292,7 @@ class EmailService {
             <p>If you didn't request this verification, please ignore this email or contact our support team.</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} EGourd. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} GourdVision. All rights reserved.</p>
             <p>This is an automated email. Please do not reply to this message.</p>
           </div>
         </div>
@@ -308,7 +308,7 @@ class EmailService {
     return `
 Hello ${userName}!
 
-Thank you for registering with EGourd. To complete your registration, please verify your email address.
+Thank you for registering with GourdVision. To complete your registration, please verify your email address.
 
 Your Verification PIN: ${pin}
 
@@ -320,7 +320,7 @@ SECURITY NOTICE: Never share this PIN with anyone. Our team will never ask for y
 
 If you didn't request this verification, please ignore this email or contact our support team.
 
-© ${new Date().getFullYear()} EGourd. All rights reserved.
+© ${new Date().getFullYear()} GourdVision. All rights reserved.
 This is an automated email. Please do not reply to this message.
     `;
   }
@@ -362,7 +362,7 @@ This is an automated email. Please do not reply to this message.
             <p>If you didn't request this password reset, please ignore this email or contact support if you have concerns.</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} EGourd. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} GourdVision. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -385,7 +385,7 @@ This link will expire in 1 hour for security reasons.
 
 If you didn't request this password reset, please ignore this email or contact support if you have concerns.
 
-© ${new Date().getFullYear()} EGourd. All rights reserved.
+© ${new Date().getFullYear()} GourdVision. All rights reserved.
     `;
   }
 
@@ -399,7 +399,7 @@ If you didn't request this password reset, please ignore this email or contact s
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to EGourd</title>
+        <title>Welcome to GourdVision</title>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
           .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -417,8 +417,8 @@ If you didn't request this password reset, please ignore this email or contact s
           </div>
           <div class="content">
             <h2>Hello ${userName}!</h2>
-            <p>Thank you for joining EGourd. We're excited to have you on board!</p>
-            <p>With EGourd, you can:</p>
+            <p>Thank you for joining GourdVision. We're excited to have you on board!</p>
+            <p>With GourdVision, you can:</p>
             <ul>
               <li>📸 Scan gourds to predict harvest readiness</li>
               <li>📊 Track your gourd growth over time</li>
@@ -428,7 +428,7 @@ If you didn't request this password reset, please ignore this email or contact s
             <p>Get started by taking your first scan!</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} EGourd. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} GourdVision. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -441,13 +441,13 @@ If you didn't request this password reset, please ignore this email or contact s
    */
   getWelcomeEmailText(userName) {
     return `
-Welcome to EGourd!
+Welcome to GourdVision!
 
 Hello ${userName}!
 
-Thank you for joining EGourd. We're excited to have you on board!
+Thank you for joining GourdVision. We're excited to have you on board!
 
-With EGourd, you can:
+With GourdVision, you can:
 - Scan gourds to predict harvest readiness
 - Track your gourd growth over time
 - View analytics and insights
@@ -455,7 +455,7 @@ With EGourd, you can:
 
 Get started by taking your first scan!
 
-© ${new Date().getFullYear()} EGourd. All rights reserved.
+© ${new Date().getFullYear()} GourdVision. All rights reserved.
     `;
   }
 
@@ -477,7 +477,7 @@ Get started by taking your first scan!
     const supportEmail = process.env.SUPPORT_EMAIL || 'egourd.app@gmail.com';
 
     const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'eGourd'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'GourdVision'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gourdvision.com'}>`,
       to: supportEmail,
       replyTo: senderEmail,
       subject: `[${category}] ${subject}`,
@@ -545,8 +545,8 @@ Get started by taking your first scan!
             <p style="color: #888; font-size: 13px;">You can reply directly to this email to respond to the user.</p>
           </div>
           <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} EGourd. All rights reserved.</p>
-            <p>This support request was submitted from the EGourd mobile app.</p>
+            <p>&copy; ${new Date().getFullYear()} GourdVision. All rights reserved.</p>
+            <p>This support request was submitted from the GourdVision mobile app.</p>
           </div>
         </div>
       </body>
@@ -559,7 +559,7 @@ Get started by taking your first scan!
    */
   getSupportEmailText(senderName, senderEmail, subject, message, category) {
     return `
-EGOURD SUPPORT REQUEST
+GOURDVISION SUPPORT REQUEST
 ======================
 
 From: ${senderName}
@@ -573,7 +573,7 @@ ${message}
 
 ---
 You can reply directly to this email to respond to the user.
-(c) ${new Date().getFullYear()} EGourd. All rights reserved.
+(c) ${new Date().getFullYear()} GourdVision. All rights reserved.
     `;
   }
 }

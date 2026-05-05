@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   StatusBar
 } from 'react-native';
@@ -63,6 +64,33 @@ export const CameraScreen = ({ navigation }) => {
   const lastFrameUri = useRef({ uri: null, width: 0, height: 0 });
   const bestFrame = useRef({ uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 }); // Track best stable frame
   const recentPredictions = useRef([]); // Track recent predictions for stability
+
+  // Floating tip animation
+  const tipFadeAnim = useRef(new Animated.Value(1)).current;
+  const tipTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (scanMode === SCAN_MODES.FLOWER) {
+      // Reset fade and start 5-second auto-hide timer
+      tipFadeAnim.setValue(1);
+      if (tipTimerRef.current) clearTimeout(tipTimerRef.current);
+      tipTimerRef.current = setTimeout(() => {
+        Animated.timing(tipFadeAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }).start();
+      }, 5000);
+    } else {
+      // Hide immediately in Leaf mode
+      tipFadeAnim.setValue(0);
+      if (tipTimerRef.current) clearTimeout(tipTimerRef.current);
+    }
+
+    return () => {
+      if (tipTimerRef.current) clearTimeout(tipTimerRef.current);
+    };
+  }, [scanMode]);
 
   /**
    * Stop scanning - defined first as it has no dependencies
@@ -629,6 +657,15 @@ export const CameraScreen = ({ navigation }) => {
             <View style={[styles.framingCorner, styles.cornerBR]} />
           </View>
         </View>
+        {/* Floating tip for flower mode */}
+        {scanMode === SCAN_MODES.FLOWER && (
+          <Animated.View style={[styles.floatingTip, { opacity: tipFadeAnim }]} pointerEvents="none">
+            <Ionicons name="information-circle-outline" size={16} color="#FFF" />
+            <Text style={styles.floatingTipText}>
+              Adjust your angle and show the back of the flower for better prediction quality
+            </Text>
+          </Animated.View>
+        )}
       </View>
 
       {/* 3. Predictions (Fills remaining space) */}
@@ -719,6 +756,28 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+
+  // Floating tip (flower mode)
+  floatingTip: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+    zIndex: 10,
+  },
+  floatingTipText: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
   },
 
   // Predictions container
