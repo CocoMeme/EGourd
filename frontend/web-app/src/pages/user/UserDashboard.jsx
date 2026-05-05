@@ -72,6 +72,26 @@ const UserDashboard = () => {
     fetchAllData();
   };
 
+  const handleNewScan = () => {
+    // Check if on Android device
+    const isAndroid = /android/i.test(navigator.userAgent);
+    
+    if (isAndroid) {
+      // Use deeplink protocol specific to Expo apps with Camera stack
+      // Format: scheme://stack/screen
+      const deepLinkUrl = 'egourd://camera/camera-capture';
+      window.location.href = deepLinkUrl;
+      
+      // Fallback to web version after 2 seconds if app is not installed
+      setTimeout(() => {
+        navigate('/user/scan');
+      }, 2000);
+    } else {
+      // On web or iOS, use web route
+      navigate('/user/scan');
+    }
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return { text: 'Good morning', icon: '🌅', period: 'morning' };
@@ -109,10 +129,10 @@ const UserDashboard = () => {
                 insights from your farming journey.
               </p>
               <div className="header-actions">
-                <Link to="/user/scan" className="action-btn primary">
+                <button onClick={handleNewScan} className="action-btn primary">
                   <Scan size={20} />
                   <span>New Scan</span>
-                </Link>
+                </button>
                 <button
                   className="action-btn secondary"
                   onClick={handleRefresh}
@@ -472,30 +492,6 @@ const UserDashboard = () => {
                     </div>
                   )}
 
-                {/* Weekly Stats */}
-                <div className="weekly-prediction-stats">
-                  <div className="weekly-stat">
-                    <span className="weekly-label">This Week</span>
-                    <span className="weekly-value">
-                      {flowerPredictionStats.weeklyStats?.thisWeek || 0}
-                    </span>
-                  </div>
-                  <div className="weekly-stat">
-                    <span className="weekly-label">Last Week</span>
-                    <span className="weekly-value">
-                      {flowerPredictionStats.weeklyStats?.lastWeek || 0}
-                    </span>
-                  </div>
-                  <div
-                    className={`weekly-stat change ${(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? 'positive' : 'negative'}`}
-                  >
-                    <span className="weekly-label">Change</span>
-                    <span className="weekly-value">
-                      {(flowerPredictionStats.weeklyStats?.change || 0) >= 0 ? '+' : ''}
-                      {flowerPredictionStats.weeklyStats?.change || 0}
-                    </span>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -763,14 +759,14 @@ const UserDashboard = () => {
             <div className="quick-actions-section">
               <h3>Quick Actions</h3>
               <div className="quick-actions-grid">
-                <Link to="/user/scan" className="quick-action-card">
+                <button onClick={handleNewScan} className="quick-action-card">
                   <div className="qa-icon scan">
                     <Scan size={24} />
                   </div>
                   <span className="qa-title">Scan Gourd</span>
                   <span className="qa-desc">Analyze flower or leaf</span>
                   <ChevronRight size={18} className="qa-arrow" />
-                </Link>
+                </button>
                 <Link to="/user/history" className="quick-action-card">
                   <div className="qa-icon history">
                     <Clock size={24} />
@@ -803,10 +799,10 @@ const UserDashboard = () => {
             <div className="empty-icon">📊</div>
             <h3>No Analytics Data Yet</h3>
             <p>Start scanning gourds and leaves to see your analytics here!</p>
-            <Link to="/user/scan" className="empty-cta">
+            <button onClick={handleNewScan} className="empty-cta">
               <Scan size={20} />
               Start Scanning
-            </Link>
+            </button>
           </div>
         )}
       </div>
