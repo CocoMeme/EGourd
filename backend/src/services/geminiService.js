@@ -15,8 +15,8 @@ const GEMINI_API_KEYS = [
 
 // ===== MODEL FALLBACK CHAIN =====
 const MODEL_FALLBACK_CHAIN = [
-  'gemini-3-flash-preview', // Primary - balanced speed + accuracy
-  'gemini-3.1-flash-lite-preview', // Fallback - high-volume, cost-sensitive
+  'gemini-3.1-flash-lite-preview', // Primary - balanced speed + accuracy
+  'gemini-3-flash-preview', // Fallback - high-volume, cost-sensitive
 ];
 
 // ===== RETRY CONFIGURATION =====

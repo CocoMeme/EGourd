@@ -275,6 +275,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     const [prediction, setPrediction] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [savedScanId, setSavedScanId] = useState(null);
+
     const [imageLoading, setImageLoading] = useState(true);
 
     // Animation
@@ -525,18 +528,40 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                     [{ text: 'OK', onPress: () => handleBack() }]
                 );
             } else {
-                await scanService.saveScan(scanData, imageUri);
-                Alert.alert(
-                    'Success! 🎉',
-                    'Leaf scan saved to your history!',
-                    [{ text: 'OK', onPress: () => handleBack() }]
-                );
+                const savedScan = await scanService.saveScan(scanData, imageUri);
+                const user = await authService.getCurrentUser();
+
+                if (user?.preferences?.geminiEmbeddingEnabled) {
+                    setSavedScanId(savedScan?.scan?._id || savedScan?._id);
+                    setShowFeedbackModal(true);
+                } else {
+                    Alert.alert(
+                        'Success! 🎉',
+                        'Leaf scan saved to your history!',
+                        [{ text: 'OK', onPress: () => handleBack() }]
+                    );
+                }
             }
         } catch (error) {
             console.error('Save error:', error);
             Alert.alert('Save Failed', 'Failed to save scan. Please try again.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleFeedbackSubmit = async (feedbackData) => {
+        try {
+            await authService.authenticatedRequest(`/scans/${savedScanId}/feedback`, {
+                method: 'POST',
+                body: JSON.stringify(feedbackData)
+            });
+            setShowFeedbackModal(false);
+            Alert.alert('Success! 🎉', 'Scan and feedback saved to your history!', [{ text: 'OK', onPress: () => handleBack() }]);
+        } catch (e) {
+            console.error('Failed to save feedback:', e);
+            setShowFeedbackModal(false);
+            Alert.alert('Feedback Failed', 'Scan was saved but feedback could not be submitted. Please try again later.', [{ text: 'OK', onPress: () => handleBack() }]);
         }
     };
 

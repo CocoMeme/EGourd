@@ -25,6 +25,7 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
+import { authService } from '../../services/authService';
 import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -871,11 +872,12 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         method: 'POST',
         body: JSON.stringify(feedbackData)
       });
-    } catch (e) {
-      console.error('Failed to save feedback:', e);
-    } finally {
       setShowFeedbackModal(false);
       Alert.alert('Success! 🎉', 'Scan and feedback saved to your history!', [{ text: 'OK', onPress: () => handleBack() }]);
+    } catch (e) {
+      console.error('Failed to save feedback:', e);
+      setShowFeedbackModal(false);
+      Alert.alert('Feedback Failed', 'Scan was saved but feedback could not be submitted. Please try again later.', [{ text: 'OK', onPress: () => handleBack() }]);
     }
   };
 

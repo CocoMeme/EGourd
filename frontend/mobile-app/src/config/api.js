@@ -44,7 +44,7 @@ export const getApiUrl = () => {
   }
 
   // Fallback for production if env var is missing (prevents crash, defaults to Prod)
-  const productionFallback = 'https://egourd.onrender.com/api';
+  const productionFallback = 'https://gourdvision.onrender.com/api';
   console.warn('⚠️ EXPO_PUBLIC_API_URL missing in production; defaulting to:', productionFallback);
   return productionFallback;
 };

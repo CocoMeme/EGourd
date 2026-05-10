@@ -58,6 +58,10 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [supportLoading, setSupportLoading] = useState(false);
 
     const SUPPORT_CATEGORIES = ['Bug Report', 'Question', 'Feature Request', 'Other'];
+    const PRESET_URLS = [
+        { label: 'GourdVision', url: 'https://gourdvision.onrender.com/api', badge: 'Current' },
+        { label: 'eGourd', url: 'https://egourd.onrender.com/api', badge: 'Legacy' },
+    ];
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -675,9 +679,43 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                 </View>
 
                                 <Text style={styles.inputLabel}>Backend URL</Text>
+                                <View style={styles.presetContainer}>
+                                    {PRESET_URLS.map((preset) => (
+                                        <TouchableOpacity
+                                            key={preset.url}
+                                            style={[
+                                                styles.presetChip,
+                                                apiUrlInput.trim() === preset.url && styles.presetChipSelected,
+                                            ]}
+                                            onPress={() => {
+                                                setApiUrlInput(preset.url);
+                                                setApiUrlTestResult(null);
+                                            }}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.presetChipText,
+                                                    apiUrlInput.trim() === preset.url && styles.presetChipTextSelected,
+                                                ]}
+                                            >
+                                                {preset.label}
+                                            </Text>
+                                            {preset.badge && (
+                                                <Text
+                                                    style={[
+                                                        styles.presetChipBadge,
+                                                        apiUrlInput.trim() === preset.url && styles.presetChipBadgeSelected,
+                                                    ]}
+                                                >
+                                                    {preset.badge}
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="https://egourd.onrender.com/api"
+                                    placeholder="https://gourdvision.onrender.com/api"
                                     placeholderTextColor={theme.colors.text.hint}
                                     value={apiUrlInput}
                                     onChangeText={(text) => {
@@ -939,6 +977,49 @@ const styles = StyleSheet.create({
     },
     categoryChipTextSelected: {
         color: '#FFFFFF',
+    },
+    presetContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 4,
+    },
+    presetChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        backgroundColor: theme.colors.background.secondary,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        gap: 6,
+    },
+    presetChipSelected: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
+    },
+    presetChipText: {
+        fontSize: 14,
+        fontFamily: theme.fonts.medium,
+        color: theme.colors.text.secondary,
+    },
+    presetChipTextSelected: {
+        color: '#FFFFFF',
+    },
+    presetChipBadge: {
+        fontSize: 10,
+        fontFamily: theme.fonts.bold,
+        color: theme.colors.text.hint,
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    presetChipBadgeSelected: {
+        color: 'rgba(255,255,255,0.9)',
+        backgroundColor: 'rgba(255,255,255,0.2)',
     },
     submitButton: {
         backgroundColor: theme.colors.primary,
