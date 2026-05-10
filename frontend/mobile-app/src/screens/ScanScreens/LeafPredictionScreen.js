@@ -237,6 +237,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     // Results state
     const [tmPrediction, setTmPrediction] = useState(null);
     const [geminiPrediction, setGeminiPrediction] = useState(null);
+    const [geminiError, setGeminiError] = useState(null);
     const [prediction, setPrediction] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -345,7 +346,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     }, [isAnalyzing, isGeminiLoading]);
 
     /**
-     * Run TM analysis (Gemini leaf analysis will be added later)
+     * Run TM and Gemini AI analysis
      */
     const runAnalysis = async () => {
         let tmPred = null;
@@ -354,6 +355,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             setIsAnalyzing(true);
             setIsTmComplete(false);
             setAnalysisError(null);
+            setGeminiError(null);
 
             // Step 1: TM Model Prediction
             setLoadingStage('Analyzing leaf with TM model...');
@@ -410,7 +412,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                     }));
                 } catch (geminiError) {
                     console.error('❌ Gemini leaf analysis failed:', geminiError);
-                    // We don't fail the whole process if Gemini fails, just show TM
+                    setGeminiError(geminiError.message || 'AI analysis failed');
                 } finally {
                     setIsGeminiLoading(false);
                 }
@@ -431,6 +433,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
      */
     const runGeminiAnalysis = async (tmPred) => {
         setIsGeminiLoading(true);
+        setGeminiError(null);
         setLoadingStage('Analyzing leaf health with AI...');
         console.log('🤖 Running Gemini leaf analysis...');
 
@@ -449,6 +452,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             }));
         } catch (geminiError) {
             console.error('❌ Gemini leaf analysis failed:', geminiError);
+            setGeminiError(geminiError.message || 'AI analysis failed');
         } finally {
             setIsGeminiLoading(false);
         }
@@ -687,12 +691,24 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                             <SkeletonCard title="AI Insights" lines={4} />
                         )}
 
-                        {/* TM Only Notice */}
-                        {!geminiPrediction && !isGeminiLoading && !isNotLeaf && (
+                        {/* Gemini Error Notice */}
+                        {geminiError && !isGeminiLoading && (
+                            <View style={styles.geminiErrorNotice}>
+                                <View style={styles.geminiErrorContent}>
+                                    <Ionicons name="warning" size={20} color="#E65100" />
+                                    <Text style={styles.geminiErrorText}>
+                                        AI analysis failed: {geminiError}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* TM Only Notice (no error, just no Gemini result) */}
+                        {!geminiPrediction && !geminiError && !isGeminiLoading && !isNotLeaf && (
                             <View style={styles.tmOnlyNotice}>
-                                <Ionicons name="information-circle" size={24} color="#4CAF50" />
+                                <Ionicons name="information-circle" size={20} color="#4CAF50" />
                                 <Text style={styles.tmOnlyText}>
-                                    Leaf identified using TM model. AI health analysis coming soon!
+                                    Leaf identified using TM model only.
                                 </Text>
                             </View>
                         )}
@@ -998,6 +1014,26 @@ const styles = StyleSheet.create({
     tmOnlyText: {
         flex: 1,
         color: '#2E7D32',
+        fontSize: 13,
+        lineHeight: 20,
+    },
+    geminiErrorNotice: {
+        flexDirection: 'column',
+        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+        margin: 16,
+        marginTop: 0,
+        padding: 16,
+        borderRadius: 6,
+        gap: 12,
+    },
+    geminiErrorContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    geminiErrorText: {
+        flex: 1,
+        color: '#E65100',
         fontSize: 13,
         lineHeight: 20,
     },
