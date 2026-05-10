@@ -500,65 +500,24 @@ const CircularProgress = ({ value, color, size = 60, backgroundColor = '#FFF', c
 };
 
 /**
- * Final Verdict Card — side-by-side TM vs Gemini with agree/disagree badge + circular progress rings
+ * Final Verdict Card — Gemini-only display with circular progress ring
  */
-const FinalVerdictCard = ({ tmPrediction, geminiPrediction, comparisonResult, isGeminiLoading }) => {
-  const agree = comparisonResult?.agree;
-  const badgeColor = agree ? '#4CAF50' : '#FF9800';
-  const badgeIcon = agree ? 'checkmark-circle' : 'alert-circle';
-  const badgeLabel = agree ? 'AGREE' : 'DISAGREE';
-
-  const tmConfidence = Math.round(tmPrediction?.confidence || 0);
+const FinalVerdictCard = ({ geminiPrediction, isGeminiLoading }) => {
   const geminiConfidence = Math.round(geminiPrediction?.confidence || 0);
 
   return (
-    <View style={{ flex: 1, paddingLeft: 16 }}>
-      {/* Row: TM | badge | Gemini */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        {/* TM column */}
-        <View style={{ alignItems: 'center', flex: 1 }}>
-          <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>TM Model</Text>
-          <CircularProgress value={tmConfidence} color="#2196F3" size={60}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#2196F3' }}>{tmConfidence}%</Text>
-          </CircularProgress>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}>
+      <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>Gemini AI</Text>
+      {geminiPrediction ? (
+        <CircularProgress value={geminiConfidence} color="#9C27B0" size={70}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
+        </CircularProgress>
+      ) : isGeminiLoading ? (
+        <SkeletonLoader width={70} height={70} style={{ borderRadius: 35 }} />
+      ) : (
+        <View style={{ width: 70, height: 70, borderRadius: 35, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', borderWidth: 5, borderColor: '#E8E8E8' }}>
+          <Text style={{ fontSize: 14, color: '#CCC' }}>--</Text>
         </View>
-
-        {/* Badge / divider */}
-        <View style={{ alignItems: 'center', paddingHorizontal: 4 }}>
-          {geminiPrediction ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: badgeColor + '18', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: badgeColor }}>
-              <Ionicons name={badgeIcon} size={12} color={badgeColor} />
-              <Text style={{ fontSize: 9, fontWeight: '700', color: badgeColor }}>{badgeLabel}</Text>
-            </View>
-          ) : isGeminiLoading ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          ) : (
-            <Text style={{ fontSize: 11, color: '#CCC', fontWeight: '600' }}>VS</Text>
-          )}
-        </View>
-
-        {/* Gemini column */}
-        <View style={{ alignItems: 'center', flex: 1 }}>
-          <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' }}>Gemini AI</Text>
-          {geminiPrediction ? (
-            <CircularProgress value={geminiConfidence} color="#9C27B0" size={60}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
-            </CircularProgress>
-          ) : isGeminiLoading ? (
-            <SkeletonLoader width={60} height={60} style={{ borderRadius: 30 }} />
-          ) : (
-            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', borderWidth: 5, borderColor: '#E8E8E8' }}>
-              <Text style={{ fontSize: 13, color: '#CCC' }}>--</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Recommended source */}
-      {comparisonResult?.recommendedSource && (
-        <Text style={{ fontSize: 10, color: '#888', textAlign: 'center', marginTop: 8 }}>
-          Using: <Text style={{ fontWeight: '700', color: '#333' }}>{comparisonResult.recommendedSource === 'gemini' ? 'Gemini AI' : 'TM Model'}</Text>
-        </Text>
       )}
     </View>
   );
@@ -1314,27 +1273,35 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ width: 100, alignItems: 'center', paddingRight: 8 }}>
-                    <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom: 8, marginRight: 0 }]}>
-                      <Ionicons
-                        name={displayGender === 'male' ? 'male' : 'female'}
-                        size={40}
-                        color={genderColor}
-                      />
-                    </View>
-                    <Text style={[styles.varietyText, { textAlign: 'center', fontSize: 14 }]}>{displayVariety?.toUpperCase()}</Text>
-                    {displayVariety && SCIENTIFIC_NAMES[displayVariety] && (
-                      <Text style={{ fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>
-                        {SCIENTIFIC_NAMES[displayVariety]}
-                      </Text>
+                    {isGeminiLoading ? (
+                      <>
+                        <SkeletonLoader width={48} height={48} style={{ borderRadius: 24, marginBottom: 8 }} />
+                        <SkeletonLoader width={80} height={14} style={{ borderRadius: 4, marginBottom: 4 }} />
+                        <SkeletonLoader width={60} height={10} style={{ borderRadius: 4 }} />
+                      </>
+                    ) : (
+                      <>
+                        <View style={[styles.genderIcon, { backgroundColor: 'transparent', marginBottom: 8, marginRight: 0 }]}>
+                          <Ionicons
+                            name={displayGender === 'male' ? 'male' : 'female'}
+                            size={40}
+                            color={genderColor}
+                          />
+                        </View>
+                        <Text style={[styles.varietyText, { textAlign: 'center', fontSize: 14 }]}>{displayVariety?.toUpperCase()}</Text>
+                        {displayVariety && SCIENTIFIC_NAMES[displayVariety] && (
+                          <Text style={{ fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>
+                            {SCIENTIFIC_NAMES[displayVariety]}
+                          </Text>
+                        )}
+                      </>
                     )}
                   </View>
 
                   {/* Final Verdict */}
                   <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: '#eee' }}>
                     <FinalVerdictCard
-                      tmPrediction={tmPrediction}
                       geminiPrediction={geminiPrediction}
-                      comparisonResult={comparisonResult}
                       isGeminiLoading={isGeminiLoading}
                     />
                   </View>
