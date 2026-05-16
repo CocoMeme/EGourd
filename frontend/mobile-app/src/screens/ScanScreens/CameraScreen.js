@@ -514,6 +514,7 @@ export const CameraScreen = ({ navigation }) => {
 
     // Navigate with the best available image
     // Logic Preservation: Passing width and height to fix distortion
+    setIsCapturing(false);
     navigation.navigate(
       scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
       {

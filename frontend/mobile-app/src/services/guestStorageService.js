@@ -44,7 +44,8 @@ class GuestStorageService {
 
   async _getScans() {
     const raw = await AsyncStorage.getItem(GUEST_SCANS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch { return []; }
   }
 
   async _setScans(scans) {
@@ -143,7 +144,8 @@ class GuestStorageService {
 
   async _getPlants() {
     const raw = await AsyncStorage.getItem(GUEST_PLANTS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch { return []; }
   }
 
   async _setPlants(plants) {

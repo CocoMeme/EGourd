@@ -96,39 +96,41 @@ class GeminiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
-      // Call Backend API
-      const response = await fetch(`${getActiveApiUrl()}/scans/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          image: base64Image,
-          tmPrediction: tmPrediction,
-          userId: userId || undefined,
-        })
-      });
+      try {
+        // Call Backend API
+        const response = await fetch(`${getActiveApiUrl()}/scans/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : '',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            image: base64Image,
+            tmPrediction: tmPrediction,
+            userId: userId || undefined,
+          })
+        });
 
-      clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);
+        }
 
-      if (!response.ok) {
-        throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);
+        const geminiResult = await response.json();
+
+        console.log('📄 Gemini backend response received');
+
+        // Validate response structure
+        if (!geminiResult.variety || !geminiResult.gender || geminiResult.confidence === undefined) {
+          console.error('Invalid Gemini response:', geminiResult);
+          throw new Error('Invalid response structure from Gemini Service');
+        }
+
+        // Format prediction for app usage
+        return this.formatPrediction(geminiResult, Date.now() - startTime);
+      } finally {
+        clearTimeout(timeoutId);
       }
-
-      const geminiResult = await response.json();
-
-      console.log('📄 Gemini backend response received');
-
-      // Validate response structure
-      if (!geminiResult.variety || !geminiResult.gender || geminiResult.confidence === undefined) {
-        console.error('Invalid Gemini response:', geminiResult);
-        throw new Error('Invalid response structure from Gemini Service');
-      }
-
-      // Format prediction for app usage
-      return this.formatPrediction(geminiResult, Date.now() - startTime);
 
     } catch (error) {
       console.error('❌ Gemini analysis error:', error);
@@ -174,39 +176,41 @@ class GeminiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
-      // Call Backend API
-      const response = await fetch(`${getActiveApiUrl()}/scans/analyze-leaf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          image: base64Image,
-          tmPrediction: tmPrediction,
-          userId: userId || undefined,
-        })
-      });
+      try {
+        // Call Backend API
+        const response = await fetch(`${getActiveApiUrl()}/scans/analyze-leaf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : '',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            image: base64Image,
+            tmPrediction: tmPrediction,
+            userId: userId || undefined,
+          })
+        });
 
-      clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(`Backend leaf analysis failed: ${response.status} ${response.statusText}`);
+        }
 
-      if (!response.ok) {
-        throw new Error(`Backend leaf analysis failed: ${response.status} ${response.statusText}`);
+        const geminiResult = await response.json();
+
+        console.log('📄 Gemini leaf response received');
+
+        // Validate response structure
+        if (!geminiResult.variety || geminiResult.confidence === undefined) {
+          console.error('Invalid leaf response:', geminiResult);
+          throw new Error('Invalid response structure from Gemini Service');
+        }
+
+        // Format prediction for app usage
+        return this.formatLeafPrediction(geminiResult, Date.now() - startTime);
+      } finally {
+        clearTimeout(timeoutId);
       }
-
-      const geminiResult = await response.json();
-
-      console.log('📄 Gemini leaf response received');
-
-      // Validate response structure
-      if (!geminiResult.variety || geminiResult.confidence === undefined) {
-        console.error('Invalid leaf response:', geminiResult);
-        throw new Error('Invalid response structure from Gemini Service');
-      }
-
-      // Format prediction for app usage
-      return this.formatLeafPrediction(geminiResult, Date.now() - startTime);
 
     } catch (error) {
       console.error('❌ Gemini leaf analysis error:', error);

@@ -225,7 +225,14 @@ const CollapsibleHealthSection = ({ healthData, confidence }) => {
  */
 export const LeafPredictionScreen = ({ route, navigation }) => {
     const { isGuest } = useAuth();
-    const { imageUri, isLoading: initialLoading, width: imgWidth, height: imgHeight } = route.params;
+    const { imageUri, isLoading: initialLoading, width: imgWidth, height: imgHeight } = route.params ?? {};
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     // Loading and analysis state
     const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
@@ -362,6 +369,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             console.log('🌿 Running TM leaf prediction...');
 
             const tmResult = await modelService.quickPredict(imageUri, imgWidth, imgHeight);
+            if (!isMounted.current) return;
             const topTmPrediction = tmResult.topPrediction;
 
             console.log('🟢 TM Leaf Prediction:', topTmPrediction.label, `(${topTmPrediction.percentage.toFixed(1)}%)`);
@@ -399,6 +407,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
                 try {
                     const geminiResult = await geminiService.analyzeLeaf(imageUri, tmPred);
+                    if (!isMounted.current) return;
                     console.log('✅ Gemini Leaf Analysis complete');
 
                     setGeminiPrediction(geminiResult);
@@ -412,9 +421,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                     }));
                 } catch (geminiError) {
                     console.error('❌ Gemini leaf analysis failed:', geminiError);
-                    setGeminiError(geminiError.message || 'AI analysis failed');
+                    if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');
                 } finally {
-                    setIsGeminiLoading(false);
+                    if (isMounted.current) setIsGeminiLoading(false);
                 }
             }
 
@@ -439,6 +448,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
         try {
             const geminiResult = await geminiService.analyzeLeaf(imageUri, tmPred);
+            if (!isMounted.current) return;
             console.log('✅ Gemini Leaf Analysis complete');
 
             setGeminiPrediction(geminiResult);
@@ -452,9 +462,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             }));
         } catch (geminiError) {
             console.error('❌ Gemini leaf analysis failed:', geminiError);
-            setGeminiError(geminiError.message || 'AI analysis failed');
+            if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');
         } finally {
-            setIsGeminiLoading(false);
+            if (isMounted.current) setIsGeminiLoading(false);
         }
     };
 
@@ -491,6 +501,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
             if (isGuest) {
                 await guestStorageService.saveLocalScan(scanData, imageUri);
+                if (!isMounted.current) return;
                 Alert.alert(
                     'Saved Locally! 🎉',
                     'Leaf scan saved on your device. Sign in to sync it to your account.',
@@ -498,6 +509,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 );
             } else {
                 const savedScan = await scanService.saveScan(scanData, imageUri);
+                if (!isMounted.current) return;
                 const user = await authService.getCurrentUser();
 
                 if (user?.preferences?.geminiEmbeddingEnabled) {

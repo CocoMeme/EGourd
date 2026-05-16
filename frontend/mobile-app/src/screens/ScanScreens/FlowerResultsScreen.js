@@ -543,7 +543,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
         variety: currentScan.variety,
         gender: currentScan.prediction,
         confidence: currentScan.confidence,
-        isNotFlower: currentScan.prediction === 'unknown' && currentScan.variety === null,
+        isNotFlower: currentScan.variety === null && (currentScan.prediction === 'unknown' || currentScan.prediction === 'not_flower'),
       });
 
       // Start fade in

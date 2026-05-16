@@ -498,6 +498,7 @@ export const CameraScreenTest = ({ navigation }) => {
     console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
 
     // Navigate IMMEDIATELY - no waiting!
+    setIsCapturing(false);
     navigation.navigate(
       scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
       {

@@ -625,8 +625,15 @@ const skeletonStyles = StyleSheet.create({
 export const FlowerPredictionScreen = ({ route, navigation }) => {
   const { isGuest } = useAuth();
   // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
-  const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params;
+  const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params ?? {};
   const isLeafMode = scanMode === SCAN_MODES.LEAF;
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Loading and analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
@@ -689,6 +696,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
       if (geminiService.isAvailable()) {
         geminiPred = await geminiService.analyzeFlower(imageUri, tmPrediction);
+        if (!isMounted.current) return;
 
         if (geminiPred) {
           console.log('✅ Gemini retry successful!');
@@ -704,13 +712,13 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.warn('⚠️ Gemini retry failed:', error.message);
-      Alert.alert(
+      if (isMounted.current) Alert.alert(
         'AI Analysis Unavailable',
         'The Gemini AI service is temporarily unavailable. Please try again later.',
         [{ text: 'OK' }]
       );
     } finally {
-      setIsGeminiLoading(false);
+      if (isMounted.current) setIsGeminiLoading(false);
     }
 
     // Also retry backend harvest prediction if Gemini succeeded
@@ -725,6 +733,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
           },
           { date: new Date().toISOString() }
         );
+        if (!isMounted.current) return;
         setBackendPrediction(bPrediction);
       } catch (backendError) {
         console.warn('⚠️ Backend harvest prediction failed:', backendError.message);
@@ -790,13 +799,14 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
             varietyMatch: comparisonResult.varietyMatch,
             genderMatch: comparisonResult.genderMatch,
             confidenceGap: comparisonResult.confidenceGap,
-            recommendation: comparisonResult.recommendedSource,
+            recommendation: comparisonResult.recommendation,
           } : null,
         }
       };
 
       if (isGuest) {
         await guestStorageService.saveLocalScan(scanData, imageUri);
+        if (!isMounted.current) return;
         Alert.alert(
           'Saved Locally! 🎉',
           'Scan saved on your device. Sign in to sync it to your account.',
@@ -804,6 +814,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         );
       } else {
         const savedScan = await scanService.saveScan(scanData, imageUri);
+        if (!isMounted.current) return;
         const user = await authService.getCurrentUser();
         
         if (user?.preferences?.geminiEmbeddingEnabled) {
@@ -989,6 +1000,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
       // Logic Preservation: Pass width and height to fix aspect ratio distortion
       const tmResult = await modelService.quickPredict(imageUri, width, height);
+      if (!isMounted.current) return;
       const topTmPrediction = tmResult.topPrediction;
 
       // DEBUG: Detailed TM prediction logging
@@ -1049,6 +1061,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
           console.log('🔍 Running Gemini analysis...');
           // Logic Preservation: Pass tmPred to give context to Gemini (Conflict Resolution Fix)
           geminiPred = await geminiService.analyzeFlower(imageUri, tmPred);
+          if (!isMounted.current) return;
 
           // DEBUG: Detailed Gemini prediction logging
           console.log('🟣 ====== GEMINI PREDICTION ======');
@@ -1080,7 +1093,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         console.warn('⚠️ Gemini analysis failed:', geminiError.message);
         // Continue with TM prediction only - already shown
       } finally {
-        setIsGeminiLoading(false);
+        if (isMounted.current) setIsGeminiLoading(false);
       }
 
       // Step 3: Backend Harvest Prediction (Enhanced)
@@ -1098,6 +1111,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               date: new Date().toISOString(),
             }
           );
+          if (!isMounted.current) return;
           setBackendPrediction(bPrediction);
         } catch (backendError) {
           console.warn('⚠️ Backend harvest prediction failed:', backendError.message);
@@ -1124,6 +1138,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
     try {
       const geminiPred = await geminiService.analyzeFlower(imageUri, tmPred);
+      if (!isMounted.current) return;
       console.log('✅ Gemini Flower Analysis complete');
 
       if (geminiPred) {
@@ -1150,6 +1165,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
             },
             { date: new Date().toISOString() }
           );
+          if (!isMounted.current) return;
           setBackendPrediction(bPrediction);
         } catch (backendError) {
           console.warn('⚠️ Backend harvest prediction failed:', backendError.message);
@@ -1158,7 +1174,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
     } catch (geminiError) {
       console.error('❌ Gemini flower analysis failed:', geminiError);
     } finally {
-      setIsGeminiLoading(false);
+      if (isMounted.current) setIsGeminiLoading(false);
     }
   };
 

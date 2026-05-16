@@ -497,19 +497,7 @@ class AuthService {
 
       // Handle token expiration
       if (response.status === 401) {
-        const refreshResult = await this.refreshToken();
-        if (!refreshResult.success) {
-          throw new Error('Authentication expired');
-        }
-
-        // Retry with new token
-        return fetch(`${getActiveApiUrl()}${endpoint}`, {
-          ...options,
-          headers: {
-            ...this.getAuthHeaders(),
-            ...options.headers,
-          },
-        });
+        throw new Error('Session expired. Please log in again.');
       }
 
       return response;
