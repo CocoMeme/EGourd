@@ -28,13 +28,6 @@ const UserLogin = () => {
   const { login, loginWithUsername, isAuthenticated } = useUserAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/user/home', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
   // Reset puzzle verification when switching methods
   useEffect(() => {
     setPuzzleVerified(false);

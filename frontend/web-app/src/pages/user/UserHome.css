@@ -70,6 +70,8 @@
   justify-content: space-between;
   gap: 20px;
   padding: 10px 8px 22px;
+  position: relative;
+  z-index: 2;
 }
 
 .landing-brand {
@@ -101,6 +103,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .landing-signup,
@@ -185,6 +189,8 @@
   align-items: center;
   gap: 12px;
   margin-top: 24px;
+  position: relative;
+  z-index: 2;
 }
 
 .landing-ghost-btn {

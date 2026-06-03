@@ -19,28 +19,22 @@ exports.getDashboardOverview = async (req, res) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
     const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7));
+    const activeUserFilter = { deletedAt: null };
 
-    // Get total users count
-    const totalUsers = await User.countDocuments();
-
-    // Get active users count
-    const activeUsers = await User.countDocuments({ isActive: true });
-
-    // Get inactive users count
-    const inactiveUsers = await User.countDocuments({ isActive: false });
-
-    // Get new users in last 30 days
+    const totalUsers = await User.countDocuments(activeUserFilter);
+    const activeUsers = await User.countDocuments({ ...activeUserFilter, isActive: true });
+    const inactiveUsers = await User.countDocuments({ ...activeUserFilter, isActive: false });
     const newUsers30Days = await User.countDocuments({
+      ...activeUserFilter,
       createdAt: { $gte: thirtyDaysAgo },
     });
-
-    // Get new users in last 7 days
     const newUsers7Days = await User.countDocuments({
+      ...activeUserFilter,
       createdAt: { $gte: sevenDaysAgo },
     });
 
-    // Get users by role
     const usersByRole = await User.aggregate([
+      { $match: activeUserFilter },
       {
         $group: {
           _id: '$role',
@@ -49,8 +43,8 @@ exports.getDashboardOverview = async (req, res) => {
       },
     ]);
 
-    // Get users by provider
     const usersByProvider = await User.aggregate([
+      { $match: activeUserFilter },
       {
         $group: {
           _id: '$provider',
@@ -59,11 +53,9 @@ exports.getDashboardOverview = async (req, res) => {
       },
     ]);
 
-    // Get verification stats
-    const verifiedUsers = await User.countDocuments({ isEmailVerified: true });
-    const unverifiedUsers = await User.countDocuments({ isEmailVerified: false });
+    const verifiedUsers = await User.countDocuments({ ...activeUserFilter, isEmailVerified: true });
+    const unverifiedUsers = await User.countDocuments({ ...activeUserFilter, isEmailVerified: false });
 
-    // Get forum post stats
     const totalPosts = await ForumPost.countDocuments();
     const activePosts = await ForumPost.countDocuments({ status: 'active' });
     const pendingPosts = await ForumPost.countDocuments({ status: 'pending' });
@@ -72,22 +64,15 @@ exports.getDashboardOverview = async (req, res) => {
     const deletedPosts = await ForumPost.countDocuments({ status: 'deleted' });
     const pinnedPosts = await ForumPost.countDocuments({ isPinned: true });
 
-    // Get news stats
     const totalNews = await News.countDocuments();
     const publishedNews = await News.countDocuments({ status: 'published' });
     const draftNews = await News.countDocuments({ status: 'draft' });
     const archivedNews = await News.countDocuments({ status: 'archived' });
 
-    // Get scan statistics
     const totalScans = await Scan.countDocuments();
-    const scans7Days = await Scan.countDocuments({
-      createdAt: { $gte: sevenDaysAgo },
-    });
-    const scans30Days = await Scan.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo },
-    });
+    const scans7Days = await Scan.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
+    const scans30Days = await Scan.countDocuments({ createdAt: { $gte: thirtyDaysAgo } });
 
-    // Get scans by variety
     const scansByVariety = await Scan.aggregate([
       {
         $group: {
@@ -100,7 +85,6 @@ exports.getDashboardOverview = async (req, res) => {
       },
     ]);
 
-    // Get scans by prediction (male/female)
     const scansByPrediction = await Scan.aggregate([
       {
         $group: {
@@ -110,15 +94,13 @@ exports.getDashboardOverview = async (req, res) => {
       },
     ]);
 
-    // Recent scans (last 10)
     const recentScans = await Scan.find()
       .select('userId imageUrl prediction variety confidence createdAt')
       .sort({ createdAt: -1 })
       .limit(10)
       .populate('userId', 'email firstName lastName');
 
-    // Get recent registrations (last 10)
-    const recentRegistrations = await User.find()
+    const recentRegistrations = await User.find(activeUserFilter)
       .select('username email firstName lastName createdAt provider isActive')
       .sort({ createdAt: -1 })
       .limit(10);
@@ -205,8 +187,90 @@ exports.getAllUsers = async (req, res) => {
       sortOrder = 'desc',
     } = req.query;
 
+    const filter = { deletedAt: null };
+
+    if (search) {
+      filter.$or = [
+        { username: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (role) {
+      filter.role = role;
+    }
+
+    if (provider) {
+      filter.provider = provider;
+    }
+
+    if (isActive !== '') {
+      filter.isActive = isActive === 'true';
+    }
+
+    if (isEmailVerified !== '') {
+      filter.isEmailVerified = isEmailVerified === 'true';
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+
+    const users = await User.find(filter)
+      .select('-password -refreshTokens -verificationPin')
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await User.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        users,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / parseInt(limit)),
+          totalUsers: total,
+          usersPerPage: parseInt(limit),
+          hasNextPage: skip + users.length < total,
+          hasPrevPage: parseInt(page) > 1,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve users',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Get all users with pagination, filtering, and sorting
+ * @route GET /api/admin/users
+ * @access Private/Admin
+ */
+exports.getAllUsers = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      role = '',
+      provider = '',
+      isActive = '',
+      isEmailVerified = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = req.query;
+
     // Build filter query
-    const filter = {};
+    const filter = { deletedAt: null };
 
     // Search by username, email, firstName, or lastName
     if (search) {
@@ -294,7 +358,9 @@ exports.getUserProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId).select('-password -refreshTokens -verificationPin');
+    const user = await User.findOne({ _id: userId, deletedAt: null }).select(
+      '-password -refreshTokens -verificationPin'
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -340,8 +406,8 @@ exports.updateUser = async (req, res) => {
     const restrictedFields = ['password', 'refreshTokens', 'verificationPin', '_id'];
     restrictedFields.forEach((field) => delete updates[field]);
 
-    const user = await User.findByIdAndUpdate(
-      userId,
+    const user = await User.findOneAndUpdate(
+      { _id: userId, deletedAt: null },
       { $set: updates },
       { new: true, runValidators: true }
     ).select('-password -refreshTokens -verificationPin');
@@ -385,8 +451,8 @@ exports.activateUser = async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
+    const user = await User.findOneAndUpdate(
+      { _id: userId, deletedAt: null },
       { $set: { isActive: true } },
       { new: true }
     ).select('-password -refreshTokens -verificationPin');
@@ -440,7 +506,7 @@ exports.deactivateUser = async (req, res) => {
     }
 
     // First, find the user and revoke refresh tokens
-    const user = await User.findById(userId);
+    const user = await User.findOne({ _id: userId, deletedAt: null });
 
     if (!user) {
       return res.status(404).json({
@@ -513,8 +579,8 @@ exports.suspendUser = async (req, res) => {
 
     const suspendUntil = duration ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000) : null;
 
-    const user = await User.findByIdAndUpdate(
-      userId,
+    const user = await User.findOneAndUpdate(
+      { _id: userId, deletedAt: null },
       {
         $set: {
           isActive: false,
@@ -574,7 +640,7 @@ exports.deleteUser = async (req, res) => {
     }
 
     // Soft delete - mark as deleted with timestamp
-    const user = await User.findById(userId);
+    const user = await User.findOne({ _id: userId, deletedAt: null });
 
     if (!user) {
       return res.status(404).json({
@@ -789,7 +855,9 @@ exports.getUserStats = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId).select('stats loginCount lastLogin createdAt');
+    const user = await User.findOne({ _id: userId, deletedAt: null }).select(
+      'stats loginCount lastLogin createdAt'
+    );
 
     if (!user) {
       return res.status(404).json({

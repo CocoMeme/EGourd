@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { adminService } from '../../services';
 import { theme } from '../../styles';
 
@@ -33,9 +34,40 @@ export const UserManagementScreen = ({ navigation, route }) => {
   });
   const [showFilters, setShowFilters] = useState(false);
 
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await adminService.getAllUsers({
+        page,
+        limit: 20,
+        search: search.trim(),
+        ...filters,
+      });
+
+      if (result.success) {
+        const visibleUsers = (result.users || []).filter(user => !user.deletedAt);
+        setUsers(visibleUsers);
+        setPagination(result.pagination);
+      } else {
+        Alert.alert('Error', result.message);
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      Alert.alert('Error', 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, filters]);
+
   useEffect(() => {
     loadUsers();
-  }, [page, filters]);
+  }, [loadUsers]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUsers();
+    }, [loadUsers])
+  );
 
   useEffect(() => {
     // Handle route params for filtering
@@ -51,36 +83,12 @@ export const UserManagementScreen = ({ navigation, route }) => {
     }
   }, [route.params]);
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const result = await adminService.getAllUsers({
-        page,
-        limit: 20,
-        search: search.trim(),
-        ...filters,
-      });
-
-      if (result.success) {
-        setUsers(result.users);
-        setPagination(result.pagination);
-      } else {
-        Alert.alert('Error', result.message);
-      }
-    } catch (error) {
-      console.error('Error loading users:', error);
-      Alert.alert('Error', 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
     await loadUsers();
     setRefreshing(false);
-  }, [search, filters]);
+  }, [loadUsers]);
 
   const handleSearch = () => {
     setPage(1);

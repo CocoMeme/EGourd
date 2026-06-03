@@ -40,13 +40,6 @@ const UserRegister = () => {
   const { register, registerWithUsername, isAuthenticated } = useUserAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/user/home', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
   // Reset states when switching methods
   useEffect(() => {
     setPuzzleVerified(false);

@@ -95,8 +95,15 @@ function App() {
             <Route path="/user/register" element={<UserRegister />} />
             <Route path="/user/verify-email" element={<VerifyEmail />} />
 
-            {/* Public landing page */}
-            <Route path="/user/home" element={<UserHome />} />
+            {/* User Home - Authenticated dashboard landing */}
+            <Route
+              path="/user/home"
+              element={
+                <UserProtectedRoute>
+                  <UserDashboard />
+                </UserProtectedRoute>
+              }
+            />
 
             {/* User Dashboard - Protected (logged in AND verified users) */}
             <Route

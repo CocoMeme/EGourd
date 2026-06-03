@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LayoutDashboard, Users, MessageSquare, Newspaper, LogOut, User } from 'lucide-react';
 import './Layout.css';
@@ -10,7 +10,7 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const navItems = [
@@ -42,6 +42,9 @@ const Layout = ({ children }) => {
         </nav>
 
         <div className="sidebar-footer">
+          <Link to="/" className="public-site-link">
+            Public Site
+          </Link>
           <div className="user-info">
             <User size={18} />
             <div>
