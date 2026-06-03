@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useUserAuth } from '../../contexts/UserAuthContext';
-import UserLayout from '../../components/user/UserLayout';
 import './UserHome.css';
 
 // Import logo
@@ -31,8 +29,33 @@ const heroCarouselImages = [
   { id: 9, src: heroImg9, alt: 'Muntinlupa Farm' },
 ];
 
+const services = [
+  {
+    title: 'AI Scan',
+    description: 'Quick flower and leaf classification powered by the scan workflow used in the app.',
+  },
+  {
+    title: 'Pollination Tracking',
+    description: 'Track planting stages, flowering, and pollination progress from one place.',
+  },
+  {
+    title: 'Yield Prediction',
+    description: 'Use scan and farm data to estimate harvest readiness and production outcomes.',
+  },
+  {
+    title: 'Community & News',
+    description: 'Stay connected with farmer updates, educational content, and community posts.',
+  },
+];
+
+const supportItems = [
+  'Flower and leaf scanning',
+  'Pollination and plant tracking',
+  'Yield and harvest insights',
+  'Mobile-friendly farm tools',
+];
+
 const UserHome = () => {
-  const { user } = useUserAuth();
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
   // Auto-advance hero carousel
@@ -55,304 +78,136 @@ const UserHome = () => {
     );
   };
 
-  // Features/Quick Actions
-  const quickActions = [
-    {
-      icon: '📊',
-      title: 'Dashboard',
-      desc: 'View your farming insights and analytics',
-      link: '/user/dashboard',
-      color: 'green',
-    },
-    {
-      icon: '🔬',
-      title: 'AI Scanner',
-      desc: 'Scan and analyze your gourd crops',
-      link: '/user/scan',
-      color: 'blue',
-    },
-    {
-      icon: '💬',
-      title: 'Forum',
-      desc: 'Connect with other gourd farmers',
-      link: '/user/forum',
-      color: 'purple',
-    },
-    {
-      icon: '📰',
-      title: 'News',
-      desc: 'Latest agricultural updates and tips',
-      link: '/user/news',
-      color: 'orange',
-    },
-    {
-      icon: '📚',
-      title: 'Learn',
-      desc: 'Educational resources for better farming',
-      link: '/user/learn',
-      color: 'teal',
-    },
-    {
-      icon: '📈',
-      title: 'Yield Prediction',
-      desc: 'AI-powered harvest forecasting',
-      link: '/user/yield',
-      color: 'lime',
-    },
-  ];
-
-  // Farming tips
-  const farmingTips = [
-    {
-      icon: '💧',
-      title: 'Morning Watering',
-      tip: 'Water your gourds in the early morning to reduce evaporation.',
-    },
-    {
-      icon: '🌱',
-      title: 'Soil Health',
-      tip: 'Add organic compost regularly for better nutrient absorption.',
-    },
-    { icon: '🐝', title: 'Pollination', tip: 'Encourage pollinators by planting flowers nearby.' },
-  ];
-
-  // Muntinlupa City Farms data
-  // To add your own images, place them in: src/assets/images/muntinlupa/
-  // Then import them at the top and add them to the image property
-  const muntinlupaFarms = [
-    {
-      id: 1,
-      name: 'Tunasan Community Farm',
-      location: 'Brgy. Tunasan',
-      image: null, // Replace with your imported image
-      placeholder: '🌾',
-      crops: ['Ampalaya', 'Upo'],
-    },
-    {
-      id: 2,
-      name: 'Poblacion Urban Garden',
-      location: 'Brgy. Poblacion',
-      image: null, // Replace with your imported image
-      placeholder: '🥬',
-      crops: ['Kalabasa', 'Sayote'],
-    },
-    {
-      id: 3,
-      name: 'Sucat Agricultural Center',
-      location: 'Brgy. Sucat',
-      image: null, // Replace with your imported image
-      placeholder: '👨‍🌾',
-      crops: ['Ampalaya', 'Kalabasa'],
-    },
-    {
-      id: 4,
-      name: 'Alabang Hills Farm',
-      location: 'Brgy. Alabang',
-      image: null, // Replace with your imported image
-      placeholder: '🌱',
-      crops: ['Patola', 'Upo'],
-    },
-  ];
-
   return (
-    <UserLayout>
-      <div className="user-home">
-        {/* Welcome Hero Section */}
-        <section className="welcome-hero">
-          {/* Background Carousel */}
-          <div className="hero-bg-carousel">
-            {heroCarouselImages.length > 0 ? (
-              <>
-                <div className="hero-carousel-track">
+    <div className="user-landing-page">
+      <div className="user-landing-backdrop">
+        <span className="blob blob-left" />
+        <span className="blob blob-right" />
+        <span className="blob blob-bottom" />
+      </div>
+
+      <div className="user-landing-shell">
+        <header className="user-landing-header">
+          <Link to="/user/home" className="landing-brand">
+            <img src={logoIcon} alt="GourdVision" className="landing-brand-logo" />
+          </Link>
+
+          <nav className="landing-nav">
+            <a href="#about">About Us</a>
+            <a href="#services">Services</a>
+          </nav>
+
+          <div className="landing-header-actions">
+            <Link to="/user/register" className="landing-signup">
+              Sign Up
+            </Link>
+            <Link to="/user/login" className="landing-signin">
+              Sign In
+            </Link>
+          </div>
+        </header>
+
+        <main className="landing-panel">
+          <section id="home" className="landing-hero">
+            <div className="landing-copy">
+              <span className="landing-kicker">Farm Landscape</span>
+              <h1>Smarter farming with AI guidance</h1>
+              <p>
+                Analyze crops, track growth, and make confident decisions with a clean, modern
+                workspace built for farmers.
+              </p>
+
+              <div className="landing-actions-row">
+                <Link to="/user/login" className="landing-ghost-btn">
+                  Sign In
+                </Link>
+                <Link to="/user/register" className="landing-primary-btn">
+                  Get Started
+                </Link>
+              </div>
+
+              <div className="landing-dots" aria-hidden="true">
+                <span className="active" />
+                <span />
+                <span />
+              </div>
+            </div>
+
+            <div className="landing-visual">
+              <div className="landing-carousel">
+                <div className="landing-carousel-track">
                   {heroCarouselImages.map((img, index) => (
                     <div
                       key={img.id}
-                      className={`hero-carousel-slide ${index === currentHeroSlide ? 'active' : ''}`}
+                      className={`landing-carousel-slide ${index === currentHeroSlide ? 'active' : ''}`}
                     >
-                      <img src={img.src} alt={img.alt} className="hero-carousel-image" />
+                      <img src={img.src} alt={img.alt} className="landing-carousel-image" />
                     </div>
                   ))}
                 </div>
-                <div className="hero-overlay"></div>
-                {heroCarouselImages.length > 1 && (
-                  <>
-                    <button className="hero-carousel-btn hero-prev" onClick={prevHeroSlide}>
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M15 18l-6-6 6-6" />
-                      </svg>
-                    </button>
-                    <button className="hero-carousel-btn hero-next" onClick={nextHeroSlide}>
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M9 18l6-6-6-6" />
-                      </svg>
-                    </button>
-                    <div className="hero-carousel-dots">
-                      {heroCarouselImages.map((_, index) => (
-                        <button
-                          key={index}
-                          className={`hero-dot ${index === currentHeroSlide ? 'active' : ''}`}
-                          onClick={() => setCurrentHeroSlide(index)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="hero-bg-fallback"></div>
-            )}
-          </div>
 
-          {/* Content Overlay */}
-          <div className="welcome-content">
-            <div className="welcome-text">
-              <div className="welcome-badge">
-                <span className="badge-dot"></span>
-                <span>Welcome back, {user?.firstName || 'Farmer'}!</span>
-              </div>
-              <h1>
-                Your Smart Farming
-                <span className="highlight"> Command Center</span>
-              </h1>
-              <p className="welcome-description">
-                Access all your farming tools, connect with the community, and leverage AI-powered
-                insights to optimize your gourd farming operations.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Actions Grid */}
-        <section className="quick-actions-section">
-          <div className="section-header">
-            <h2>Quick Actions</h2>
-            <p>Access your most used features</p>
-          </div>
-          <div className="quick-actions-grid">
-            {quickActions.map((action, index) => (
-              <Link key={index} to={action.link} className={`action-card ${action.color}`}>
-                <div className="action-icon">{action.icon}</div>
-                <div className="action-content">
-                  <h3>{action.title}</h3>
-                  <p>{action.desc}</p>
-                </div>
-                <div className="action-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="m9 18 6-6-6-6"></path>
+                <button className="landing-carousel-btn landing-prev" onClick={prevHeroSlide}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6" />
                   </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+                </button>
+                <button className="landing-carousel-btn landing-next" onClick={nextHeroSlide}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
 
-        {/* Farming Tips Section */}
-        <section className="tips-section">
-          <div className="section-header">
-            <h2>Daily Farming Tips</h2>
-            <p>Expert advice for better yields</p>
-          </div>
-          <div className="tips-grid">
-            {farmingTips.map((tip, index) => (
-              <div key={index} className="tip-card">
-                <div className="tip-icon">{tip.icon}</div>
-                <h3>{tip.title}</h3>
-                <p>{tip.tip}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Muntinlupa City Farms Section */}
-        <section className="muntinlupa-section">
-          <div className="section-header">
-            <h2>Farms of Muntinlupa City</h2>
-            <p>Our partner farms in your local area</p>
-          </div>
-          <div className="muntinlupa-farms-grid">
-            {muntinlupaFarms.map((farm) => (
-              <div key={farm.id} className="farm-card">
-                <div className="farm-image-wrapper">
-                  {farm.image ? (
-                    <img src={farm.image} alt={farm.name} className="farm-image" />
-                  ) : (
-                    <div className="farm-image-placeholder">
-                      <span>{farm.placeholder}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="farm-info">
-                  <h3>{farm.name}</h3>
-                  <p className="farm-location">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    {farm.location}
-                  </p>
-                  <div className="farm-crops">
-                    {farm.crops.map((crop, index) => (
-                      <span key={index} className="crop-tag">
-                        {crop}
-                      </span>
-                    ))}
-                  </div>
+                <div className="landing-carousel-dots" aria-hidden="true">
+                  {heroCarouselImages.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`landing-carousel-dot ${index === currentHeroSlide ? 'active' : ''}`}
+                      onClick={() => setCurrentHeroSlide(index)}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          </section>
 
-        {/* CTA Section */}
-        <section className="home-cta">
-          <div className="cta-content">
-            <h2>Ready to analyze your crops?</h2>
-            <p>Use our AI-powered scanner to get instant insights about your gourd plants.</p>
-            <Link to="/user/dashboard" className="cta-button">
-              <span>Go to Dashboard</span>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="m9 18 6-6-6-6"></path>
-              </svg>
-            </Link>
-          </div>
-        </section>
+          <section id="about" className="landing-info-grid">
+            <article className="landing-about-card">
+              <span className="section-tag">About Us</span>
+              <h2>Built for farmers who want clarity, speed, and confidence.</h2>
+              <p>
+                GourdVision helps you classify flowers and leaves, monitor planting and pollination
+                progress, and keep your farming workflow organized across web and mobile.
+              </p>
+            </article>
+
+            <article className="landing-support-card">
+              <span className="section-tag light">What We Support</span>
+              <ul>
+                {supportItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          </section>
+
+          <section id="services" className="landing-services">
+            <div className="section-head">
+              <span className="section-tag">Services</span>
+              <h2>Tools that support the full growing cycle.</h2>
+            </div>
+
+            <div className="services-grid">
+              {services.map((service) => (
+                <article key={service.title} className="service-card">
+                  <h3>{service.title}</h3>
+                  <p>{service.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
-    </UserLayout>
+    </div>
   );
 };
 

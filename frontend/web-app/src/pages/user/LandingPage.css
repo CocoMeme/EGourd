@@ -558,13 +558,6 @@
   box-shadow: 0 18px 44px rgba(28, 60, 42, 0.08);
 }
 
-.member-launch-copy h1 {
-  margin: 10px 0 12px;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1.05;
-  color: #10281d;
-}
-
 .member-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -578,9 +571,9 @@
   text-transform: uppercase;
 }
 
-.member-hero-copy p {
+.member-launch-copy p {
+  margin: 12px 0 0;
   max-width: 620px;
-  margin: 0;
   color: #496157;
   font-size: 1.02rem;
 }

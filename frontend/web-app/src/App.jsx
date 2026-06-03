@@ -19,7 +19,6 @@ import UserProtectedRoute from './components/user/UserProtectedRoute';
 import UserLogin from './pages/user/UserLogin';
 import UserRegister from './pages/user/UserRegister';
 import VerifyEmail from './pages/user/VerifyEmail';
-import LandingPage from './pages/user/LandingPage';
 import UserHome from './pages/user/UserHome';
 import UserDashboard from './pages/user/UserDashboard';
 import UserForum from './pages/user/UserForum';
@@ -88,23 +87,16 @@ function App() {
             />
 
             {/* ==================== USER ROUTES ==================== */}
-            {/* Landing Page - Public (for non-logged in users) */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Default entry point - public landing page */}
+            <Route path="/" element={<UserHome />} />
 
             {/* User Authentication - Public */}
             <Route path="/user/login" element={<UserLogin />} />
             <Route path="/user/register" element={<UserRegister />} />
             <Route path="/user/verify-email" element={<VerifyEmail />} />
 
-            {/* User Home - Protected (logged in AND verified users) */}
-            <Route
-              path="/user/home"
-              element={
-                <UserProtectedRoute>
-                  <UserHome />
-                </UserProtectedRoute>
-              }
-            />
+            {/* Public landing page */}
+            <Route path="/user/home" element={<UserHome />} />
 
             {/* User Dashboard - Protected (logged in AND verified users) */}
             <Route
