@@ -37,10 +37,11 @@ import { pollinationNotificationHelper } from '../../utils/pollinationNotificati
 
 // Days to result by gourd type (for display)
 const DAYS_TO_RESULT = {
-  bitter_gourd: { min: 5, max: 7, average: 6, name: 'Ampalaya' },
-  bottle_gourd: { min: 7, max: 10, average: 8, name: 'Upo' },
-  sponge_gourd: { min: 4, max: 6, average: 5, name: 'Patola' },
-  cucumber: { min: 3, max: 5, average: 4, name: 'Pipino' }
+  bitter_gourd: { min: 5, max: 7, average: 6, name: 'Bitter Gourd' },
+  bottle_gourd: { min: 7, max: 10, average: 8, name: 'Bottle Gourd' },
+  sponge_gourd: { min: 4, max: 6, average: 5, name: 'Sponge Gourd' },
+  cucumber: { min: 3, max: 5, average: 4, name: 'Cucumber' },
+  kalabasa: { min: 8, max: 12, average: 10, name: 'Squash' }
 };
 
 export const PollinationTrackerScreen = ({ navigation, route }) => {
@@ -745,8 +746,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         <View style={styles.plantInfo}>
           <Text style={styles.plantName}>{plant?.plantName || 'Plant'}</Text>
           <Text style={styles.plantType}>
-            {plant?.displayName?.english || plant?.gourdType?.replace(/_/g, ' ')} 
-            {plant?.displayName?.tagalog && ` (${plant.displayName.tagalog})`}
+            {plant?.displayName?.english || plant?.gourdType?.replace(/_/g, ' ')}
           </Text>
         </View>
 

@@ -236,11 +236,11 @@ class GeminiService {
 
     // Variety display mapping
     const varietyMap = {
-      'ampalaya': 'Ampalaya',
-      'patola': 'Patola',
-      'upo': 'Upo',
-      'kalabasa': 'Kalabasa',
-      'pipino': 'Pipino'
+      'ampalaya': 'Bitter Gourd',
+      'patola': 'Sponge Gourd',
+      'upo': 'Bottle Gourd',
+      'kalabasa': 'Squash',
+      'pipino': 'Cucumber'
     };
     const varietyDisplay = varietyMap[variety] || (isNotLeaf ? 'Not a Leaf' : variety);
 
@@ -292,15 +292,15 @@ class GeminiService {
 
     // Format variety name for display
     const varietyDisplayMap = {
-      'bitter_gourd': 'Ampalaya',
-      'bottle_gourd': 'Upo',
-      'sponge_gourd': 'Patola',
+      'bitter_gourd': 'Bitter Gourd',
+      'bottle_gourd': 'Bottle Gourd',
+      'sponge_gourd': 'Sponge Gourd',
       'cucumber': 'Cucumber',
-      'kalabasa': 'Kalabasa',
+      'kalabasa': 'Squash',
       // Legacy support
-      'ampalaya_bilog': 'Ampalaya',
-      'upo_smooth': 'Upo',
-      'patola': 'Patola',
+      'ampalaya_bilog': 'Bitter Gourd',
+      'upo_smooth': 'Bottle Gourd',
+      'patola': 'Sponge Gourd',
     };
     const varietyDisplay = varietyDisplayMap[variety] || null;
 
@@ -435,9 +435,9 @@ class GeminiService {
     } else {
       // DISAGREEMENT LOGIC:
 
-      // 0. SPECIES CHECK: Trust TM if it says Upo (White) and Gemini says Ampalaya (Yellow)
-      // This handles cases where Gemini hallucinates color
-      if (tflitePrediction.variety === 'Upo (Smooth)' && geminiPrediction.variety === 'Ampalaya Bilog') {
+      // 0. SPECIES CHECK: Trust TM if it says Bottle Gourd and Gemini says Bitter Gourd
+      // This handles the legacy color-hallucination case (white Upo misidentified as yellow Ampalaya)
+      if (tflitePrediction.variety === 'Bottle Gourd' && geminiPrediction.variety === 'Bitter Gourd') {
         if (tflitePrediction.rawScore > 0.8) recommendation = 'tflite';
       }
 

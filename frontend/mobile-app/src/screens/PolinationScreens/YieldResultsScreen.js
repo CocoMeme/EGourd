@@ -15,10 +15,11 @@ const YieldResultsScreen = ({ navigation, route }) => {
 
   const getPlantTypeLabel = (type) => {
     const labels = {
-      bitter_gourd: 'Ampalaya',
-      bottle_gourd: 'Upo',
-      sponge_gourd: 'Patola',
-      cucumber: 'Cucumber'
+      bitter_gourd: 'Bitter Gourd',
+      bottle_gourd: 'Bottle Gourd',
+      sponge_gourd: 'Sponge Gourd',
+      cucumber: 'Cucumber',
+      kalabasa: 'Squash'
     };
     return labels[type] || type;
   };

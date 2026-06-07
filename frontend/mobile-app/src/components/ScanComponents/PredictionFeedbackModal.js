@@ -10,11 +10,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 
 const FLOWER_VARIETIES = [
-  'Ampalaya Bilog', 'Ampalaya Haba', 'Patola', 'Upo (Smooth)', 'Cucumber', 'Kalabasa'
+  'Bitter Gourd', 'Sponge Gourd', 'Bottle Gourd', 'Cucumber', 'Squash'
 ];
 
 const LEAF_VARIETIES = [
-  'Ampalaya', 'Patola', 'Upo', 'Cucumber', 'Kalabasa'
+  'Bitter Gourd', 'Sponge Gourd', 'Bottle Gourd', 'Cucumber', 'Squash'
 ];
 
 export const PredictionFeedbackModal = ({

@@ -238,10 +238,11 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!formData.selectedPlantId}
               >
-                <Picker.Item label="Ampalaya (Bitter Gourd)" value="bitter_gourd" />
-                <Picker.Item label="Upo (Bottle Gourd)" value="bottle_gourd" />
-                <Picker.Item label="Patola (Sponge Gourd)" value="sponge_gourd" />
+                <Picker.Item label="Bitter Gourd" value="bitter_gourd" />
+                <Picker.Item label="Bottle Gourd" value="bottle_gourd" />
+                <Picker.Item label="Sponge Gourd" value="sponge_gourd" />
                 <Picker.Item label="Cucumber" value="cucumber" />
+                <Picker.Item label="Squash" value="kalabasa" />
               </Picker>
             </View>
           </View>

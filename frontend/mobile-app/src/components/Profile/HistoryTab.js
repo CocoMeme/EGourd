@@ -27,10 +27,11 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
 
     const varieties = [
         { id: 'all', label: 'All' },
-        { id: 'Ampalaya Bilog', label: 'Ampalaya' },
-        { id: 'Patola', label: 'Patola' },
-        { id: 'Upo (Smooth)', label: 'Upo' },
+        { id: 'Bitter Gourd', label: 'Bitter Gourd' },
+        { id: 'Sponge Gourd', label: 'Sponge Gourd' },
+        { id: 'Bottle Gourd', label: 'Bottle Gourd' },
         { id: 'Cucumber', label: 'Cucumber' },
+        { id: 'Squash', label: 'Squash' },
     ];
 
     const genders = [
@@ -100,8 +101,17 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
             scan.variety?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             scan.prediction?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Apply variety filter
-        const matchesVariety = selectedVariety === 'all' || scan.variety === selectedVariety;
+        // Apply variety filter (backward-compatible with legacy names)
+        const legacyVarietyMap = {
+            'Bitter Gourd': ['Ampalaya', 'Ampalaya Bilog', 'Ampalaya Elipse'],
+            'Sponge Gourd': ['Patola', 'Patola Bilog', 'Patola Elipse'],
+            'Bottle Gourd': ['Upo', 'Upo Bilog', 'Upo Elipse'],
+            'Cucumber': ['Pipino', 'Pipino Bilog', 'Pipino Elipse'],
+            'Squash': ['Kalabasa', 'Kalabasa Bilog', 'Kalabasa Elipse'],
+        };
+        const matchesVariety = selectedVariety === 'all' || 
+            scan.variety === selectedVariety || 
+            (legacyVarietyMap[selectedVariety] || []).includes(scan.variety);
 
         // Apply gender filter
         const matchesGender = selectedGender === 'all' || scan.prediction?.toLowerCase() === selectedGender;

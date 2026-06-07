@@ -50,28 +50,29 @@ api.interceptors.response.use(
 // Gourd type display configuration
 const GOURD_DISPLAY = {
   bitter_gourd: {
-    english: 'Bitter Gourd',
-    tagalog: 'Ampalaya',
+    name: 'Bitter Gourd',
     icon: '🥒',
     color: '#4CAF50'
   },
   bottle_gourd: {
-    english: 'Bottle Gourd',
-    tagalog: 'Upo',
+    name: 'Bottle Gourd',
     icon: '🫛',
     color: '#8BC34A'
   },
   sponge_gourd: {
-    english: 'Sponge Gourd',
-    tagalog: 'Patola',
+    name: 'Sponge Gourd',
     icon: '🥬',
     color: '#CDDC39'
   },
   cucumber: {
-    english: 'Cucumber',
-    tagalog: 'Pipino',
+    name: 'Cucumber',
     icon: '🥒',
     color: '#009688'
+  },
+  kalabasa: {
+    name: 'Squash',
+    icon: '🎃',
+    color: '#E67E22'
   }
 };
 
@@ -85,17 +86,16 @@ class PlantService {
   /**
    * Format gourd type for display
    */
-  formatGourdType(type, language = 'english') {
+  formatGourdType(type) {
     const display = GOURD_DISPLAY[type];
-    if (!display) return type;
-    return language === 'tagalog' ? display.tagalog : display.english;
+    return display ? display.name : type;
   }
 
   /**
    * Get gourd display config
    */
   getGourdDisplay(type) {
-    return GOURD_DISPLAY[type] || { english: type, tagalog: type, icon: '🌱', color: '#4CAF50' };
+    return GOURD_DISPLAY[type] || { name: type, icon: '🌱', color: '#4CAF50' };
   }
 
   /**

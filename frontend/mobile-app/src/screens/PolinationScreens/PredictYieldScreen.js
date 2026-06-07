@@ -178,10 +178,11 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
   const getPlantTypeLabel = (type) => {
     const labels = {
-      bitter_gourd: 'Ampalaya',
-      bottle_gourd: 'Upo',
-      sponge_gourd: 'Patola',
-      cucumber: 'Cucumber'
+      bitter_gourd: 'Bitter Gourd',
+      bottle_gourd: 'Bottle Gourd',
+      sponge_gourd: 'Sponge Gourd',
+      cucumber: 'Cucumber',
+      kalabasa: 'Squash'
     };
     return labels[type] || type;
   };
@@ -289,10 +290,11 @@ const PredictYieldScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!useExistingPlant || !selectedPlantId}
               >
-                <Picker.Item label="Ampalaya (Bitter Gourd)" value="bitter_gourd" />
-                <Picker.Item label="Upo (Bottle Gourd)" value="bottle_gourd" />
-                <Picker.Item label="Patola (Sponge Gourd)" value="sponge_gourd" />
+                <Picker.Item label="Bitter Gourd" value="bitter_gourd" />
+                <Picker.Item label="Bottle Gourd" value="bottle_gourd" />
+                <Picker.Item label="Sponge Gourd" value="sponge_gourd" />
                 <Picker.Item label="Cucumber" value="cucumber" />
+                <Picker.Item label="Squash" value="kalabasa" />
               </Picker>
             </View>
             {errors.plantType && <Text style={styles.errorText}>{errors.plantType}</Text>}

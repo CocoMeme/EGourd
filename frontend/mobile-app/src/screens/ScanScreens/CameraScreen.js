@@ -380,9 +380,9 @@ export const CameraScreen = ({ navigation }) => {
    */
   const getVarietyFromLabel = (label) => {
     if (!label) return null;
-    if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
-    if (label.includes('Patola')) return 'Patola';
-    if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label.includes('Ampalaya')) return 'Bitter Gourd';
+    if (label.includes('Patola')) return 'Sponge Gourd';
+    if (label.includes('Upo')) return 'Bottle Gourd';
     if (label.includes('Cucumber')) return 'Cucumber';
     if (label === 'Not Flower') return null;
     return null;

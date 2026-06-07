@@ -40,14 +40,8 @@ export const PlantFilter = ({
   };
 
   const formatPlantName = (name) => {
-    const plantNames = {
-      ampalaya: 'Ampalaya',
-      patola: 'Patola',
-      upo: 'Upo',
-      kalabasa: 'Kalabasa',
-      kundol: 'Kundol',
-    };
-    return plantNames[name] || name;
+    if (!name) return 'All Plants';
+    return name;
   };
 
   return (
@@ -112,11 +106,11 @@ export const PlantFilter = ({
         <FlatList
           data={[
             { value: '', label: 'All Plants' },
-            { value: 'ampalaya', label: 'Ampalaya' },
-            { value: 'patola', label: 'Patola' },
-            { value: 'upo', label: 'Upo' },
-            { value: 'kalabasa', label: 'Kalabasa' },
-            { value: 'kundol', label: 'Kundol' },
+            { value: 'Bitter Gourd', label: 'Bitter Gourd' },
+            { value: 'Sponge Gourd', label: 'Sponge Gourd' },
+            { value: 'Bottle Gourd', label: 'Bottle Gourd' },
+            { value: 'Squash', label: 'Squash' },
+            { value: 'Cucumber', label: 'Cucumber' },
           ]}
           horizontal
           showsHorizontalScrollIndicator={false}

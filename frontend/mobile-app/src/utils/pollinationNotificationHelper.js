@@ -270,11 +270,12 @@ class PollinationNotificationHelper {
       }
 
       const plantName = plant.plantName || plant.displayName?.english || 'Your plant';
-      const gourdType = plant.displayName?.tagalog || plant.gourdType?.replace(/_/g, ' ') || '';
+      const gourdType = plant.displayName?.english || plant.gourdType?.replace(/_/g, ' ') || '';
+      const showGourdType = gourdType && gourdType.toLowerCase() !== (plantName || '').toLowerCase();
 
       const notificationId = await this.scheduleLocalNotification(
         `🌱 Check ${pollination.label}!`,
-        `Time to check if your ${plantName}${gourdType ? ` (${gourdType})` : ''} pollination was successful! Look for fruit development.`,
+        `Time to check if your ${plantName}${showGourdType ? ` (${gourdType})` : ''} pollination was successful! Look for fruit development.`,
         notificationTime,
         {
           plantId: plant._id,

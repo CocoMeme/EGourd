@@ -33,18 +33,20 @@ const { width } = Dimensions.get('window');
 
 // Variety colors
 const VARIETY_COLORS = {
-  'Ampalaya Bilog': '#27AE60',
-  'Patola': '#F39C12',
-  'Upo (Smooth)': '#3498DB',
+  'Bitter Gourd': '#27AE60',
+  'Sponge Gourd': '#F39C12',
+  'Bottle Gourd': '#3498DB',
   'Cucumber': '#8BC34A',
+  'Squash': '#E67E22',
 };
 
 // Scientific names
 const SCIENTIFIC_NAMES = {
-  'Ampalaya Bilog': 'Momordica charantia',
-  'Patola': 'Luffa acutangula',
-  'Upo (Smooth)': 'Lagenaria siceraria',
+  'Bitter Gourd': 'Momordica charantia',
+  'Sponge Gourd': 'Luffa acutangula',
+  'Bottle Gourd': 'Lagenaria siceraria',
   'Cucumber': 'Cucumis sativus',
+  'Squash': 'Cucurbita moschata',
 };
 
 // Gender colors
@@ -858,18 +860,18 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
     // Leaf mode: extract variety from leaf labels
     if (isLeafMode) {
-      if (label.includes('Ampalaya')) return 'Ampalaya';
-      if (label.includes('Patola')) return 'Patola';
-      if (label.includes('Upo')) return 'Upo';
-      if (label.includes('Kalabasa')) return 'Kalabasa';
-      if (label.includes('Pipino')) return 'Pipino';
+      if (label.includes('Ampalaya')) return 'Bitter Gourd';
+      if (label.includes('Patola')) return 'Sponge Gourd';
+      if (label.includes('Upo')) return 'Bottle Gourd';
+      if (label.includes('Kalabasa')) return 'Squash';
+      if (label.includes('Pipino')) return 'Cucumber';
       return label.replace(' Leaves', ''); // Fallback: remove " Leaves" suffix
     }
 
     // Flower mode
-    if (label.includes('Ampalaya')) return 'Ampalaya Bilog';
-    if (label.includes('Patola')) return 'Patola';
-    if (label.includes('Upo')) return 'Upo (Smooth)';
+    if (label.includes('Ampalaya')) return 'Bitter Gourd';
+    if (label.includes('Patola')) return 'Sponge Gourd';
+    if (label.includes('Upo')) return 'Bottle Gourd';
     if (label.includes('Cucumber')) return 'Cucumber';
     if (label === 'Not Flower') return null;
     return null;

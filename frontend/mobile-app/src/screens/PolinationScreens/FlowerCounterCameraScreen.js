@@ -27,18 +27,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Gourd type mapping from TM labels to plant gourd types
 const GOURD_TYPE_MAPPING = {
-  'Ampalaya': 'bitter_gourd',
-  'Patola': 'sponge_gourd',
-  'Upo': 'bottle_gourd',
+  'Bitter Gourd': 'bitter_gourd',
+  'Sponge Gourd': 'sponge_gourd',
+  'Bottle Gourd': 'bottle_gourd',
   'Cucumber': 'cucumber',
+  'Squash': 'kalabasa',
 };
 
 // Reverse mapping for display
 const GOURD_TYPE_DISPLAY = {
-  bitter_gourd: 'Ampalaya',
-  sponge_gourd: 'Patola',
-  bottle_gourd: 'Upo',
+  bitter_gourd: 'Bitter Gourd',
+  sponge_gourd: 'Sponge Gourd',
+  bottle_gourd: 'Bottle Gourd',
   cucumber: 'Cucumber',
+  kalabasa: 'Squash',
 };
 
 export const FlowerCounterCameraScreen = ({ navigation, route }) => {
@@ -139,10 +141,11 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
    */
   const getGourdTypeFromLabel = (label) => {
     if (!label) return null;
-    if (label.includes('Ampalaya')) return 'Ampalaya';
-    if (label.includes('Patola')) return 'Patola';
-    if (label.includes('Upo')) return 'Upo';
+    if (label.includes('Ampalaya')) return 'Bitter Gourd';
+    if (label.includes('Patola')) return 'Sponge Gourd';
+    if (label.includes('Upo')) return 'Bottle Gourd';
     if (label.includes('Cucumber')) return 'Cucumber';
+    if (label.includes('Kalabasa')) return 'Squash';
     return null;
   };
 

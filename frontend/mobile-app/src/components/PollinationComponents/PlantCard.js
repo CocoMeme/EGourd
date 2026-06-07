@@ -30,14 +30,14 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
     return emojis[gourdType] || '🌱';
   };
 
-  // Gourd type display names with Tagalog
+  // Gourd type display names
   const getGourdDisplayName = (gourdType) => {
     const names = {
-      bitter_gourd: 'Bitter Gourd / Ampalaya',
-      bottle_gourd: 'Bottle Gourd / Upo',
-      sponge_gourd: 'Sponge Gourd / Patola',
-      cucumber: 'Cucumber / Pipino',
-      kalabasa: 'Squash / Kalabasa'
+      bitter_gourd: 'Bitter Gourd',
+      bottle_gourd: 'Bottle Gourd',
+      sponge_gourd: 'Sponge Gourd',
+      cucumber: 'Cucumber',
+      kalabasa: 'Squash'
     };
     return names[gourdType] || formatLabel(gourdType);
   };

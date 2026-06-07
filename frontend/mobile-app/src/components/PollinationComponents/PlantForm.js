@@ -165,11 +165,11 @@ export const PlantForm = ({
   }, []);
 
   const gourdTypes = [
-    { value: 'bitter_gourd', label: 'Bitter Gourd', tagalog: 'Ampalaya', icon: '🥒' },
-    { value: 'bottle_gourd', label: 'Bottle Gourd', tagalog: 'Upo', icon: '🫛' },
-    { value: 'sponge_gourd', label: 'Sponge Gourd', tagalog: 'Patola', icon: '🌿' },
-    { value: 'cucumber', label: 'Cucumber', tagalog: 'Pipino', icon: '🥒' },
-    { value: 'kalabasa', label: 'Squash', tagalog: 'Kalabasa', icon: '🎃' },
+    { value: 'bitter_gourd', label: 'Bitter Gourd', icon: '🥒' },
+    { value: 'bottle_gourd', label: 'Bottle Gourd', icon: '🫛' },
+    { value: 'sponge_gourd', label: 'Sponge Gourd', icon: '🌿' },
+    { value: 'cucumber', label: 'Cucumber', icon: '🥒' },
+    { value: 'kalabasa', label: 'Squash', icon: '🎃' },
   ];
 
   // Removed soilTypes, climateTypes, seasons as they are now auto-determined
@@ -277,7 +277,7 @@ export const PlantForm = ({
           onPress={() => setShowGourdTypeModal(true)}
         >
           <Text style={styles.selectorText}>
-            {selectedGourd?.icon} {selectedGourd?.label} ({selectedGourd?.tagalog})
+            {selectedGourd?.icon} {selectedGourd?.label}
           </Text>
           <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
         </TouchableOpacity>
@@ -527,7 +527,7 @@ export const PlantForm = ({
                 onPress={() => handleGourdTypeChange(gourd.value)}
               >
                 <Text style={styles.modalOptionText}>
-                  {gourd.icon} {gourd.label} ({gourd.tagalog})
+                  {gourd.icon} {gourd.label}
                 </Text>
                 {formData.gourdType === gourd.value && (
                   <Ionicons name="checkmark" size={20} color={theme.colors.primary} />

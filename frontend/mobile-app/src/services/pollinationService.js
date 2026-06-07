@@ -405,16 +405,16 @@ class PollinationService {
   }
 
   // Helper method to format plant names for display
-  formatPlantName(name, language = 'english') {
+  formatPlantName(name) {
     const plantNames = {
-      ampalaya: { english: 'Bitter Gourd', tagalog: 'Ampalaya' },
-      patola: { english: 'Sponge Gourd', tagalog: 'Patola' },
-      upo: { english: 'Bottle Gourd', tagalog: 'Upo' },
-      kalabasa: { english: 'Squash', tagalog: 'Kalabasa' },
-      kundol: { english: 'Winter Melon', tagalog: 'Kundol' },
+      bitter_gourd: 'Bitter Gourd',
+      sponge_gourd: 'Sponge Gourd',
+      bottle_gourd: 'Bottle Gourd',
+      kalabasa: 'Squash',
+      cucumber: 'Cucumber',
     };
 
-    return plantNames[name]?.[language] || name;
+    return plantNames[name] || name;
   }
 
   // Helper method to get status color

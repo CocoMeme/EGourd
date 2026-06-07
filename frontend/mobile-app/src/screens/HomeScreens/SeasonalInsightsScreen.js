@@ -50,7 +50,7 @@ const GOURD_ICONS = {
 // Philippine growing tips per gourd
 const GOURD_TIPS = {
   bitter_gourd: {
-    name: 'Ampalaya (Bitter Gourd)',
+    name: 'Bitter Gourd',
     optimalTemp: '25–32°C',
     season: 'Thrives in both wet and dry seasons',
     spacing: '1–2 meters between plants',
@@ -64,7 +64,7 @@ const GOURD_TIPS = {
     pollination: 'Primarily insect-pollinated (bees). Hand-pollinate early morning (6–9 AM) when female flowers open.',
   },
   bottle_gourd: {
-    name: 'Upo (Bottle Gourd)',
+    name: 'Bottle Gourd',
     optimalTemp: '24–35°C',
     season: 'Best planted during dry season (Dec–May)',
     spacing: '2–3 meters between plants',
@@ -78,7 +78,7 @@ const GOURD_TIPS = {
     pollination: 'Flowers open in the evening. Hand-pollinate late afternoon or early evening for best success.',
   },
   sponge_gourd: {
-    name: 'Patola (Sponge Gourd)',
+    name: 'Sponge Gourd',
     optimalTemp: '25–30°C',
     season: 'Best during wet season with good sunlight',
     spacing: '1.5–2 meters between plants',
@@ -92,7 +92,7 @@ const GOURD_TIPS = {
     pollination: 'Bee-pollinated. Hand-pollinate in early morning. Male flowers are abundant; identify female by the small fruit below the flower.',
   },
   cucumber: {
-    name: 'Pipino (Cucumber)',
+    name: 'Cucumber',
     optimalTemp: '22–30°C',
     season: 'Year-round in tropical climates',
     spacing: '0.5–1 meter between plants',
@@ -106,7 +106,7 @@ const GOURD_TIPS = {
     pollination: 'Insect-pollinated. Each plant produces many male flowers. Hand-pollinate morning (6–10 AM) for greenhouse or covered setups.',
   },
   kalabasa: {
-    name: 'Kalabasa (Squash)',
+    name: 'Squash',
     optimalTemp: '24–32°C',
     season: 'Excellent in wet season; also grows in dry with irrigation',
     spacing: '2–3 meters between plants (sprawling vine)',

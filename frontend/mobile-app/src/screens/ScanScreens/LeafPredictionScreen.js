@@ -34,20 +34,20 @@ import { LeafQualityMetrics } from '../../components/ScanComponents/LeafQualityM
 
 // Leaf Variety colors
 const LEAF_VARIETY_COLORS = {
-    'Ampalaya': '#27AE60',
-    'Patola': '#F39C12',
-    'Upo': '#3498DB',
-    'Kalabasa': '#E67E22',
-    'Pipino': '#8BC34A',
+    'Bitter Gourd': '#27AE60',
+    'Sponge Gourd': '#F39C12',
+    'Bottle Gourd': '#3498DB',
+    'Squash': '#E67E22',
+    'Cucumber': '#8BC34A',
 };
 
 // Scientific names for leaf varieties
 const LEAF_SCIENTIFIC_NAMES = {
-    'Ampalaya': 'Momordica charantia',
-    'Patola': 'Luffa acutangula',
-    'Upo': 'Lagenaria siceraria',
-    'Kalabasa': 'Cucurbita moschata',
-    'Pipino': 'Cucumis sativus',
+    'Bitter Gourd': 'Momordica charantia',
+    'Sponge Gourd': 'Luffa acutangula',
+    'Bottle Gourd': 'Lagenaria siceraria',
+    'Squash': 'Cucurbita moschata',
+    'Cucumber': 'Cucumis sativus',
 };
 
 /**
@@ -273,11 +273,11 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     // Helper: Get variety from TM label
     const getVarietyFromLabel = (label) => {
         if (!label) return null;
-        if (label.includes('Ampalaya')) return 'Ampalaya';
-        if (label.includes('Patola')) return 'Patola';
-        if (label.includes('Upo')) return 'Upo';
-        if (label.includes('Kalabasa')) return 'Kalabasa';
-        if (label.includes('Pipino')) return 'Pipino';
+        if (label.includes('Ampalaya')) return 'Bitter Gourd';
+        if (label.includes('Patola')) return 'Sponge Gourd';
+        if (label.includes('Upo')) return 'Bottle Gourd';
+        if (label.includes('Kalabasa')) return 'Squash';
+        if (label.includes('Pipino')) return 'Cucumber';
         if (label === 'Not Leaf') return null;
         return label.replace(' Leaves', '');
     };

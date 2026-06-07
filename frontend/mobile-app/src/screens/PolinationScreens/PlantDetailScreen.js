@@ -204,19 +204,16 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return emojis[gourdType] || '🌱';
   };
 
-  // Gourd type display names with Tagalog
+  // Gourd type display names
   const getGourdDisplayName = (gourdType) => {
     const names = {
-      bitter_gourd: { english: 'Bitter Gourd', tagalog: 'Ampalaya' },
-      bottle_gourd: { english: 'Bottle Gourd', tagalog: 'Upo' },
-      sponge_gourd: { english: 'Sponge Gourd', tagalog: 'Patola' },
-      cucumber: { english: 'Cucumber', tagalog: 'Pipino' }
+      bitter_gourd: 'Bitter Gourd',
+      bottle_gourd: 'Bottle Gourd',
+      sponge_gourd: 'Sponge Gourd',
+      cucumber: 'Cucumber',
+      kalabasa: 'Squash'
     };
-    const gourd = names[gourdType];
-    if (gourd) {
-      return `${gourd.english} / ${gourd.tagalog}`;
-    }
-    return gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+    return names[gourdType] || gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
   };
 
   // Prediction handlers
@@ -326,10 +323,11 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     
     // Map TM model gourd type labels to plant gourd types
     const gourdTypeMapping = {
-      'Ampalaya': 'bitter_gourd',
-      'Patola': 'sponge_gourd',
-      'Upo': 'bottle_gourd',
+      'Bitter Gourd': 'bitter_gourd',
+      'Sponge Gourd': 'sponge_gourd',
+      'Bottle Gourd': 'bottle_gourd',
       'Cucumber': 'cucumber',
+      'Squash': 'kalabasa',
     };
     
     const detectedGourdType = gourdTypeMapping[gourdType] || gourdType?.toLowerCase()?.replace(' ', '_');

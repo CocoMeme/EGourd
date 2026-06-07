@@ -35,20 +35,20 @@ const { width } = Dimensions.get('window');
 
 // Variety colors
 const VARIETY_COLORS = {
-  'Ampalaya Bilog': '#27AE60',
-  'Patola': '#F39C12',
-  'Upo (Smooth)': '#3498DB',
+  'Bitter Gourd': '#27AE60',
+  'Sponge Gourd': '#F39C12',
+  'Bottle Gourd': '#3498DB',
   'Cucumber': '#8BC34A',
-  'Kalabasa': '#E67E22',
+  'Squash': '#E67E22',
 };
 
 // Scientific names
 const SCIENTIFIC_NAMES = {
-  'Ampalaya Bilog': 'Momordica charantia',
-  'Patola': 'Luffa acutangula',
-  'Upo (Smooth)': 'Lagenaria siceraria',
+  'Bitter Gourd': 'Momordica charantia',
+  'Sponge Gourd': 'Luffa acutangula',
+  'Bottle Gourd': 'Lagenaria siceraria',
   'Cucumber': 'Cucumis sativus',
-  'Kalabasa': 'Cucurbita moschata',
+  'Squash': 'Cucurbita moschata',
 };
 
 // Gender colors
