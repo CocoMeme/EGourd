@@ -295,7 +295,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 confidence: preComputed.topPrediction.percentage,
                 rawScore: preComputed.topPrediction.probability,
                 label: preComputed.topPrediction.label,
-                isNotLeaf: preComputed.topPrediction.label === 'Not Leaf',
+                isNotLeaf: false,
                 allPredictions: preComputed.predictions,
                 source: 'tflite',
                 modelType: `Teachable Machine (Leaf) - ${preComputed.runs} runs averaged`,
@@ -381,7 +381,10 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 confidence: topTmPrediction.percentage,
                 rawScore: topTmPrediction.probability,
                 label: topTmPrediction.label,
-                isNotLeaf: topTmPrediction.label === 'Not Leaf',
+                // Don't seed isNotLeaf from TFLite — Gemini is the authority on
+                // "Not a Gourd Leaf". The flag will be set when Gemini resolves
+                // (or stay false if Gemini confirms it IS a gourd leaf).
+                isNotLeaf: false,
                 allPredictions: tmResult.predictions,
                 source: 'tflite',
                 modelType: 'Teachable Machine (Leaf)',
@@ -732,11 +735,11 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                         <Text style={styles.actionButtonText}>Scan Again</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.actionButton, styles.saveButton, (!isTmComplete || isSaving) && styles.buttonDisabled]}
-                        onPress={handleSave}
-                        disabled={!isTmComplete || isSaving}
-                    >
+                      <TouchableOpacity
+                          style={[styles.actionButton, styles.saveButton, (!isTmComplete || isAnalyzing || isGeminiLoading || isSaving) && styles.buttonDisabled]}
+                          onPress={handleSave}
+                          disabled={!isTmComplete || isAnalyzing || isGeminiLoading || isSaving}
+                      >
                         {isSaving ? (
                             <ActivityIndicator color="#FFF" size="small" />
                         ) : (

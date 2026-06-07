@@ -900,7 +900,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         confidence: preComputed.topPrediction.percentage,
         rawScore: preComputed.topPrediction.probability,
         label: preComputed.topPrediction.label,
-        isNotFlower: preComputed.topPrediction.label === 'Not Flower',
+        isNotFlower: false,
         allPredictions: preComputed.predictions,
         source: 'tflite',
         modelType: `Teachable Machine (Flower) - ${preComputed.runs} runs averaged`,
@@ -1022,7 +1022,10 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         confidence: topTmPrediction.percentage,
         rawScore: topTmPrediction.probability,
         label: topTmPrediction.label,
-        isNotFlower: topTmPrediction.label === 'Not Flower',
+        // Don't seed isNotFlower from TFLite — Gemini is the authority on
+        // "Not a Gourd Flower". The flag will be set when Gemini resolves
+        // (or stay false if Gemini confirms it IS a gourd flower).
+        isNotFlower: false,
         allPredictions: tmResult.predictions,
         source: 'tflite',
         modelType: isLeafMode ? 'Teachable Machine (Leaf)' : 'Teachable Machine (Flower)',
@@ -1191,7 +1194,10 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
   // Determine display values
   const displayVariety = prediction?.variety || tmPrediction?.variety || 'Unknown';
   const displayGender = prediction?.gender || tmPrediction?.gender || 'unknown';
-  const isNotFlower = prediction?.isNotFlower || tmPrediction?.isNotFlower;
+  // Only consult the merged/Gemini-updated prediction. TFLite's
+  // "Not Flower" verdict is intentionally not surfaced — Gemini is the
+  // authority and will set this flag when it resolves.
+  const isNotFlower = prediction?.isNotFlower;
 
   // Spin interpolation
   const spin = spinAnim.interpolate({
@@ -1415,20 +1421,20 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
             <Text style={styles.actionButtonText}>Scan Again</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.saveButton, (!isTmComplete || isSaving) && styles.buttonDisabled]}
-            onPress={handleSave}
-            disabled={!isTmComplete || isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#FFF" size="small" />
-            ) : (
-              <>
-                <Ionicons name="save-outline" size={20} color="#FFF" />
-                <Text style={styles.actionButtonText}>Save Result</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.saveButton, (!isTmComplete || isAnalyzing || isGeminiLoading || isSaving) && styles.buttonDisabled]}
+              onPress={handleSave}
+              disabled={!isTmComplete || isAnalyzing || isGeminiLoading || isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="save-outline" size={20} color="#FFF" />
+                  <Text style={styles.actionButtonText}>Save Result</Text>
+                </>
+              )}
+            </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />

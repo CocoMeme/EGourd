@@ -27,7 +27,6 @@ import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const CONFIDENCE_THRESHOLD = 0.60; // Minimum confidence to display a detection
-const PREDICTION_BUFFER_SIZE = 15; // Frames kept in rolling buffer
 const STABLE_FRAME_GATE = 7; // Consecutive matching frames required for stability
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -62,8 +61,12 @@ export const CameraScreen = ({ navigation }) => {
 
   // LOGIC PRESERVATION: Store dimensions to fix distortion
   const lastFrameUri = useRef({ uri: null, width: 0, height: 0 });
-  const bestFrame = useRef({ uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 }); // Track best stable frame
-  const recentPredictions = useRef([]); // Track recent predictions for stability
+
+  // Stability tracking — counter for the green "Ready to capture" pill hint.
+  // Capture itself no longer gates on TFLite; Gemini is the authority on
+  // "Not a Gourd Flower/Leaf", so we only need a hint, not a frame selector.
+  const consecutiveLabelCount = useRef(0);
+  const lastLabel = useRef(null);
 
   // Floating tip animation
   const tipFadeAnim = useRef(new Animated.Value(1)).current;
@@ -116,8 +119,8 @@ export const CameraScreen = ({ navigation }) => {
     setIsStable(false);
 
     // Reset tracking refs - IMPORTANT: Reset ALL frame refs to prevent stale frames from previous mode
-    recentPredictions.current = [];
-    bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+    consecutiveLabelCount.current = 0;
+    lastLabel.current = null;
     lastFrameUri.current = { uri: null, width: 0, height: 0 }; // Clear stale frames from previous mode
 
     try {
@@ -200,64 +203,27 @@ export const CameraScreen = ({ navigation }) => {
         // DEBUG: Log real-time prediction
         console.log('🔴 REALTIME:', result.topPrediction.label, `(${result.topPrediction.percentage.toFixed(1)}%)`, '| Frame:', photo.uri.slice(-20));
 
-        // Track stability: count consecutive same predictions
+        // Track stability: count consecutive same predictions (pill hint only)
         const currentLabel = result.topPrediction.label;
         const currentConfidence = result.topPrediction.percentage;
 
-        // Add to recent predictions
-        // Logic Preservation: Increased buffer to 7 for better "recent" selection
-        recentPredictions.current.push({
-          label: currentLabel,
-          confidence: currentConfidence,
-          uri: photo.uri,
-          width: photo.width,
-          height: photo.height
-        });
-        if (recentPredictions.current.length > PREDICTION_BUFFER_SIZE) {
-          recentPredictions.current.shift();
+        if (currentLabel === lastLabel.current) {
+          consecutiveLabelCount.current = Math.min(
+            consecutiveLabelCount.current + 1,
+            STABLE_FRAME_GATE
+          );
+        } else {
+          lastLabel.current = currentLabel;
+          consecutiveLabelCount.current = 1;
         }
 
-        // Check for stable prediction using 7-frame gate
-        const recent = recentPredictions.current;
-        const lastSeven = recent.slice(-STABLE_FRAME_GATE);
-        const stableNow = lastSeven.length >= STABLE_FRAME_GATE && lastSeven.every(p => p.label === currentLabel);
+        const stableNow = consecutiveLabelCount.current >= STABLE_FRAME_GATE;
 
         // Mode-aware rejection label check
         const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
 
-        // Update UI stability indicator
+        // Update UI stability indicator (informational hint — does not gate capture)
         setIsStable(stableNow && currentLabel !== rejectionLabel);
-
-        // Update best frame if:
-        if (stableNow && currentLabel !== rejectionLabel) {
-          if (currentLabel === bestFrame.current.label) {
-            // Same label - update if higher confidence
-            if (currentConfidence > bestFrame.current.confidence) {
-              bestFrame.current = {
-                uri: photo.uri,
-                width: photo.width,
-                height: photo.height,
-                label: currentLabel,
-                confidence: currentConfidence,
-                count: lastSeven.length
-              };
-              console.log('🏆 BEST FRAME updated (higher confidence):', currentLabel, `${currentConfidence.toFixed(1)}%`);
-            }
-          } else {
-            // Different label - update if this stable prediction is more confident
-            if (currentConfidence > bestFrame.current.confidence) {
-              bestFrame.current = {
-                uri: photo.uri,
-                width: photo.width,
-                height: photo.height,
-                label: currentLabel,
-                confidence: currentConfidence,
-                count: lastSeven.length
-              };
-              console.log('🏆 BEST FRAME changed to:', currentLabel, `${currentConfidence.toFixed(1)}%`);
-            }
-          }
-        }
 
         // Update predictions — only the top result needed for the detection pill
         const topPredictions = result.predictions.slice(0, 1);
@@ -313,8 +279,8 @@ export const CameraScreen = ({ navigation }) => {
       stopScanning();
       isModelReadyRef.current = false; // Reset ref on cleanup
       // Memory cleanup
-      recentPredictions.current = [];
-      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
+      consecutiveLabelCount.current = 0;
+      lastLabel.current = null;
       lastFrameUri.current = { uri: null, width: 0, height: 0 };
     };
   }, [stopScanning]);
@@ -332,9 +298,9 @@ export const CameraScreen = ({ navigation }) => {
         tabBarStyle: { display: 'none' }
       });
 
-      // Reset best frame tracking for fresh scan
-      bestFrame.current = { uri: null, width: 0, height: 0, label: null, confidence: 0, count: 0 };
-      recentPredictions.current = [];
+      // Reset frame tracking for fresh scan
+      consecutiveLabelCount.current = 0;
+      lastLabel.current = null;
       lastFrameUri.current = { uri: null, width: 0, height: 0 };
 
       // Small delay to allow camera to reinitialize after returning from another screen
@@ -399,9 +365,11 @@ export const CameraScreen = ({ navigation }) => {
   };
 
   /**
-   * Handle Capture - Uses the BEST STABLE frame from real-time scanning
-   * Prioritizes frames where the prediction was stable
-   * Falls back to best recent frame, then last frame
+   * Handle Capture - Always uses the most recent frame from the scan loop.
+   * TFLite's "Not a Gourd Flower/Leaf" verdict is intentionally NOT a gate —
+   * the user can capture at any time and let Gemini be the final authority.
+   * HQ re-capture at quality 0.9 is performed on top of the scan-loop frame
+   * (quality 0.5) to give Gemini a sharper image.
    */
   const handleCapture = async () => {
     if (isCapturing) return;
@@ -414,45 +382,18 @@ export const CameraScreen = ({ navigation }) => {
 
     console.log('📸 Capturing image...');
 
-    // Prefer the BEST STABLE frame, fall back to Best Recent, then Last Frame
-    let imageUri = null;
-    let imageWidth = 0;
-    let imageHeight = 0;
-    let selectionReason = '';
+    let finalUri = null;
+    let finalWidth = 0;
+    let finalHeight = 0;
 
-    // 1. Try Best Stable Frame
-    if (bestFrame.current.uri && bestFrame.current.confidence > 50) {
-      imageUri = bestFrame.current.uri;
-      imageWidth = bestFrame.current.width;
-      imageHeight = bestFrame.current.height;
-      selectionReason = `BEST STABLE: ${bestFrame.current.label} (${bestFrame.current.confidence.toFixed(1)}%)`;
-    }
-    // Logic Preservation: 2. Try Best Recent Frame (Intelligent Capture)
-    else {
-      // Mode-aware rejection label
-      const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
-      const bestRecent = recentPredictions.current
-        .filter(p => p.label !== rejectionLabel)
-        .sort((a, b) => b.confidence - a.confidence)[0];
-
-      if (bestRecent && bestRecent.confidence > 60) {
-        imageUri = bestRecent.uri;
-        imageWidth = bestRecent.width;
-        imageHeight = bestRecent.height;
-        selectionReason = `BEST RECENT: ${bestRecent.label} (${bestRecent.confidence.toFixed(1)}%)`;
-      }
-      // 3. Fallback to Last Frame
-      else if (lastFrameUri.current.uri) {
-        imageUri = lastFrameUri.current.uri;
-        imageWidth = lastFrameUri.current.width;
-        imageHeight = lastFrameUri.current.height;
-        selectionReason = 'LAST FRAME (no stable prediction found)';
-      }
-    }
-
-    if (!imageUri) {
-      // Fallback: take a new photo if no frame available
-      console.log('⚠️ No cached frame, taking new photo...');
+    if (lastFrameUri.current.uri) {
+      finalUri = lastFrameUri.current.uri;
+      finalWidth = lastFrameUri.current.width;
+      finalHeight = lastFrameUri.current.height;
+      console.log('🟢 CAPTURE: LAST FRAME');
+    } else {
+      // No cached frame — take a fresh one (user tapped before the first scan frame completed)
+      console.log('⚠️ No cached frame, taking fresh photo...');
       try {
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.7,
@@ -461,36 +402,25 @@ export const CameraScreen = ({ navigation }) => {
           exif: false,
           shutterSound: false,
         });
-
-        console.log('✅ Image captured:', photo.uri);
-        navigation.navigate(
-          scanMode === SCAN_MODES.LEAF ? 'LeafPrediction' : 'FlowerPrediction',
-          {
-            imageUri: photo.uri,
-            width: photo.width,
-            height: photo.height,
-            isLoading: true,
-            returnTo: 'CameraMain',
-            scanMode: scanMode,
-          }
-        );
+        finalUri = photo.uri;
+        finalWidth = photo.width;
+        finalHeight = photo.height;
+        console.log('🟢 CAPTURE: FRESH (no scan frame available)');
       } catch (error) {
         console.error('❌ Capture failed:', error);
         Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
         setIsCapturing(false);
         startScanning();
+        return;
       }
-      return;
     }
 
-    console.log('🟢 CAPTURE:', selectionReason);
-    console.log('🟢 CAPTURE: URI:', imageUri.slice(-40));
+    if (finalUri) {
+      console.log('🟢 CAPTURE: URI:', finalUri.slice(-40));
+    }
 
     // Re-capture at higher quality for accurate final prediction
     // The scanning loop uses quality 0.5 for speed — upgrade the selected frame
-    let finalUri = imageUri;
-    let finalWidth = imageWidth;
-    let finalHeight = imageHeight;
     try {
       if (cameraRef.current) {
         const hqPhoto = await cameraRef.current.takePictureAsync({
