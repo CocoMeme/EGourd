@@ -45,6 +45,10 @@ const register = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Generate refresh token (30d) and persist it on the user
+    const refreshToken = newUser.generateRefreshToken();
+    await newUser.save();
+
     // Remove sensitive information from response
     const userResponse = {
       id: newUser._id,
@@ -62,6 +66,7 @@ const register = async (req, res) => {
       message: 'User registered successfully',
       user: userResponse,
       token: jwtToken,
+      refreshToken,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -171,6 +176,10 @@ const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Generate refresh token (30d) and persist it on the user
+    const refreshToken = user.generateRefreshToken();
+    await user.save();
+
     // Remove sensitive information from response
     const userResponse = {
       id: user._id,
@@ -190,6 +199,7 @@ const login = async (req, res) => {
       message: 'Login successful',
       user: userResponse,
       token: jwtToken,
+      refreshToken,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -358,11 +368,31 @@ const changePassword = async (req, res) => {
  */
 const logout = async (req, res) => {
   try {
-    const { userId } = req;
+    let { userId } = req;
+    const { refreshToken } = req.body || {};
+
+    // Fallback: if access token was expired and auth middleware did not set req.userId,
+    // try to derive userId from the refresh token in the body so we can still revoke it.
+    if (!userId && refreshToken) {
+      try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret');
+        if (decoded && decoded.type === 'refresh' && decoded.id) {
+          userId = decoded.id;
+        }
+      } catch (_e) {
+        // Refresh token invalid/expired — nothing to revoke, proceed to clear response.
+      }
+    }
 
     if (userId) {
-      // Update last active timestamp
-      await User.updateOne({ _id: userId }, { lastActive: new Date() });
+      // Revoke the supplied refresh token so it cannot be reused
+      if (refreshToken) {
+        const user = await User.findById(userId);
+        if (user) {
+          user.revokeRefreshToken(refreshToken);
+          await user.save();
+        }
+      }
     }
 
     res.status(200).json({
@@ -453,6 +483,10 @@ const registerWithUsername = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Generate refresh token (30d) and persist it on the user
+    const refreshToken = newUser.generateRefreshToken();
+    await newUser.save();
+
     // Remove sensitive information from response
     const userResponse = {
       id: newUser._id,
@@ -471,6 +505,7 @@ const registerWithUsername = async (req, res) => {
       message: 'Account created successfully',
       user: userResponse,
       token: jwtToken,
+      refreshToken,
     });
   } catch (error) {
     console.error('Username registration error:', error);
@@ -579,6 +614,10 @@ const loginWithUsername = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Generate refresh token (30d) and persist it on the user
+    const refreshToken = user.generateRefreshToken();
+    await user.save();
+
     // Remove sensitive information from response
     const userResponse = {
       id: user._id,
@@ -599,12 +638,121 @@ const loginWithUsername = async (req, res) => {
       message: 'Login successful',
       user: userResponse,
       token: jwtToken,
+      refreshToken,
     });
   } catch (error) {
     console.error('Username login error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error during login',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * Refresh access token using a valid refresh token
+ * Rotates the refresh token: the supplied one is revoked and a new one is issued.
+ */
+const refresh = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        code: 'NO_REFRESH_TOKEN',
+        message: 'Refresh token is required',
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret');
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          code: 'REFRESH_TOKEN_EXPIRED',
+          message: 'Refresh token has expired. Please log in again.',
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_REFRESH_TOKEN',
+        message: 'Invalid refresh token',
+      });
+    }
+
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_REFRESH_TOKEN',
+        message: 'Invalid refresh token',
+      });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_REFRESH_TOKEN',
+        message: 'Invalid refresh token',
+      });
+    }
+
+    if (!user.isActive) {
+      console.log(`❌ Refresh rejected: Account deactivated - ${user.email}`);
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_DEACTIVATED',
+        message: 'Your account has been deactivated. Please contact support for assistance.',
+        accountDeactivated: true,
+        deactivationReason: user.deactivationReason || null,
+      });
+    }
+
+    const tokenRecord = user.refreshTokens.find(
+      (rt) => rt.token === refreshToken && rt.isActive && rt.expiresAt > new Date()
+    );
+
+    if (!tokenRecord) {
+      return res.status(401).json({
+        success: false,
+        code: 'REFRESH_TOKEN_REVOKED',
+        message: 'Refresh token is no longer valid. Please log in again.',
+      });
+    }
+
+    // Rotate: revoke the old refresh token, then issue a new pair.
+    user.revokeRefreshToken(refreshToken);
+    user.cleanExpiredRefreshTokens();
+
+    const newAccessToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        username: user.username,
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    const newRefreshToken = user.generateRefreshToken();
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Token refreshed successfully',
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return res.status(500).json({
+      success: false,
+      code: 'INTERNAL_ERROR',
+      message: 'Failed to refresh token',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
@@ -620,4 +768,5 @@ module.exports = {
   changePassword,
   logout,
   deleteAccount,
+  refresh,
 };

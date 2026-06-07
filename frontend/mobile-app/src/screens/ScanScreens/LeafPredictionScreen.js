@@ -22,6 +22,7 @@ import { theme } from '../../styles';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
+import { mergeGeminiLeafResult } from '../../services/leafPredictionMerge';
 import { scanService } from '../../services/scanService';
 import { guestStorageService } from '../../services/guestStorageService';
 import { authService } from '../../services/authService';
@@ -314,7 +315,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             }).start();
 
             // Still run Gemini analysis if available
-            if (geminiService.isAvailable() && !tmPred.isNotLeaf) {
+            if (geminiService.isAvailable()) {
                 runGeminiAnalysis(tmPred);
             }
             return;
@@ -401,7 +402,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             }).start();
 
             // Step 2: Gemini AI Analysis
-            if (geminiService.isAvailable() && tmPred && !tmPred.isNotLeaf) {
+            if (geminiService.isAvailable() && tmPred) {
                 setIsGeminiLoading(true);
                 setLoadingStage('Analyzing leaf health with AI...');
                 console.log('🤖 Running Gemini leaf analysis...');
@@ -413,13 +414,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
                     setGeminiPrediction(geminiResult);
 
-                    // Update final prediction with Gemini data
-                    setPrediction(prev => ({
-                        ...prev,
-                        geminiData: geminiResult.geminiData,
-                        confidence: (prev.confidence + geminiResult.confidence) / 2, // Combine confidences
-                        validationStatus: 'validated',
-                    }));
+                    // Update final prediction with Gemini data.
+                    // When Gemini succeeds, its variety is the source of truth (more accurate than TFLite).
+                    setPrediction(prev => mergeGeminiLeafResult(prev, geminiResult));
                 } catch (geminiError) {
                     console.error('❌ Gemini leaf analysis failed:', geminiError);
                     if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');
@@ -454,13 +451,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
             setGeminiPrediction(geminiResult);
 
-            // Update final prediction with Gemini data
-            setPrediction(prev => ({
-                ...prev,
-                geminiData: geminiResult.geminiData,
-                confidence: (prev.confidence + geminiResult.confidence) / 2,
-                validationStatus: 'validated',
-            }));
+            // Update final prediction with Gemini data.
+            // When Gemini succeeds, its variety is the source of truth (more accurate than TFLite).
+            setPrediction(prev => mergeGeminiLeafResult(prev, geminiResult));
         } catch (geminiError) {
             console.error('❌ Gemini leaf analysis failed:', geminiError);
             if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');

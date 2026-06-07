@@ -156,10 +156,14 @@ export const LeafResultsScreen = ({ route, navigation }) => {
             }
 
             // Main prediction
+            // Prefer Gemini's variety when present (more accurate than TFLite);
+            // fall back to the stored scan.variety for TM-only records.
+            const finalVariety = currentScan.aiPrediction?.gemini?.variety
+                ?? currentScan.variety;
             setPrediction({
-                variety: currentScan.variety,
+                variety: finalVariety,
                 confidence: currentScan.confidence,
-                isNotLeaf: currentScan.variety === null,
+                isNotLeaf: finalVariety === null,
             });
 
             Animated.timing(fadeAnim, {

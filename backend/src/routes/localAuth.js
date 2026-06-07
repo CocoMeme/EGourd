@@ -90,10 +90,11 @@ router.post(
 
 /**
  * @route   POST /auth/local/logout
- * @desc    Logout user
- * @access  Private
+ * @desc    Logout user. Public route — controller verifies refresh token from body
+ *          so that logout still works when the access token is expired.
+ * @access  Public
  */
-router.post('/logout', authenticateToken, logout);
+router.post('/logout', logout);
 
 /**
  * @route   GET /auth/local/me

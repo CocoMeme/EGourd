@@ -34,18 +34,28 @@ export const AuthProvider = ({ children }) => {
     try {
       // First check if there is a real auth token
       const isAuth = await authService.initialize();
-      
+
       if (isAuth) {
         // Real authenticated user
         setIsAuthenticated(true);
         setIsGuest(false);
 
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          const user = JSON.parse(userData);
+        // Use the user object the auth service holds in memory — it has just
+        // been refreshed (or re-validated) so we are not reading stale
+        // AsyncStorage data that was written days ago.
+        const user = authService.getCurrentUser();
+        if (user) {
           console.log('👤 User Data:', user);
           console.log('🔑 User Role:', user.role);
           setUserRole(user.role);
+        } else {
+          // Fallback to the raw stored value if, for some reason, the service
+          // has no user object (e.g. first boot with a still-valid token).
+          const userData = await AsyncStorage.getItem('user');
+          if (userData) {
+            const parsed = JSON.parse(userData);
+            setUserRole(parsed.role);
+          }
         }
 
         console.log('🔔 User authenticated - initializing notifications...');

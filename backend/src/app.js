@@ -171,6 +171,28 @@ class App {
       }
     });
 
+    // Email service health check endpoint
+    this.app.get('/api/health/email', async (req, res) => {
+      try {
+        const emailService = require('./services/emailService');
+        const ok = await emailService.verifyConnection();
+        res.status(ok ? 200 : 503).json({
+          success: ok,
+          initialized: emailService.initialized,
+          transport: emailService.useHttpApi ? 'http' : 'smtp',
+          ok,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        res.status(503).json({
+          success: false,
+          message: 'Email service health check failed',
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
     // API documentation endpoint
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
@@ -200,6 +222,7 @@ class App {
     // Import and use route modules
     this.app.use('/api/auth', require('./routes/googleAuth'));
     this.app.use('/api/auth/local', require('./routes/localAuth'));
+    this.app.use('/api/auth', require('./routes/refresh'));
     this.app.use('/api/verification', require('./routes/verification'));
     this.app.use('/api/news', require('./routes/news'));
     this.app.use('/api/pollination', require('./routes/pollination'));

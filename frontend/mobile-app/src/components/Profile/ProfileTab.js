@@ -21,8 +21,28 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
     const [verificationPin, setVerificationPin] = useState('');
     const [sendingPin, setSendingPin] = useState(false);
     const [verifyingPin, setVerifyingPin] = useState(false);
+    const [lastSendError, setLastSendError] = useState(null);
 
     const isVerified = user?.emailVerified || user?.isEmailVerified;
+
+    const friendlyPinError = (result, fallback) => {
+        switch (result?.code) {
+            case 'USER_NOT_FOUND':
+                return 'No account found for this email. Please check the address or register first.';
+            case 'ALREADY_VERIFIED':
+                return 'This email is already verified.';
+            case 'EMAIL_SERVICE_DOWN':
+                return 'We could not reach the email service just now. Please try again in a moment.';
+            case 'RATE_LIMIT':
+                return result?.message || 'Please wait a moment before requesting a new PIN.';
+            case 'EMAIL_REQUIRED':
+                return 'Email is required to send a verification PIN.';
+            case 'NETWORK_ERROR':
+                return 'Network error. Please check your connection and try again.';
+            default:
+                return result?.message || fallback;
+        }
+    };
 
     const handleVerifyEmail = async () => {
         if (!user?.email) {
@@ -36,6 +56,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
         }
 
         setSendingPin(true);
+        setLastSendError(null);
         const result = await authService.sendVerificationPin(user.email);
         setSendingPin(false);
 
@@ -43,7 +64,9 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
             setVerificationModalVisible(true);
             Alert.alert('Success', 'Verification PIN sent to your email. Please check your inbox.');
         } else {
-            Alert.alert('Error', result.message || 'Failed to send verification PIN');
+            const message = friendlyPinError(result, 'Failed to send verification PIN');
+            setLastSendError({ message, code: result.code });
+            Alert.alert('Failed to Send', message);
         }
     };
 
@@ -60,6 +83,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
         if (result.success) {
             setVerificationModalVisible(false);
             setVerificationPin('');
+            setLastSendError(null);
             Alert.alert('Success', 'Email verified successfully!');
             if (loadUserData) await loadUserData();
         } else {
@@ -69,6 +93,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
 
     const handleResendPin = async () => {
         setSendingPin(true);
+        setLastSendError(null);
         const result = await authService.sendVerificationPin(user.email);
         setSendingPin(false);
 
@@ -76,7 +101,9 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
             Alert.alert('Success', 'New verification PIN sent to your email');
             setVerificationPin('');
         } else {
-            Alert.alert('Error', result.message || 'Failed to resend verification PIN');
+            const message = friendlyPinError(result, 'Failed to resend verification PIN');
+            setLastSendError({ message, code: result.code });
+            Alert.alert('Failed to Send', message);
         }
     };
 
@@ -196,19 +223,31 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                 visible={verificationModalVisible}
                 transparent
                 animationType="slide"
-                onRequestClose={() => setVerificationModalVisible(false)}
+                onRequestClose={() => {
+                    setVerificationModalVisible(false);
+                    setLastSendError(null);
+                }}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Verify Your Email</Text>
-                            <TouchableOpacity onPress={() => setVerificationModalVisible(false)}>
+                            <TouchableOpacity onPress={() => {
+                                setVerificationModalVisible(false);
+                                setLastSendError(null);
+                            }}>
                                 <Ionicons name="close" size={24} color={theme.colors.text.primary} />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.modalDescription}>
                             Enter the 6-digit PIN sent to your email address
                         </Text>
+                        {lastSendError && (
+                            <View style={styles.modalErrorBox}>
+                                <Ionicons name="alert-circle-outline" size={18} color={theme.colors.error || '#D32F2F'} />
+                                <Text style={styles.modalErrorText}>{lastSendError.message}</Text>
+                            </View>
+                        )}
                         <TextInput
                             style={styles.pinInput}
                             value={verificationPin}
@@ -404,4 +443,22 @@ const styles = StyleSheet.create({
         fontFamily: theme.fonts.medium,
     },
     buttonDisabled: { opacity: 0.6 },
+    modalErrorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(211, 47, 47, 0.08)',
+        borderColor: 'rgba(211, 47, 47, 0.3)',
+        borderWidth: 1,
+        borderRadius: theme.borderRadius.medium,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        marginBottom: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+    modalErrorText: {
+        flex: 1,
+        fontSize: 12,
+        color: theme.colors.error || '#D32F2F',
+        fontFamily: theme.fonts.medium,
+    },
 });

@@ -5,50 +5,142 @@ import nativeGoogleAuthService from './nativeGoogleAuth';
 
 // Configuration
 const TOKEN_KEY = 'userToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
 const GOOGLE_AUTH_TIMEOUT_MS = 60000;
+
+// Decode a JWT payload without verifying it (verification happens server-side).
+const decodeJwt = (token) => {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+const isTokenExpired = (token, skewSeconds = 30) => {
+  const payload = decodeJwt(token);
+  if (!payload || typeof payload.exp !== 'number') return true;
+  return Date.now() / 1000 >= payload.exp - skewSeconds;
+};
 
 class AuthService {
   constructor() {
     this.token = null;
+    this.refreshToken = null;
     this.user = null;
+    this._refreshInFlight = null;
   }
 
   /**
-   * Initialize the auth service by loading stored credentials
+   * Initialize the auth service by loading stored credentials and
+   * transparently refreshing the access token if it has expired.
    */
   async initialize() {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
       const user = await AsyncStorage.getItem(USER_KEY);
 
       this.token = token;
+      this.refreshToken = refreshToken;
       this.user = user ? JSON.parse(user) : null;
 
-      // If we have a token but no user data, try to fetch the profile
-      if (this.token && !this.user) {
-        try {
-          const result = await this.fetchProfile();
-          if (result.success) {
-            this.user = result.user;
-            await AsyncStorage.setItem(USER_KEY, JSON.stringify(this.user));
-          } else {
-            // If fetching profile fails (e.g. invalid token), clear everything
-            await this.logout();
-            return false;
-          }
-        } catch (error) {
-          console.error('Error fetching profile during initialization:', error);
-          // Don't logout here, maybe just network error.
-          // But without user data, app might be unstable.
-        }
+      if (!this.token) {
+        return false;
       }
 
-      return !!this.token;
+      // If the access token is still valid, just make sure the cached user
+      // object is fresh so callers don't see stale data.
+      if (!isTokenExpired(this.token)) {
+        await this._refreshProfileIfPossible();
+        return true;
+      }
+
+      // Access token expired (or near expiry). Try to rotate via refresh token.
+      const rotated = await this._rotateWithRefreshToken();
+      if (rotated) {
+        return true;
+      }
+
+      // Refresh failed — clear credentials so the user is sent to login.
+      console.warn('[AuthService] Stored token expired and refresh failed. Forcing logout.');
+      await this.logout();
+      return false;
     } catch (error) {
       console.error('Error initializing auth service:', error);
       return false;
     }
+  }
+
+  /**
+   * Best-effort: fetch the latest profile and update the cached user. Never throws.
+   */
+  async _refreshProfileIfPossible() {
+    try {
+      const result = await this.fetchProfile();
+      if (result.success) {
+        this.user = result.user;
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(this.user));
+      }
+    } catch (error) {
+      console.warn('[AuthService] Background profile refresh failed:', error?.message);
+    }
+  }
+
+  /**
+   * Internal: try to swap an expired access token for a fresh pair using the
+   * stored refresh token. Coalesces concurrent calls.
+   */
+  async _rotateWithRefreshToken() {
+    if (!this.refreshToken) return false;
+    if (this._refreshInFlight) return this._refreshInFlight;
+
+    this._refreshInFlight = (async () => {
+      try {
+        const response = await fetch(`${getActiveApiUrl()}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: this.refreshToken }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.token || !data?.refreshToken) {
+          console.warn('[AuthService] Refresh token rejected:', data?.message);
+          return false;
+        }
+
+        await this._persistTokens(data.token, data.refreshToken);
+        // Pull fresh profile data so the cached user is current.
+        await this._refreshProfileIfPossible();
+        return true;
+      } catch (error) {
+        console.error('[AuthService] Refresh request failed:', error);
+        return false;
+      } finally {
+        this._refreshInFlight = null;
+      }
+    })();
+
+    return this._refreshInFlight;
+  }
+
+  /**
+   * Persist a new access + refresh token pair in memory and AsyncStorage.
+   */
+  async _persistTokens(token, refreshToken) {
+    this.token = token;
+    if (refreshToken) {
+      this.refreshToken = refreshToken;
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+    await AsyncStorage.setItem(TOKEN_KEY, token);
   }
 
   /**
@@ -119,14 +211,19 @@ class AuthService {
       // Store credentials
       await AsyncStorage.setItem(TOKEN_KEY, data.token);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (data.refreshToken) {
+        await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      }
 
       this.token = data.token;
+      this.refreshToken = data.refreshToken || this.refreshToken;
       this.user = data.user;
 
       return {
         success: true,
         user: data.user,
         token: data.token,
+        refreshToken: data.refreshToken,
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -164,14 +261,19 @@ class AuthService {
       // Store credentials
       await AsyncStorage.setItem(TOKEN_KEY, data.token);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (data.refreshToken) {
+        await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      }
 
       this.token = data.token;
+      this.refreshToken = data.refreshToken || this.refreshToken;
       this.user = data.user;
 
       return {
         success: true,
         user: data.user,
         token: data.token,
+        refreshToken: data.refreshToken,
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -251,14 +353,19 @@ class AuthService {
       // Store credentials
       await AsyncStorage.setItem(TOKEN_KEY, data.token);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (data.refreshToken) {
+        await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      }
 
       this.token = data.token;
+      this.refreshToken = data.refreshToken || this.refreshToken;
       this.user = data.user;
 
       return {
         success: true,
         user: data.user,
         token: data.token,
+        refreshToken: data.refreshToken,
       };
     } catch (error) {
       console.error('Google Sign-In error:', error);
@@ -283,7 +390,7 @@ class AuthService {
    */
   async logout() {
     try {
-      // Call logout endpoint if token exists
+      // Call logout endpoint if token exists, and revoke the refresh token
       if (this.token) {
         await fetch(`${getActiveApiUrl()}/auth/local/logout`, {
           method: 'POST',
@@ -291,6 +398,7 @@ class AuthService {
             'Authorization': `Bearer ${this.token}`,
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ refreshToken: this.refreshToken || null }),
         });
       }
     } catch (error) {
@@ -307,8 +415,9 @@ class AuthService {
     }
 
     // Clear local storage
-    await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY]);
     this.token = null;
+    this.refreshToken = null;
     this.user = null;
 
     return true;
@@ -346,41 +455,29 @@ class AuthService {
   }
 
   /**
-   * Refresh user token using Google OAuth refresh token
+   * Refresh the access token using the stored refresh token.
+   * Backward-compatible alias used by older callers; delegates to the
+   * internal rotate pipeline so behaviour is consistent everywhere.
    */
   async refreshToken(refreshToken) {
-    try {
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await fetch(`${getActiveApiUrl()}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Token refresh failed');
-      }
-
-      return {
-        success: true,
-        tokens: data.tokens,
-      };
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      // If refresh fails, logout user
-      await this.logout();
+    const tokenToUse = refreshToken || this.refreshToken;
+    if (!tokenToUse) {
       return {
         success: false,
-        message: error.message || 'Token refresh failed',
+        message: 'No refresh token available',
       };
     }
+    const previous = this.refreshToken;
+    this.refreshToken = tokenToUse;
+    const ok = await this._rotateWithRefreshToken();
+    if (!ok) {
+      this.refreshToken = previous;
+      return {
+        success: false,
+        message: 'Token refresh failed',
+      };
+    }
+    return { success: true };
   }
 
   /**
@@ -482,12 +579,12 @@ class AuthService {
    * Make authenticated API request
    */
   async authenticatedRequest(endpoint, options = {}) {
-    try {
-      if (!this.token) {
-        throw new Error('Not authenticated');
-      }
+    if (!this.token) {
+      throw new Error('Not authenticated');
+    }
 
-      const response = await fetch(`${getActiveApiUrl()}${endpoint}`, {
+    const doFetch = () =>
+      fetch(`${getActiveApiUrl()}${endpoint}`, {
         ...options,
         headers: {
           ...this.getAuthHeaders(),
@@ -495,16 +592,43 @@ class AuthService {
         },
       });
 
-      // Handle token expiration
-      if (response.status === 401) {
-        throw new Error('Session expired. Please log in again.');
-      }
-
-      return response;
+    let response;
+    try {
+      response = await doFetch();
     } catch (error) {
       console.error('Authenticated request error:', error);
       throw error;
     }
+
+    // Attempt one transparent refresh + retry on 401, but never for the
+    // refresh endpoint itself (would create an infinite loop).
+    if (
+      response.status === 401 &&
+      this.refreshToken &&
+      !endpoint.startsWith('/auth/refresh') &&
+      !endpoint.startsWith('/auth/local/logout')
+    ) {
+      const rotated = await this._rotateWithRefreshToken();
+      if (rotated) {
+        try {
+          response = await doFetch();
+        } catch (error) {
+          console.error('Authenticated request retry error:', error);
+          throw error;
+        }
+      } else {
+        // Refresh failed — force logout so the user lands on the login screen
+        // instead of seeing a perpetual "Session expired" message.
+        await this.logout();
+        throw new Error('Session expired. Please log in again.');
+      }
+    }
+
+    if (response.status === 401) {
+      throw new Error('Session expired. Please log in again.');
+    }
+
+    return response;
   }
 
   /**
@@ -539,10 +663,18 @@ class AuthService {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send verification PIN');
+        console.warn(
+          `[VerifyPin] failed: status=${response.status} code=${data?.code || 'UNKNOWN'} message=${data?.message}`
+        );
+        return {
+          success: false,
+          status: response.status,
+          code: data?.code || 'UNKNOWN',
+          message: data?.message || 'Failed to send verification PIN',
+        };
       }
 
       return {
@@ -554,6 +686,8 @@ class AuthService {
       console.error('Send verification PIN error:', error);
       return {
         success: false,
+        status: 0,
+        code: 'NETWORK_ERROR',
         message: error.message || 'Failed to send verification PIN',
       };
     }

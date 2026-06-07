@@ -23,7 +23,7 @@ class EmailService {
       if (this.brevoApiKey) {
         this.useHttpApi = true;
         this.initialized = true;
-        console.log('✅ Email service initialized with Brevo HTTP API');
+        console.log('✅ Email service initialized with Brevo HTTP API (transport=http)');
         return;
       }
 
@@ -45,7 +45,9 @@ class EmailService {
       });
 
       this.initialized = true;
-      console.log('✅ Email service initialized with Brevo SMTP');
+      console.log(
+        `✅ Email service initialized with Brevo SMTP (transport=smtp, host=${process.env.EMAIL_HOST || 'smtp-relay.brevo.com'})`
+      );
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error.message);
       this.initialized = false;

@@ -6,9 +6,18 @@ const emailService = require('../services/emailService');
  * Handles email verification with PIN-based verification
  */
 
+const isProd = process.env.NODE_ENV === 'production';
+
+const buildErrorPayload = (code, message, extra = {}) => ({
+  success: false,
+  code,
+  message,
+  ...(isProd ? {} : { ...extra }),
+});
+
 /**
  * Send verification PIN to user's email
- * @route POST /api/auth/send-verification-pin
+ * @route POST /api/verification/send-pin
  */
 exports.sendVerificationPin = async (req, res) => {
   try {
@@ -19,10 +28,7 @@ exports.sendVerificationPin = async (req, res) => {
     console.log('[SendPin] Lowercase email:', email ? email.toLowerCase() : 'UNDEFINED');
 
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required',
-      });
+      return res.status(400).json(buildErrorPayload('EMAIL_REQUIRED', 'Email is required'));
     }
 
     // Find user by email
@@ -33,27 +39,18 @@ exports.sendVerificationPin = async (req, res) => {
 
     console.log('[SendPin] User.findOne result:', user ? `Found: ${user.email}` : 'NOT FOUND');
 
-    // Debug: List all users to compare
-    const allUsers = await User.find({}).select('email');
-    console.log(
-      '[SendPin] All users in DB:',
-      allUsers.map((u) => u.email)
-    );
-
     if (!user) {
       console.log('[SendPin] Returning 404 - user not found');
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
+      return res
+        .status(404)
+        .json(buildErrorPayload('USER_NOT_FOUND', 'No account found for this email.'));
     }
 
     // Check if email is already verified
     if (user.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is already verified',
-      });
+      return res
+        .status(400)
+        .json(buildErrorPayload('ALREADY_VERIFIED', 'This email is already verified.'));
     }
 
     // Generate 6-digit PIN
@@ -72,7 +69,28 @@ exports.sendVerificationPin = async (req, res) => {
 
     // Send email with PIN
     const userName = user.firstName || user.username || 'User';
-    await emailService.sendVerificationPin(email, pin, userName);
+    try {
+      await emailService.sendVerificationPin(email, pin, userName);
+    } catch (emailError) {
+      console.error('[SendPin] Email send failed:', emailError);
+      // Roll back the saved PIN so the user can request a fresh one.
+      user.emailVerification = { pin: undefined, expires: undefined, attempts: 0 };
+      await user
+        .save()
+        .catch((saveErr) =>
+          console.error('[SendPin] Failed to clear PIN after email error:', saveErr)
+        );
+
+      return res
+        .status(502)
+        .json(
+          buildErrorPayload(
+            'EMAIL_SERVICE_DOWN',
+            'Verification email could not be sent. Please try again in a moment.',
+            { error: emailError.message, stack: emailError.stack }
+          )
+        );
+    }
 
     res.status(200).json({
       success: true,
@@ -81,11 +99,12 @@ exports.sendVerificationPin = async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending verification PIN:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send verification PIN',
-      error: error.message,
-    });
+    res.status(500).json(
+      buildErrorPayload('INTERNAL_ERROR', 'Failed to send verification PIN', {
+        error: error.message,
+        stack: error.stack,
+      })
+    );
   }
 };
 
@@ -206,28 +225,23 @@ exports.resendVerificationPin = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required',
-      });
+      return res.status(400).json(buildErrorPayload('EMAIL_REQUIRED', 'Email is required'));
     }
 
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
+      return res
+        .status(404)
+        .json(buildErrorPayload('USER_NOT_FOUND', 'No account found for this email.'));
     }
 
     // Check if email is already verified
     if (user.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is already verified',
-      });
+      return res
+        .status(400)
+        .json(buildErrorPayload('ALREADY_VERIFIED', 'This email is already verified.'));
     }
 
     // Check if last PIN was sent recently (prevent spam - 1 minute cooldown)
@@ -236,10 +250,9 @@ exports.resendVerificationPin = async (req, res) => {
       user.emailVerification.expires &&
       user.emailVerification.expires > new Date(Date.now() + 9 * 60 * 1000)
     ) {
-      return res.status(429).json({
-        success: false,
-        message: 'Please wait before requesting a new PIN',
-      });
+      return res
+        .status(429)
+        .json(buildErrorPayload('RATE_LIMIT', 'Please wait before requesting a new PIN.'));
     }
 
     // Generate new PIN
@@ -256,7 +269,27 @@ exports.resendVerificationPin = async (req, res) => {
 
     // Send email
     const userName = user.firstName || user.username || 'User';
-    await emailService.sendVerificationPin(email, pin, userName);
+    try {
+      await emailService.sendVerificationPin(email, pin, userName);
+    } catch (emailError) {
+      console.error('[ResendPin] Email send failed:', emailError);
+      user.emailVerification = { pin: undefined, expires: undefined, attempts: 0 };
+      await user
+        .save()
+        .catch((saveErr) =>
+          console.error('[ResendPin] Failed to clear PIN after email error:', saveErr)
+        );
+
+      return res
+        .status(502)
+        .json(
+          buildErrorPayload(
+            'EMAIL_SERVICE_DOWN',
+            'Verification email could not be sent. Please try again in a moment.',
+            { error: emailError.message, stack: emailError.stack }
+          )
+        );
+    }
 
     res.status(200).json({
       success: true,
@@ -265,11 +298,12 @@ exports.resendVerificationPin = async (req, res) => {
     });
   } catch (error) {
     console.error('Error resending verification PIN:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to resend verification PIN',
-      error: error.message,
-    });
+    res.status(500).json(
+      buildErrorPayload('INTERNAL_ERROR', 'Failed to resend verification PIN', {
+        error: error.message,
+        stack: error.stack,
+      })
+    );
   }
 };
 

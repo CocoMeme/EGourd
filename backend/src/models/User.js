@@ -248,14 +248,14 @@ userSchema.methods.generateAuthToken = function () {
     role: this.role,
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET, {
+  return jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 };
 
 // Instance method to generate refresh token
 userSchema.methods.generateRefreshToken = function () {
-  const refreshToken = jwt.sign({ id: this._id, type: 'refresh' }, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign({ id: this._id, type: 'refresh' }, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret', {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
   });
 

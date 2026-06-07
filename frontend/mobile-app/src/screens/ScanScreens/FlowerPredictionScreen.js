@@ -685,7 +685,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
    * Called when user taps retry button after Gemini failed
    */
   const handleRetryGemini = async () => {
-    if (!tmPrediction || tmPrediction.isNotFlower || isGeminiLoading) return;
+    if (!tmPrediction || isGeminiLoading) return;
 
     console.log('🔄 Retrying Gemini analysis...');
     setIsGeminiLoading(true);
@@ -923,7 +923,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       }).start();
 
       // Still run Gemini analysis if available
-      if (geminiService.isAvailable() && !tmPred.isNotFlower) {
+      if (geminiService.isAvailable()) {
         runGeminiAnalysisOnly(tmPred);
       }
       return;
@@ -1043,9 +1043,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         useNativeDriver: true,
       }).start();
 
-      // Skip Gemini if not a flower OR if in leaf mode (Gemini is flower-specific)
-      if (tmPred.isNotFlower || isLeafMode) {
-        console.log(`⏭️ Skipping Gemini - ${isLeafMode ? 'Leaf mode' : 'Not a flower detected'}`);
+      // Skip Gemini if in leaf mode (Gemini is flower-specific)
+      if (isLeafMode) {
+        console.log('⏭️ Skipping Gemini - Leaf mode');
         return;
       }
 
@@ -1079,7 +1079,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
           setGeminiPrediction(geminiPred);
 
           // Compare predictions if both available
-          if (geminiPred && !tmPred.isNotFlower) {
+          if (geminiPred) {
             comparison = geminiService.comparePredictions(tmPred, geminiPred);
             console.log('📊 Comparison result:', comparison);
             setComparisonResult(comparison);
