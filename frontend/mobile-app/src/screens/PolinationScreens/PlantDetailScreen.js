@@ -962,7 +962,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                   <Text style={styles.lifecycleTimelineDays}>
                     +{lifecyclePredictions.summary?.floweringToHarvest || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Flower → Harvest</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>Flower → Pollination</Text>
                   <Text style={styles.lifecycleTimelineSubLabel}>(After flowering starts)</Text>
                 </View>
                 
@@ -990,7 +990,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               <View style={styles.timelineExplanation}>
                 <Ionicons name="information-circle-outline" size={16} color={theme.colors.text.secondary} />
                 <Text style={styles.timelineExplanationText}>
-                  "Flower → Harvest" is the time from first flower to ready harvest. 
+                  "Flower → Harvest" is the time from the flowers to be pollinated. 
                   "Total" is from planting date to harvest.
                 </Text>
               </View>
@@ -1852,11 +1852,12 @@ const styles = StyleSheet.create({
   lifecycleTimelineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   lifecycleTimelineItem: {
     alignItems: 'center',
     flex: 1,
+    minHeight: 90,
   },
   lifecycleTimelineIcon: {
     width: 40,
@@ -1910,6 +1911,7 @@ const styles = StyleSheet.create({
   },
   lifecycleTimelineArrow: {
     paddingHorizontal: theme.spacing.xs,
+    marginTop: 12,
   },
   lifecycleLoadButton: {
     flexDirection: 'row',

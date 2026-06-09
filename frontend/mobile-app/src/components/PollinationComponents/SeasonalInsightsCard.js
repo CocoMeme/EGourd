@@ -167,6 +167,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
           {/* Monthly Chart */}
           <View style={styles.chartContainer}>
             <Text style={styles.chartTitle}>Successful Pollinations by Month</Text>
+            <Text style={styles.chartSubMessage}>This is the pollination that has been successfully harvested</Text>
             
             <View style={styles.chart}>
               {MONTHS.map((month, index) => {
@@ -350,9 +351,14 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 12,
     color: theme.colors.text.secondary,
-    marginBottom: 12,
+    marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  chartSubMessage: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    marginBottom: 12,
   },
   chart: {
     flexDirection: 'row',

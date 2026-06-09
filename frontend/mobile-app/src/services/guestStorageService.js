@@ -315,6 +315,19 @@ class GuestStorageService {
 
     plant.pollinations = plant.pollinations || [];
     plant.pollinations.push(pollination);
+
+    // Auto-update femaleFlowerCount if total pollinated exceeds current count
+    const totalPollinated = plant.pollinations.reduce(
+      (sum, p) => sum + (p.femaleFlowersPollinated || 0),
+      0
+    );
+    if (!plant.flowering) {
+      plant.flowering = { maleFlowerCount: 0, femaleFlowerCount: 0, hasStartedFlowering: false };
+    }
+    if (totalPollinated > (plant.flowering.femaleFlowerCount || 0)) {
+      plant.flowering.femaleFlowerCount = totalPollinated;
+    }
+
     plant.timeline = plant.timeline || [];
     plant.timeline.push({
       event: 'pollination',

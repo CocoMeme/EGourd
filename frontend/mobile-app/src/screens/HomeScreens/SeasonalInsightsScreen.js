@@ -346,7 +346,10 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         {selectedGourdData && (
           <View style={styles.chartCard}>
             <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>Monthly Pollination Success</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.chartTitle}>Monthly Pollination Success</Text>
+                <Text style={styles.chartSubMessage}>This is the pollination that has been successfully harvested</Text>
+              </View>
               {selectedGourdData.peakMonths?.length > 0 && (
                 <View style={[styles.peakBadge, { backgroundColor: `${GOURD_COLORS[selectedGourd]}18` }]}>
                   <Ionicons name="trending-up" size={14} color={GOURD_COLORS[selectedGourd]} />
@@ -800,6 +803,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: theme.colors.text.primary,
+  },
+  chartSubMessage: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    marginTop: 4,
   },
   peakBadge: {
     flexDirection: 'row',

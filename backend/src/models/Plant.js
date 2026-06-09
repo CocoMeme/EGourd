@@ -537,6 +537,15 @@ plantSchema.methods.addPollination = function (pollinationData) {
   this.pollinations.push(pollination);
   this.status = 'pollinating';
 
+  // Auto-update femaleFlowerCount if total pollinated exceeds current count
+  const totalPollinated = this.pollinations.reduce(
+    (sum, p) => sum + (p.femaleFlowersPollinated || 0),
+    0
+  );
+  if (totalPollinated > (this.flowering.femaleFlowerCount || 0)) {
+    this.flowering.femaleFlowerCount = totalPollinated;
+  }
+
   this.addTimelineEvent(
     'pollinated',
     `${label}: Pollinated ${pollinationData.femaleFlowersPollinated || 1} female flower(s). Check result on ${expectedResultDate.toLocaleDateString()}`
