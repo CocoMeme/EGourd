@@ -42,6 +42,7 @@ class App {
         'http://192.168.1.66:3000',
         'http://localhost:19006', // Expo dev server
         'http://192.168.1.66:19006', // Expo dev server with IP
+        'https://e-gourd.vercel.app', // Production website
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

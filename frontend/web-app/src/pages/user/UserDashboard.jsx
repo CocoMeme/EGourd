@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import UserLayout from '../../components/user/UserLayout';
@@ -31,6 +31,7 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [pollinationStats, setPollinationStats] = useState(null);
+  const [seasonalPollinationStats, setSeasonalPollinationStats] = useState(null);
   const [flowerPredictionStats, setFlowerPredictionStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,15 +49,18 @@ const UserDashboard = () => {
       setError(null);
       const userId = user?._id || user?.id;
 
-      // Fetch scan analytics, pollination stats, and flower prediction stats in parallel
-      const [scanResponse, pollinationResponse, flowerPredResponse] = await Promise.all([
-        userApi.get(`/scans/analytics/${userId}`).catch(() => null),
-        userApi.get('/pollination/dashboard/stats').catch(() => null),
-        userApi.get('/pollination/predictions/stats').catch(() => null),
-      ]);
+      // Fetch scan analytics, pollination stats, seasonal pollination stats, and flower prediction stats in parallel
+      const [scanResponse, pollinationResponse, seasonalPollinationResponse, flowerPredResponse] =
+        await Promise.all([
+          userApi.get(`/scans/analytics/${userId}`).catch(() => null),
+          userApi.get('/pollination/dashboard/stats').catch(() => null),
+          userApi.get('/plants/seasonal/pollination-stats').catch(() => null),
+          userApi.get('/pollination/predictions/stats').catch(() => null),
+        ]);
 
       setAnalytics(scanResponse);
       setPollinationStats(pollinationResponse?.data || null);
+      setSeasonalPollinationStats(seasonalPollinationResponse?.data || null);
       setFlowerPredictionStats(flowerPredResponse?.data || null);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -100,6 +104,69 @@ const UserDashboard = () => {
   };
 
   const greeting = getGreeting();
+
+  const harvestForecasts = useMemo(() => {
+    if (!seasonalPollinationStats?.gourdTypes?.length) return [];
+
+    return seasonalPollinationStats.gourdTypes.map((gourd) => {
+      const monthlyData = Array.isArray(gourd.data) ? gourd.data : new Array(12).fill(0);
+      const quarterlyTotals = [0, 0, 0, 0];
+
+      monthlyData.forEach((value, index) => {
+        const quarterIndex = Math.floor(index / 3);
+        quarterlyTotals[quarterIndex] += Number(value) || 0;
+      });
+
+      const yearlyTotal = monthlyData.reduce((total, value) => total + (Number(value) || 0), 0);
+      const peakMonthIndex = monthlyData.reduce(
+        (bestIndex, value, index, array) =>
+          (Number(value) || 0) > (Number(array[bestIndex]) || 0) ? index : bestIndex,
+        0
+      );
+
+      return {
+        type: gourd.type,
+        label: gourd.label || gourd.type,
+        monthlyData,
+        quarterlyTotals,
+        yearlyTotal,
+        peakMonths: gourd.peakMonths || [],
+        peakMonthLabel:
+          seasonalPollinationStats.months?.[peakMonthIndex] ||
+          seasonalPollinationStats.months?.[0] ||
+          'Jan',
+        currentMonthValue: monthlyData[new Date().getMonth()] || 0,
+      };
+    });
+  }, [seasonalPollinationStats]);
+
+  const totalExpectedHarvest = harvestForecasts.reduce((sum, gourd) => sum + gourd.yearlyTotal, 0);
+  const strongestQuarter = harvestForecasts.reduce(
+    (best, gourd) => {
+      const quarterIndex = gourd.quarterlyTotals.reduce(
+        (bestQuarterIndex, value, index, array) =>
+          (Number(value) || 0) > (Number(array[bestQuarterIndex]) || 0)
+            ? index
+            : bestQuarterIndex,
+        0
+      );
+      const quarterValue = gourd.quarterlyTotals[quarterIndex] || 0;
+
+      if (!best || quarterValue > best.value) {
+        return {
+          label: `Q${quarterIndex + 1}`,
+          value: quarterValue,
+        };
+      }
+
+      return best;
+    },
+    null
+  );
+
+  const formatCount = (value) => new Intl.NumberFormat().format(Number(value) || 0);
+
+  const getQuarterLabel = (index) => `Q${index + 1}`;
 
   // Format percentage
   const formatPercent = (value) => {
@@ -378,6 +445,89 @@ const UserDashboard = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Pollination Harvest Forecast */}
+            {harvestForecasts.length > 0 && (
+              <div className="pollination-forecast-section">
+                <div className="section-header">
+                  <div className="header-title">
+                    <Calendar size={20} />
+                    <h3>Pollination Harvest Forecast</h3>
+                  </div>
+                  <span className="forecast-summary">
+                    {formatCount(totalExpectedHarvest)} expected harvests yearly
+                  </span>
+                </div>
+
+                <div className="forecast-overview-grid">
+                  <div className="forecast-overview-card">
+                    <span className="overview-label">Tracked Gourds</span>
+                    <strong>{harvestForecasts.length}</strong>
+                  </div>
+                  <div className="forecast-overview-card">
+                    <span className="overview-label">Current Month</span>
+                    <strong>
+                      {formatCount(
+                        harvestForecasts.reduce((sum, gourd) => sum + gourd.currentMonthValue, 0)
+                      )}
+                    </strong>
+                  </div>
+                  <div className="forecast-overview-card">
+                    <span className="overview-label">Top Quarter</span>
+                    <strong>{strongestQuarter?.label || 'Q1'}</strong>
+                  </div>
+                  <div className="forecast-overview-card">
+                    <span className="overview-label">Quarterly Harvest</span>
+                    <strong>{formatCount(strongestQuarter?.value || 0)}</strong>
+                  </div>
+                </div>
+
+                <div className="forecast-gourd-grid">
+                  {harvestForecasts.map((gourd) => (
+                    <article key={gourd.type} className="forecast-gourd-card">
+                      <div className="forecast-gourd-header">
+                        <div>
+                          <h4>{gourd.label}</h4>
+                          <span>Expected harvest from successful pollinations</span>
+                        </div>
+                        <div className="forecast-total-pill">
+                          <strong>{formatCount(gourd.yearlyTotal)}</strong>
+                          <span>yearly</span>
+                        </div>
+                      </div>
+
+                      <div className="forecast-month-row">
+                        {seasonalPollinationStats.months?.map((month, index) => (
+                          <div key={`${gourd.type}-${month}`} className="forecast-month-item">
+                            <span className="forecast-month-label">{month}</span>
+                            <span
+                              className={`forecast-month-value ${index === new Date().getMonth() ? 'active' : ''}`}
+                            >
+                              {formatCount(gourd.monthlyData[index])}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="forecast-quarter-grid">
+                        {gourd.quarterlyTotals.map((value, index) => (
+                          <div key={`${gourd.type}-q${index + 1}`} className="forecast-quarter-card">
+                            <span className="forecast-quarter-label">{getQuarterLabel(index)}</span>
+                            <strong>{formatCount(value)}</strong>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="forecast-footnote">
+                        <span>Peak month</span>
+                        <strong>{gourd.peakMonthLabel}</strong>
+                        <span>{gourd.peakMonths.length ? gourd.peakMonths.join(', ') : 'No peak yet'}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
             )}
 
