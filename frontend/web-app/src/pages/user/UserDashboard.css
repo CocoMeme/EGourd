@@ -1057,6 +1057,189 @@
   color: #d97706;
 }
 
+/* ================== POLLINATION FORECAST SECTION ================== */
+.pollination-forecast-section {
+  background: linear-gradient(135deg, #ffffff 0%, #f6fbf7 100%);
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 32px;
+  animation: fadeIn 0.5s ease 0.25s backwards;
+}
+
+.forecast-summary {
+  font-size: 13px;
+  color: #2d6a4f;
+  font-weight: 600;
+  background: rgba(64, 145, 108, 0.1);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.forecast-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.forecast-overview-card {
+  background: linear-gradient(135deg, #f8faf8 0%, #ffffff 100%);
+  border: 1px solid #e8f1eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.overview-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.forecast-overview-card strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.1;
+}
+
+.forecast-gourd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.forecast-gourd-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.forecast-gourd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.forecast-gourd-header h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.forecast-gourd-header span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.forecast-total-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(64, 145, 108, 0.12), rgba(82, 183, 136, 0.12));
+  color: #2d6a4f;
+  white-space: nowrap;
+}
+
+.forecast-total-pill strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.forecast-total-pill span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.forecast-month-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.forecast-month-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #f8faf8;
+  border: 1px solid #eef3ef;
+}
+
+.forecast-month-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.forecast-month-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.forecast-month-value.active {
+  color: #2d6a4f;
+}
+
+.forecast-quarter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.forecast-quarter-card {
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f0f9f4 0%, #e8f5ed 100%);
+  border: 1px solid rgba(64, 145, 108, 0.12);
+  text-align: center;
+}
+
+.forecast-quarter-label {
+  display: block;
+  font-size: 11px;
+  color: #2d6a4f;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.forecast-quarter-card strong {
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.forecast-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.forecast-footnote strong {
+  color: #2d6a4f;
+}
+
 /* Plant Types Card */
 .plant-types-card {
   background: white;
@@ -1443,6 +1626,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .forecast-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .flower-gender-distribution {
     flex-direction: column;
     text-align: center;
@@ -1494,6 +1681,12 @@
     grid-template-columns: 1fr;
   }
 
+  .forecast-overview-grid,
+  .forecast-quarter-grid,
+  .forecast-month-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .distribution-chart {
     flex-direction: column;
   }
@@ -1514,6 +1707,14 @@
     width: 100%;
     text-align: center;
     margin-top: 8px;
+  }
+
+  .forecast-gourd-header {
+    flex-direction: column;
+  }
+
+  .forecast-total-pill {
+    align-items: flex-start;
   }
 }
 
@@ -1542,6 +1743,12 @@
 
   .stat-number {
     font-size: 24px;
+  }
+
+  .forecast-overview-grid,
+  .forecast-quarter-grid,
+  .forecast-month-row {
+    grid-template-columns: 1fr;
   }
 }
 
