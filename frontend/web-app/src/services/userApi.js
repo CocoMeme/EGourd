@@ -27,11 +27,20 @@ userApi.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('userToken');
-      localStorage.removeItem('userData');
-      // Only redirect if on user pages, not admin
-      if (!window.location.pathname.startsWith('/admin')) {
-        window.location.href = '/user/login';
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath.startsWith('/user/login') || 
+                        currentPath.startsWith('/user/register') || 
+                        currentPath.startsWith('/user/verify-email');
+      
+      // Only clear tokens and redirect if NOT on an auth page
+      // (login/register failures should show the error message, not redirect)
+      if (!isAuthPage) {
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userData');
+        // Only redirect if on user pages, not admin
+        if (!currentPath.startsWith('/admin')) {
+          window.location.href = '/user/login';
+        }
       }
     }
     return Promise.reject(error.response?.data || error.message);

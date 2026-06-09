@@ -52,9 +52,14 @@ api.interceptors.response.use(
     });
 
     if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
-      window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath === '/login' || currentPath === '/admin/login';
+      
+      if (!isAuthPage) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error.response?.data || error.message);
   }
