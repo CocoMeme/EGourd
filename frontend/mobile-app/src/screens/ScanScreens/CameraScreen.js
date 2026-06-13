@@ -72,6 +72,10 @@ export const CameraScreen = ({ navigation }) => {
   const tipFadeAnim = useRef(new Animated.Value(1)).current;
   const tipTimerRef = useRef(null);
 
+  // Bounding box pulse animation (UI-only, does not affect predictions)
+  const boundingBoxAnim = useRef(new Animated.Value(0)).current;
+  const boundingBoxLoopRef = useRef(null);
+
   useEffect(() => {
     if (scanMode === SCAN_MODES.FLOWER) {
       // Reset fade and start 5-second auto-hide timer
@@ -94,6 +98,57 @@ export const CameraScreen = ({ navigation }) => {
       if (tipTimerRef.current) clearTimeout(tipTimerRef.current);
     };
   }, [scanMode]);
+
+  /**
+   * UI-only bounding box pulse animation.
+   * Runs only when there is a stable, valid detection.
+   * Does not alter prediction logic or model behavior.
+   */
+  useEffect(() => {
+    const top = predictions[0];
+    const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
+    const isValid = top && top.percentage / 100 >= CONFIDENCE_THRESHOLD && top.label !== rejectionLabel;
+    const shouldPulse = isStable && isValid;
+
+    if (shouldPulse && !boundingBoxLoopRef.current) {
+      boundingBoxAnim.setValue(0);
+      boundingBoxLoopRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(boundingBoxAnim, {
+            toValue: 1,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+          Animated.timing(boundingBoxAnim, {
+            toValue: 0,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      boundingBoxLoopRef.current.start();
+    } else if (!shouldPulse && boundingBoxLoopRef.current) {
+      boundingBoxLoopRef.current.stop();
+      boundingBoxLoopRef.current = null;
+      Animated.timing(boundingBoxAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isStable, predictions, scanMode]);
+
+  /**
+   * Stop bounding box animation when the screen unmounts.
+   */
+  useEffect(() => {
+    return () => {
+      if (boundingBoxLoopRef.current) {
+        boundingBoxLoopRef.current.stop();
+        boundingBoxLoopRef.current = null;
+      }
+    };
+  }, []);
 
   /**
    * Stop scanning - defined first as it has no dependencies
@@ -588,6 +643,56 @@ export const CameraScreen = ({ navigation }) => {
             <View style={[styles.framingCorner, styles.cornerBR]} />
           </View>
         </View>
+        {/* Bounding box overlay — UI-only feedback, appears alongside framing guide corners */}
+        {predictions.length > 0 && (
+          <Animated.View
+            style={[
+              styles.boundingBox,
+              {
+                borderColor:
+                  isStable &&
+                  predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                  predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                    ? '#4CAF50'
+                    : 'rgba(255, 255, 255, 0.55)',
+                opacity: boundingBoxAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.55, 0.95],
+                }),
+                transform: [
+                  {
+                    scale: boundingBoxAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.03],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <View
+              style={[
+                styles.boundingBoxFill,
+                {
+                  borderColor:
+                    isStable &&
+                    predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                    predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                      ? 'rgba(76, 175, 80, 0.35)'
+                      : 'rgba(255, 255, 255, 0.12)',
+                  backgroundColor:
+                    isStable &&
+                    predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                    predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                      ? 'rgba(76, 175, 80, 0.08)'
+                      : 'transparent',
+                },
+              ]}
+            />
+          </Animated.View>
+        )}
+
         {/* Floating tip for flower mode */}
         {scanMode === SCAN_MODES.FLOWER && (
           <Animated.View style={[styles.floatingTip, { opacity: tipFadeAnim }]} pointerEvents="none">
@@ -800,6 +905,25 @@ const styles = StyleSheet.create({
   cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
   cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
+
+  // Bounding box overlay (UI-only, accompanies framing guide)
+  boundingBox: {
+    position: 'absolute',
+    top: (SCREEN_WIDTH - SCREEN_WIDTH * 0.72) / 2,
+    left: (SCREEN_WIDTH - SCREEN_WIDTH * 0.72) / 2,
+    width: SCREEN_WIDTH * 0.72,
+    height: SCREEN_WIDTH * 0.72,
+    borderWidth: 2.5,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  boundingBoxFill: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 1,
+    borderRadius: 4,
+  },
 
   // Bottom Controls (Capture Button)
   bottomControls: {
