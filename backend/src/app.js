@@ -234,6 +234,7 @@ class App {
     this.app.use('/api/scans', require('./routes/scan'));
     this.app.use('/api/uploads', require('./routes/uploads'));
     this.app.use('/api/support', require('./routes/support'));
+    this.app.use('/api/download', require('./routes/download'));
     // TODO: Add these when other route modules are created
     // this.app.use('/api/users', require('./routes/users'));
 

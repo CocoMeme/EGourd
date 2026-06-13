@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import './UserHome.css';
 
@@ -58,6 +58,12 @@ const supportItems = [
 const UserHome = () => {
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
+  // Build the QR code image URL using a reliable public API
+  const qrImageUrl = useMemo(() => {
+    const downloadUrl = `${window.location.origin}/api/download/apk`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1c444b&bgcolor=ffffff&format=png&data=${encodeURIComponent(downloadUrl)}`;
+  }, []);
+
   // Auto-advance hero carousel
   useEffect(() => {
     if (heroCarouselImages.length > 1) {
@@ -66,6 +72,15 @@ const UserHome = () => {
       }, 4000);
       return () => clearInterval(interval);
     }
+  }, []);
+
+  const handleDownloadApk = useCallback(() => {
+    const link = document.createElement('a');
+    link.href = '/api/download/apk';
+    link.download = 'GourdVision.apk';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }, []);
 
   const nextHeroSlide = () => {
@@ -95,6 +110,7 @@ const UserHome = () => {
           <nav className="landing-nav">
             <a href="#about">About Us</a>
             <a href="#services">Services</a>
+            <a href="#download-app">Download</a>
           </nav>
 
           <div className="landing-header-actions">
@@ -188,6 +204,58 @@ const UserHome = () => {
                 ))}
               </ul>
             </article>
+          </section>
+
+          {/* ── Download App Section ── */}
+          <section id="download-app" className="landing-download-section">
+            <div className="download-section-inner">
+              <div className="download-info">
+                <span className="section-tag">Mobile App</span>
+                <h2>Get GourdVision on your phone</h2>
+                <p>
+                  Scan the QR code with your phone camera or tap the button below to download
+                  the GourdVision Android app directly. Take AI-powered crop scanning and
+                  pollination tracking right into the field.
+                </p>
+
+                <button
+                  id="download-apk-btn"
+                  className="download-apk-button"
+                  onClick={handleDownloadApk}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Download APK for Android
+                </button>
+              </div>
+
+              <div className="download-qr-area">
+                <div className="qr-card">
+                  <div className="qr-card-glow" />
+                  <img
+                    src={qrImageUrl}
+                    alt="QR code to download GourdVision APK"
+                    className="qr-canvas"
+                    width="220"
+                    height="220"
+                  />
+                  <p className="qr-label">Scan to download</p>
+                  <span className="qr-sublabel">Point your phone camera here</span>
+                </div>
+              </div>
+            </div>
           </section>
 
           <section id="services" className="landing-services">

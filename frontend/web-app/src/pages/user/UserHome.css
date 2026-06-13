@@ -401,6 +401,216 @@
   font-size: 0.95rem;
 }
 
+/* ======================================
+   Download App Section
+   ====================================== */
+.landing-download-section {
+  margin-top: 24px;
+  padding: 32px 28px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #f0faf4 0%, #e8f6f0 40%, #edf8fc 100%);
+  border: 1px solid rgba(45, 143, 137, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-download-section::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(120, 194, 64, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.landing-download-section::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(43, 143, 136, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.download-section-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 36px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.download-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.download-info h2 {
+  margin: 0 0 12px;
+  color: #193f46;
+  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.download-info > p {
+  margin: 0 0 20px;
+  color: #5b7177;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  max-width: 480px;
+}
+
+.download-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.download-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(45, 143, 137, 0.08);
+  font-size: 0.88rem;
+  color: #3a5a62;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.download-feature-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(45, 143, 137, 0.18);
+  transform: translateY(-1px);
+}
+
+.download-feature-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.download-apk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #7cc744, #5da931);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(93, 169, 49, 0.3);
+  align-self: flex-start;
+}
+
+.download-apk-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(93, 169, 49, 0.4);
+  background: linear-gradient(135deg, #85d048, #68b83a);
+}
+
+.download-apk-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 14px rgba(93, 169, 49, 0.25);
+}
+
+.download-apk-button svg {
+  flex-shrink: 0;
+}
+
+.download-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: #7a969e;
+  font-weight: 500;
+}
+
+.download-note svg {
+  flex-shrink: 0;
+  stroke: #7a969e;
+}
+
+/* QR Code Card */
+.download-qr-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 28px 22px;
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow:
+    0 8px 32px rgba(33, 86, 67, 0.1),
+    0 2px 8px rgba(33, 86, 67, 0.06);
+  border: 1px solid rgba(45, 143, 137, 0.1);
+  transition: all 0.3s ease;
+}
+
+.qr-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 14px 44px rgba(33, 86, 67, 0.14),
+    0 4px 12px rgba(33, 86, 67, 0.08);
+}
+
+.qr-card-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(120, 194, 64, 0.2), rgba(43, 143, 136, 0.2));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.qr-card:hover .qr-card-glow {
+  opacity: 1;
+}
+
+.qr-canvas {
+  border-radius: 12px;
+  image-rendering: pixelated;
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+}
+
+.qr-label {
+  margin: 14px 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #193f46;
+  letter-spacing: -0.01em;
+}
+
+.qr-sublabel {
+  font-size: 0.78rem;
+  color: #7a969e;
+  font-weight: 500;
+}
+
 @media (max-width: 1100px) {
   .landing-hero,
   .landing-info-grid,
@@ -414,6 +624,19 @@
 
   .services-grid {
     gap: 12px;
+  }
+
+  .download-section-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .download-qr-area {
+    order: -1;
+  }
+
+  .download-features {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -457,6 +680,27 @@
   .landing-carousel-btn {
     width: 36px;
     height: 36px;
+  }
+
+  .landing-download-section {
+    padding: 22px 18px;
+  }
+
+  .download-features {
+    grid-template-columns: 1fr;
+  }
+
+  .download-apk-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qr-canvas {
+    max-width: 180px;
+  }
+
+  .download-info h2 {
+    font-size: 1.35rem;
   }
 }
 
