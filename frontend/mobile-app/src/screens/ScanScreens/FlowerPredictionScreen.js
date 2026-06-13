@@ -75,14 +75,14 @@ const HarvestTimeline = ({ data, backendData }) => {
   const [expanded, setExpanded] = useState(false);
   if (!data && !backendData) return null;
 
-  const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'fruiting', 'harvest'];
+  const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'wilting', 'fruiting'];
   const stageLabels = {
     bud: 'Bud',
     blooming: 'Blooming',
     peak_bloom: 'Peak',
     pollinated: 'Pollinated',
+    wilting: 'Wilting',
     fruiting: 'Fruiting',
-    harvest: 'Harvest',
   };
 
   const currentStage = backendData?.currentStage || data?.currentStage;
