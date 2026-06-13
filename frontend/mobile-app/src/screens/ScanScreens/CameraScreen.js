@@ -18,6 +18,7 @@ import {
   StatusBar
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
@@ -420,6 +421,41 @@ export const CameraScreen = ({ navigation }) => {
   };
 
   /**
+   * Helper: Crop image to the UI bounding box region (center 72% of center square).
+   * This matches the bounding box overlay shown during scanning.
+   */
+  const cropToBoundingBox = async (imageUri, sourceWidth, sourceHeight) => {
+    const minDimension = Math.min(sourceWidth, sourceHeight);
+    const boxSize = Math.round(minDimension * 0.72);
+    const originX = Math.round((sourceWidth - boxSize) / 2);
+    const originY = Math.round((sourceHeight - boxSize) / 2);
+
+    const manipResult = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [
+        {
+          crop: {
+            originX,
+            originY,
+            width: boxSize,
+            height: boxSize,
+          },
+        },
+      ],
+      {
+        compress: 0.9,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+
+    return {
+      uri: manipResult.uri,
+      width: boxSize,
+      height: boxSize,
+    };
+  };
+
+  /**
    * Handle Capture - Always uses the most recent frame from the scan loop.
    * TFLite's "Not a Gourd Flower/Leaf" verdict is intentionally NOT a gate —
    * the user can capture at any time and let Gemini be the final authority.
@@ -497,6 +533,22 @@ export const CameraScreen = ({ navigation }) => {
       // Fall through — use the original scanning frame
     }
 
+    // Crop the final image to the bounding box region shown in the UI.
+    // Scan-loop predictions still run on the full frame; only the saved/Gemini image is cropped.
+    try {
+      if (finalUri && finalWidth > 0 && finalHeight > 0) {
+        console.log('✂️ Cropping capture to bounding box region...');
+        const cropped = await cropToBoundingBox(finalUri, finalWidth, finalHeight);
+        finalUri = cropped.uri;
+        finalWidth = cropped.width;
+        finalHeight = cropped.height;
+        console.log('✅ Cropped capture:', finalWidth, 'x', finalHeight);
+      }
+    } catch (cropErr) {
+      console.warn('⚠️ Bounding box crop failed, using full image:', cropErr.message);
+      // Fall through — use the uncropped image
+    }
+
     // Navigate with the best available image
     // Logic Preservation: Passing width and height to fix distortion
     setIsCapturing(false);
@@ -543,7 +595,7 @@ export const CameraScreen = ({ navigation }) => {
     );
   }
 
-  // Render single Detection Pill — shows variety+confidence above threshold, 'Detecting...' below
+  // Render single Detection Pill — shows "Gourd" + confidence above threshold, 'Detecting...' below
   const renderDetectionPill = () => {
     if (predictions.length === 0) return null;
 
@@ -562,7 +614,7 @@ export const CameraScreen = ({ navigation }) => {
         <View style={[styles.detectionPill, isStable && showDetection && styles.detectionPillActive]}>
           <View style={[styles.pillDot, { backgroundColor: color }]} />
           <Text style={[styles.pillText, { color }]} numberOfLines={1}>
-            {showDetection ? `${top.label}  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
+            {showDetection ? `Gourd  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
           </Text>
         </View>
         <Text style={styles.statusText}>{statusText}</Text>
