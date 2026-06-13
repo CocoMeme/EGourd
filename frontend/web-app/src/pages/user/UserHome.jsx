@@ -55,13 +55,15 @@ const supportItems = [
   'Mobile-friendly farm tools',
 ];
 
+// Google Drive direct download link for the APK
+const APK_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=10POHgvYcucO7PUh7bfAU4HX0bq1Bg489';
+
 const UserHome = () => {
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
   // Build the QR code image URL using a reliable public API
   const qrImageUrl = useMemo(() => {
-    const downloadUrl = `${window.location.origin}/api/download/apk`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1c444b&bgcolor=ffffff&format=png&data=${encodeURIComponent(downloadUrl)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1c444b&bgcolor=ffffff&format=png&data=${encodeURIComponent(APK_DOWNLOAD_URL)}`;
   }, []);
 
   // Auto-advance hero carousel
@@ -75,12 +77,7 @@ const UserHome = () => {
   }, []);
 
   const handleDownloadApk = useCallback(() => {
-    const link = document.createElement('a');
-    link.href = '/api/download/apk';
-    link.download = 'GourdVision.apk';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.open(APK_DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
   }, []);
 
   const nextHeroSlide = () => {
