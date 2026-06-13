@@ -18,6 +18,7 @@ import {
   StatusBar
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
@@ -72,6 +73,10 @@ export const CameraScreen = ({ navigation }) => {
   const tipFadeAnim = useRef(new Animated.Value(1)).current;
   const tipTimerRef = useRef(null);
 
+  // Bounding box pulse animation (UI-only, does not affect predictions)
+  const boundingBoxAnim = useRef(new Animated.Value(0)).current;
+  const boundingBoxLoopRef = useRef(null);
+
   useEffect(() => {
     if (scanMode === SCAN_MODES.FLOWER) {
       // Reset fade and start 5-second auto-hide timer
@@ -94,6 +99,57 @@ export const CameraScreen = ({ navigation }) => {
       if (tipTimerRef.current) clearTimeout(tipTimerRef.current);
     };
   }, [scanMode]);
+
+  /**
+   * UI-only bounding box pulse animation.
+   * Runs only when there is a stable, valid detection.
+   * Does not alter prediction logic or model behavior.
+   */
+  useEffect(() => {
+    const top = predictions[0];
+    const rejectionLabel = scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower';
+    const isValid = top && top.percentage / 100 >= CONFIDENCE_THRESHOLD && top.label !== rejectionLabel;
+    const shouldPulse = isStable && isValid;
+
+    if (shouldPulse && !boundingBoxLoopRef.current) {
+      boundingBoxAnim.setValue(0);
+      boundingBoxLoopRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(boundingBoxAnim, {
+            toValue: 1,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+          Animated.timing(boundingBoxAnim, {
+            toValue: 0,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      boundingBoxLoopRef.current.start();
+    } else if (!shouldPulse && boundingBoxLoopRef.current) {
+      boundingBoxLoopRef.current.stop();
+      boundingBoxLoopRef.current = null;
+      Animated.timing(boundingBoxAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isStable, predictions, scanMode]);
+
+  /**
+   * Stop bounding box animation when the screen unmounts.
+   */
+  useEffect(() => {
+    return () => {
+      if (boundingBoxLoopRef.current) {
+        boundingBoxLoopRef.current.stop();
+        boundingBoxLoopRef.current = null;
+      }
+    };
+  }, []);
 
   /**
    * Stop scanning - defined first as it has no dependencies
@@ -365,6 +421,41 @@ export const CameraScreen = ({ navigation }) => {
   };
 
   /**
+   * Helper: Crop image to the UI bounding box region (center 72% of center square).
+   * This matches the bounding box overlay shown during scanning.
+   */
+  const cropToBoundingBox = async (imageUri, sourceWidth, sourceHeight) => {
+    const minDimension = Math.min(sourceWidth, sourceHeight);
+    const boxSize = Math.round(minDimension * 0.72);
+    const originX = Math.round((sourceWidth - boxSize) / 2);
+    const originY = Math.round((sourceHeight - boxSize) / 2);
+
+    const manipResult = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [
+        {
+          crop: {
+            originX,
+            originY,
+            width: boxSize,
+            height: boxSize,
+          },
+        },
+      ],
+      {
+        compress: 0.9,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+
+    return {
+      uri: manipResult.uri,
+      width: boxSize,
+      height: boxSize,
+    };
+  };
+
+  /**
    * Handle Capture - Always uses the most recent frame from the scan loop.
    * TFLite's "Not a Gourd Flower/Leaf" verdict is intentionally NOT a gate —
    * the user can capture at any time and let Gemini be the final authority.
@@ -442,6 +533,22 @@ export const CameraScreen = ({ navigation }) => {
       // Fall through — use the original scanning frame
     }
 
+    // Crop the final image to the bounding box region shown in the UI.
+    // Scan-loop predictions still run on the full frame; only the saved/Gemini image is cropped.
+    try {
+      if (finalUri && finalWidth > 0 && finalHeight > 0) {
+        console.log('✂️ Cropping capture to bounding box region...');
+        const cropped = await cropToBoundingBox(finalUri, finalWidth, finalHeight);
+        finalUri = cropped.uri;
+        finalWidth = cropped.width;
+        finalHeight = cropped.height;
+        console.log('✅ Cropped capture:', finalWidth, 'x', finalHeight);
+      }
+    } catch (cropErr) {
+      console.warn('⚠️ Bounding box crop failed, using full image:', cropErr.message);
+      // Fall through — use the uncropped image
+    }
+
     // Navigate with the best available image
     // Logic Preservation: Passing width and height to fix distortion
     setIsCapturing(false);
@@ -488,7 +595,7 @@ export const CameraScreen = ({ navigation }) => {
     );
   }
 
-  // Render single Detection Pill — shows variety+confidence above threshold, 'Detecting...' below
+  // Render single Detection Pill — shows "Gourd" + confidence above threshold, 'Detecting...' below
   const renderDetectionPill = () => {
     if (predictions.length === 0) return null;
 
@@ -507,7 +614,7 @@ export const CameraScreen = ({ navigation }) => {
         <View style={[styles.detectionPill, isStable && showDetection && styles.detectionPillActive]}>
           <View style={[styles.pillDot, { backgroundColor: color }]} />
           <Text style={[styles.pillText, { color }]} numberOfLines={1}>
-            {showDetection ? `${top.label}  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
+            {showDetection ? `Gourd  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
           </Text>
         </View>
         <Text style={styles.statusText}>{statusText}</Text>
@@ -588,6 +695,56 @@ export const CameraScreen = ({ navigation }) => {
             <View style={[styles.framingCorner, styles.cornerBR]} />
           </View>
         </View>
+        {/* Bounding box overlay — UI-only feedback, appears alongside framing guide corners */}
+        {predictions.length > 0 && (
+          <Animated.View
+            style={[
+              styles.boundingBox,
+              {
+                borderColor:
+                  isStable &&
+                  predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                  predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                    ? '#4CAF50'
+                    : 'rgba(255, 255, 255, 0.55)',
+                opacity: boundingBoxAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.55, 0.95],
+                }),
+                transform: [
+                  {
+                    scale: boundingBoxAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.03],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <View
+              style={[
+                styles.boundingBoxFill,
+                {
+                  borderColor:
+                    isStable &&
+                    predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                    predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                      ? 'rgba(76, 175, 80, 0.35)'
+                      : 'rgba(255, 255, 255, 0.12)',
+                  backgroundColor:
+                    isStable &&
+                    predictions[0].percentage / 100 >= CONFIDENCE_THRESHOLD &&
+                    predictions[0].label !== (scanMode === SCAN_MODES.LEAF ? 'Not Leaf' : 'Not Flower')
+                      ? 'rgba(76, 175, 80, 0.08)'
+                      : 'transparent',
+                },
+              ]}
+            />
+          </Animated.View>
+        )}
+
         {/* Floating tip for flower mode */}
         {scanMode === SCAN_MODES.FLOWER && (
           <Animated.View style={[styles.floatingTip, { opacity: tipFadeAnim }]} pointerEvents="none">
@@ -800,6 +957,25 @@ const styles = StyleSheet.create({
   cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
   cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
+
+  // Bounding box overlay (UI-only, accompanies framing guide)
+  boundingBox: {
+    position: 'absolute',
+    top: (SCREEN_WIDTH - SCREEN_WIDTH * 0.72) / 2,
+    left: (SCREEN_WIDTH - SCREEN_WIDTH * 0.72) / 2,
+    width: SCREEN_WIDTH * 0.72,
+    height: SCREEN_WIDTH * 0.72,
+    borderWidth: 2.5,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  boundingBoxFill: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 1,
+    borderRadius: 4,
+  },
 
   // Bottom Controls (Capture Button)
   bottomControls: {

@@ -203,7 +203,7 @@ const FLOWER_ANALYSIS_SCHEMA = {
         daysToHarvest: { type: 'number' },
         currentStage: {
           type: 'string',
-          enum: ['bud', 'blooming', 'peak_bloom', 'wilting', 'pollinated'],
+          enum: ['bud', 'blooming', 'peak_bloom', 'pollinated', 'wilting'],
         },
         pollinationReady: { type: 'boolean' },
         optimalHarvestWindow: { type: 'string' },
