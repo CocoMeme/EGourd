@@ -1173,31 +1173,56 @@
   border-color: rgba(64, 145, 108, 0.18);
 }
 
-.card-bottom {
+.forecast-body {
   display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.forecast-body .month-grid {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.forecast-sidebar {
+  display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  min-width: 90px;
+  flex-shrink: 0;
 }
 
 .quarter-list {
   display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .quarter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   background: linear-gradient(135deg, #f0f9f4 0%, #e8f5ed 100%);
   border: 1px solid rgba(64, 145, 108, 0.12);
   padding: 8px 12px;
   border-radius: 10px;
-  text-align: center;
 }
 
 .quarter-item .q-label {
-  display: block;
   font-size: 11px;
   color: #2d6a4f;
   font-weight: 700;
+}
+
+.quarter-item strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.peak-info {
+  text-align: right;
 }
 
 .peak-info .peak-label {
@@ -1226,79 +1251,29 @@
     grid-template-columns: 1fr;
   }
 
+  .forecast-body {
+    flex-direction: column;
+  }
+
+  .forecast-body .month-grid {
+    margin-bottom: 16px;
+  }
+
+  .forecast-sidebar {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .quarter-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
   .month-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-}
-
-.forecast-month-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 12px;
-  background: #f8faf8;
-  border: 1px solid #eef3ef;
-}
-
-.forecast-month-label {
-  font-size: 11px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.forecast-month-value {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1a1a1a;
-}
-
-.forecast-month-value.active {
-  color: #2d6a4f;
-}
-
-.forecast-quarter-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.forecast-quarter-card {
-  padding: 12px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f0f9f4 0%, #e8f5ed 100%);
-  border: 1px solid rgba(64, 145, 108, 0.12);
-  text-align: center;
-}
-
-.forecast-quarter-label {
-  display: block;
-  font-size: 11px;
-  color: #2d6a4f;
-  margin-bottom: 4px;
-  font-weight: 700;
-}
-
-.forecast-quarter-card strong {
-  font-size: 18px;
-  color: #1a1a1a;
-}
-
-.forecast-footnote {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.forecast-footnote strong {
-  color: #2d6a4f;
 }
 
 /* Plant Types Card */
@@ -1742,10 +1717,16 @@
     grid-template-columns: 1fr;
   }
 
-  .forecast-overview-grid,
-  .forecast-quarter-grid,
-  .forecast-month-row {
+  .forecast-overview-grid.small-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .forecast-body {
+    gap: 12px;
+  }
+
+  .forecast-sidebar {
+    min-width: 80px;
   }
 
   .distribution-chart {
@@ -1806,10 +1787,16 @@
     font-size: 24px;
   }
 
-  .forecast-overview-grid,
-  .forecast-quarter-grid,
-  .forecast-month-row {
+  .forecast-overview-grid.small-cards {
     grid-template-columns: 1fr;
+  }
+
+  .forecast-sidebar {
+    flex-direction: column;
+  }
+
+  .quarter-list {
+    flex-direction: row;
   }
 }
 

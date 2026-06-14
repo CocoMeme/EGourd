@@ -497,33 +497,35 @@ const UserDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="month-grid">
-                        {seasonalPollinationStats.months?.map((month, index) => (
-                          <div
-                            key={`${gourd.type}-m-${month}`}
-                            className={`month-box ${index === new Date().getMonth() ? 'active' : ''}`}
-                          >
-                            <div className="month-abbr">{month}</div>
-                            <div className="month-value">
-                              {formatCount(gourd.monthlyData[index])}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="card-bottom">
-                        <div className="quarter-list">
-                          {gourd.quarterlyTotals.map((value, index) => (
-                            <div key={`${gourd.type}-q${index + 1}`} className="quarter-item">
-                              <span className="q-label">{getQuarterLabel(index)}</span>
-                              <strong>{formatCount(value)}</strong>
+                      <div className="forecast-body">
+                        <div className="month-grid">
+                          {seasonalPollinationStats.months?.map((month, index) => (
+                            <div
+                              key={`${gourd.type}-m-${month}`}
+                              className={`month-box ${index === new Date().getMonth() ? 'active' : ''}`}
+                            >
+                              <div className="month-abbr">{month}</div>
+                              <div className="month-value">
+                                {formatCount(gourd.monthlyData[index])}
+                              </div>
                             </div>
                           ))}
                         </div>
 
-                        <div className="peak-info">
-                          <span className="peak-label">Peak month:</span>
-                          <strong className="peak-month">{gourd.peakMonthLabel}</strong>
+                        <div className="forecast-sidebar">
+                          <div className="quarter-list">
+                            {gourd.quarterlyTotals.map((value, index) => (
+                              <div key={`${gourd.type}-q${index + 1}`} className="quarter-item">
+                                <span className="q-label">{getQuarterLabel(index)}</span>
+                                <strong>{formatCount(value)}</strong>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="peak-info">
+                            <span className="peak-label">Peak month:</span>
+                            <strong className="peak-month">{gourd.peakMonthLabel}</strong>
+                          </div>
                         </div>
                       </div>
                     </article>
