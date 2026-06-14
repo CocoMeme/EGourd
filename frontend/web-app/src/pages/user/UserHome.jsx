@@ -55,8 +55,8 @@ const supportItems = [
   'Mobile-friendly farm tools',
 ];
 
-// Google Drive direct download link for the APK
-const APK_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=10POHgvYcucO7PUh7bfAU4HX0bq1Bg489';
+// Google Drive direct download link for the APK (bypasses large file warning)
+const APK_DOWNLOAD_URL = 'https://drive.usercontent.google.com/download?export=download&confirm=t&id=10POHgvYcucO7PUh7bfAU4HX0bq1Bg489';
 
 const UserHome = () => {
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
