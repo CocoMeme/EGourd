@@ -30,7 +30,19 @@ const REPORT_CONFIG = {
   },
 };
 
-const ReportModal = ({ isOpen, onClose, user, reportType = 'plant-health' }) => {
+function gourdDisplayName(gourdType) {
+  if (!gourdType) return 'Unknown';
+  return gourdType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function formatPlantLabel(plant) {
+  const name = plant.plantName || 'Unnamed Plant';
+  const type = gourdDisplayName(plant.gourdType);
+  const age = plant.ageInDays != null ? `${plant.ageInDays}d` : null;
+  return age ? `${name} (${type}, ${age})` : `${name} (${type})`;
+}
+
+const ReportModal = ({ isOpen, onClose, user, plants = [], reportType = 'plant-health' }) => {
   const config = REPORT_CONFIG[reportType] || REPORT_CONFIG['plant-health'];
   const today = new Date().toISOString().split('T')[0];
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -41,7 +53,6 @@ const ReportModal = ({ isOpen, onClose, user, reportType = 'plant-health' }) => 
   const [endDate, setEndDate] = useState(today);
   const [format, setFormat] = useState(config.defaultFormat);
   const [selectedPlantId, setSelectedPlantId] = useState('');
-  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -52,23 +63,8 @@ const ReportModal = ({ isOpen, onClose, user, reportType = 'plant-health' }) => 
       setFormat(config.defaultFormat);
       setSelectedPlantId('');
       setError(null);
-
-      if (reportType === 'growth-progress') {
-        loadPlants();
-      }
     }
   }, [isOpen, reportType]);
-
-  const loadPlants = async () => {
-    try {
-      const userId = user?._id || user?.id;
-      if (!userId) return;
-      const response = await userApi.get(`/plants?user=${userId}&limit=200`);
-      setPlants(response?.data || []);
-    } catch (err) {
-      console.error('Error loading plants:', err);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -206,7 +202,7 @@ const ReportModal = ({ isOpen, onClose, user, reportType = 'plant-health' }) => 
                 <option value="">Choose a plant...</option>
                 {plants.map((plant) => (
                   <option key={plant._id} value={plant._id}>
-                    {plant.plantName} ({plant.gourdType?.replace(/_/g, ' ')})
+                    {formatPlantLabel(plant)}
                   </option>
                 ))}
               </select>

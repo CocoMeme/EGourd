@@ -1054,6 +1054,21 @@ const getGrowthReport = async (req, res) => {
 
     // Filter growth history by date range if provided
     let history = plant.growthHistory || [];
+
+    // Seed a fallback snapshot for existing plants that have no history yet
+    if (history.length === 0) {
+      history = [
+        {
+          date: plant.datePlanted || plant.createdAt || new Date(),
+          vineLength: plant.vineLength,
+          leafCount: plant.leafCount,
+          plantHealth: plant.plantHealth,
+          status: plant.status,
+          note: 'Current plant snapshot (no historical records yet)',
+        },
+      ];
+    }
+
     if (startDate || endDate) {
       history = history.filter((entry) => {
         const entryDate = new Date(entry.date);

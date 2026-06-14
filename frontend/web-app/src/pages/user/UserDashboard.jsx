@@ -35,6 +35,7 @@ const UserDashboard = () => {
   const [pollinationStats, setPollinationStats] = useState(null);
   const [seasonalPollinationStats, setSeasonalPollinationStats] = useState(null);
   const [flowerPredictionStats, setFlowerPredictionStats] = useState(null);
+  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -54,19 +55,21 @@ const UserDashboard = () => {
       setError(null);
       const userId = user?._id || user?.id;
 
-      // Fetch scan analytics, pollination stats, seasonal pollination stats, and flower prediction stats in parallel
-      const [scanResponse, pollinationResponse, seasonalPollinationResponse, flowerPredResponse] =
+      // Fetch scan analytics, pollination stats, seasonal pollination stats, flower prediction stats, and plants in parallel
+      const [scanResponse, pollinationResponse, seasonalPollinationResponse, flowerPredResponse, plantsResponse] =
         await Promise.all([
           userApi.get(`/scans/analytics/${userId}`).catch(() => null),
           userApi.get('/pollination/dashboard/stats').catch(() => null),
           userApi.get('/plants/seasonal/pollination-stats').catch(() => null),
           userApi.get('/pollination/predictions/stats').catch(() => null),
+          userApi.get(`/plants?limit=200`).catch(() => null),
         ]);
 
       setAnalytics(scanResponse);
       setPollinationStats(pollinationResponse?.data || null);
       setSeasonalPollinationStats(seasonalPollinationResponse?.data || null);
       setFlowerPredictionStats(flowerPredResponse?.data || null);
+      setPlants(plantsResponse?.data || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError('Unable to load dashboard data');
@@ -995,18 +998,21 @@ const UserDashboard = () => {
               isOpen={isHealthReportOpen}
               onClose={() => setIsHealthReportOpen(false)}
               user={user}
+              plants={plants}
               reportType="plant-health"
             />
             <ReportModal
               isOpen={isFlowerReportOpen}
               onClose={() => setIsFlowerReportOpen(false)}
               user={user}
+              plants={plants}
               reportType="flower-distribution"
             />
             <ReportModal
               isOpen={isGrowthReportOpen}
               onClose={() => setIsGrowthReportOpen(false)}
               user={user}
+              plants={plants}
               reportType="growth-progress"
             />
           </>
