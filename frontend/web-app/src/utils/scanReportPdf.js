@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const STATUS = {
   HEALTHY: 'Healthy',
@@ -193,7 +193,7 @@ export async function generatePlantHealthScanReport({ user, startDate, endDate, 
       : scan.recommendation,
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y + 4,
     margin: { left: margin, right: margin },
     head: [['#', 'Date', 'Type', 'Variety', 'Status', 'Detected Issue', 'Confidence', 'Recommendation']],
