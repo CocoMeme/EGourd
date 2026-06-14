@@ -925,6 +925,11 @@
   color: #059669;
 }
 
+.qa-icon.report {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #2563eb;
+}
+
 .qa-title {
   font-size: 16px;
   font-weight: 700;

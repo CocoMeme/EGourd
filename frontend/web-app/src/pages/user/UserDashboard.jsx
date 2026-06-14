@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../../contexts/UserAuthContext';
 import UserLayout from '../../components/user/UserLayout';
+import ReportModal from '../../components/user/ReportModal';
 import userApi from '../../services/userApi';
 import './UserDashboard.css';
 
@@ -24,6 +25,7 @@ import {
   Sprout,
   AlertTriangle,
   TreeDeciduous,
+  FileText,
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -36,6 +38,7 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
     if (user?._id || user?.id) {
@@ -950,8 +953,25 @@ const UserDashboard = () => {
                   <span className="qa-desc">Farming guides</span>
                   <ChevronRight size={18} className="qa-arrow" />
                 </Link>
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="quick-action-card"
+                >
+                  <div className="qa-icon report">
+                    <FileText size={24} />
+                  </div>
+                  <span className="qa-title">Reports</span>
+                  <span className="qa-desc">Download scan report</span>
+                  <ChevronRight size={18} className="qa-arrow" />
+                </button>
               </div>
             </div>
+
+            <ReportModal
+              isOpen={isReportModalOpen}
+              onClose={() => setIsReportModalOpen(false)}
+              user={user}
+            />
           </>
         ) : (
           <div className="empty-analytics">

@@ -106,16 +106,25 @@ exports.getScanHistory = async (req, res) => {
   try {
     const { userId } = req.params;
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
+    const { startDate, endDate } = req.query;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
     }
 
+    const query = { userId };
+
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
     const [scans, total] = await Promise.all([
-      Scan.find({ userId }).sort({ date: -1 }).skip(skip).limit(limit),
-      Scan.countDocuments({ userId }),
+      Scan.find(query).sort({ date: -1 }).skip(skip).limit(limit),
+      Scan.countDocuments(query),
     ]);
 
     res.status(200).json({
