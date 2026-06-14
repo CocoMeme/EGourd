@@ -219,11 +219,11 @@ function generatePdf({ user, startDate, endDate, scans, distribution }) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   if (maleWidth > 20) {
-    doc.text(`♂ ${distribution.maleRatio.toFixed(1)}%`, margin + 4, y + 6.5);
+    doc.text(`M ${distribution.maleRatio.toFixed(1)}%`, margin + 4, y + 6.5);
   }
   if (barWidth - maleWidth > 20) {
     doc.text(
-      `♀ ${distribution.femaleRatio.toFixed(1)}%`,
+      `F ${distribution.femaleRatio.toFixed(1)}%`,
       margin + barWidth - 4,
       y + 6.5,
       { align: 'right' }
