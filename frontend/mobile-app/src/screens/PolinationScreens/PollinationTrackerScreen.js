@@ -791,6 +791,39 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
           </Text>
         </View>
 
+        {/* TEST BUTTON - Uncomment to re-enable for testing
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#FF5722',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 14,
+            borderRadius: 12,
+            marginHorizontal: 16,
+            marginBottom: 12,
+            gap: 8,
+          }}
+          onPress={async () => {
+            try {
+              const result = await pollinationNotificationHelper.scheduleTestNotification6amPHT();
+              Alert.alert(
+                '🧪 Test Notification Scheduled!',
+                `A test notification has been scheduled for tomorrow at 6:00 AM Philippines Time.\n\nScheduled for (UTC): ${result.scheduledFor}\n\nIf you receive it at exactly 6:00 AM PHT tomorrow, the fix is working! ✅`,
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              Alert.alert('Error', `Failed to schedule test: ${error.message}`);
+            }
+          }}
+        >
+          <Ionicons name="notifications" size={20} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+            🧪 TEST: Schedule 6AM PHT Notification (Tomorrow)
+          </Text>
+        </TouchableOpacity>
+        */}
+
         {/* Pollination List */}
         <View style={styles.listContainer}>
           <Text style={styles.sectionTitle}>Pollination History</Text>

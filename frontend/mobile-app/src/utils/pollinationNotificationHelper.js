@@ -259,13 +259,33 @@ class PollinationNotificationHelper {
         return null;
       }
 
-      // Set notification time to 6am on the expected date
-      const notificationTime = new Date(pollination.expectedResultDate);
-      notificationTime.setHours(6, 0, 0, 0);
+      // ============================================================
+      // Fix: Explicitly schedule at 6:00 AM Philippines Time (PHT = UTC+8)
+      // 
+      // The expectedResultDate from the backend is stored as UTC in MongoDB.
+      // We extract the DATE portion (year/month/day) in UTC, then construct
+      // a new Date that represents 6:00 AM PHT (which is 10:00 PM UTC the
+      // previous day, i.e., 22:00 UTC on day-1).
+      //
+      // This ensures the notification fires at exactly 6:00 AM Philippine
+      // time regardless of the server timezone or device timezone settings.
+      // ============================================================
+      const PH_UTC_OFFSET_HOURS = 8; // Philippines is UTC+8
+      const expectedDate = new Date(pollination.expectedResultDate);
+      const notificationTime = new Date(Date.UTC(
+        expectedDate.getUTCFullYear(),
+        expectedDate.getUTCMonth(),
+        expectedDate.getUTCDate(),
+        6 - PH_UTC_OFFSET_HOURS, // 6 AM PHT in UTC = -2 = 22:00 previous day
+        0, 0, 0
+      ));
+
+      console.log(`📅 Expected result date (UTC): ${expectedDate.toISOString()}`);
+      console.log(`⏰ Notification scheduled for: ${notificationTime.toISOString()} (6:00 AM PHT)`);
 
       // Only schedule if time is in the future
       if (notificationTime <= new Date()) {
-        console.log('Expected result date is in the past, not scheduling notification');
+        console.log('Notification time is in the past, not scheduling notification');
         return null;
       }
 
@@ -285,7 +305,7 @@ class PollinationNotificationHelper {
         }
       );
 
-      console.log(`✅ Scheduled pollination result notification for ${pollination.label} at ${notificationTime}`);
+      console.log(`✅ Scheduled pollination result notification for ${pollination.label} at 6:00 AM PHT (${notificationTime.toISOString()})`);
       return notificationId;
     } catch (error) {
       console.error('Error scheduling pollination result notification:', error);
@@ -396,6 +416,52 @@ class PollinationNotificationHelper {
     } catch (error) {
       console.error('Error initializing notification system:', error);
       return false;
+    }
+  }
+
+  /**
+   * TEST: Schedule a test notification for tomorrow at 6:00 AM PHT
+   * This is for verifying the Philippines timezone fix works correctly.
+   * Remove this method after testing.
+   */
+  async scheduleTestNotification6amPHT() {
+    try {
+      const PH_UTC_OFFSET_HOURS = 8;
+
+      // Get tomorrow's date
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Calculate 6:00 AM PHT for tomorrow
+      const notificationTime = new Date(Date.UTC(
+        tomorrow.getUTCFullYear(),
+        tomorrow.getUTCMonth(),
+        tomorrow.getUTCDate(),
+        6 - PH_UTC_OFFSET_HOURS, // 6 AM PHT = 22:00 UTC previous day
+        0, 0, 0
+      ));
+
+      console.log(`🧪 TEST: Scheduling test notification for 6:00 AM PHT tomorrow`);
+      console.log(`🧪 TEST: Notification time (UTC): ${notificationTime.toISOString()}`);
+      console.log(`🧪 TEST: Current time (UTC): ${now.toISOString()}`);
+
+      const notificationId = await this.scheduleLocalNotification(
+        '🧪 TEST: 6:00 AM PHT Notification',
+        `This test notification was scheduled to fire at exactly 6:00 AM Philippines Time. If you're seeing this at 6:00 AM, the timezone fix is working! 🎉`,
+        notificationTime,
+        {
+          type: 'test_6am_pht',
+          scheduledAt: now.toISOString(),
+          targetTime: notificationTime.toISOString(),
+        }
+      );
+
+      console.log(`🧪 TEST: Notification scheduled with ID: ${notificationId}`);
+      return { notificationId, scheduledFor: notificationTime.toISOString() };
+    } catch (error) {
+      console.error('Error scheduling test notification:', error);
+      throw error;
     }
   }
 }
