@@ -4,6 +4,7 @@ import { useUserAuth } from '../../contexts/UserAuthContext';
 import UserLayout from '../../components/user/UserLayout';
 import ReportModal from '../../components/user/ReportModal';
 import userApi from '../../services/userApi';
+import { generateHarvestForecastReport } from '../../utils/harvestForecastReport';
 import './UserDashboard.css';
 
 // Icons
@@ -26,6 +27,7 @@ import {
   AlertTriangle,
   TreeDeciduous,
   FileText,
+  Download,
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -465,6 +467,21 @@ const UserDashboard = () => {
                     <span className="forecast-badge">
                       {formatCount(totalExpectedHarvest)} expected harvests yearly
                     </span>
+                    <button
+                      className="forecast-download-btn"
+                      onClick={() =>
+                        generateHarvestForecastReport({
+                          user,
+                          harvestForecasts,
+                          totalExpectedHarvest,
+                          strongestQuarter,
+                        })
+                      }
+                      title="Download forecast report"
+                    >
+                      <Download size={16} />
+                      <span>PDF</span>
+                    </button>
                   </div>
                 </div>
 

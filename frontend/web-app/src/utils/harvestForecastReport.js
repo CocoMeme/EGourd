@@ -1,0 +1,184 @@
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+function formatDate(dateValue) {
+  if (!dateValue) return 'N/A';
+  return new Date(dateValue).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+export function generateHarvestForecastReport({ user, harvestForecasts, totalExpectedHarvest, strongestQuarter }) {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  // Header
+  doc.setFillColor(45, 106, 79);
+  doc.rect(0, 0, pageWidth, 32, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Pollination Harvest Forecast Report', margin, 13);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Generated for: ${user?.firstName || 'Farmer'} ${user?.lastName || ''}`.trim(), margin, 21);
+  doc.text(`Generated: ${formatDate(new Date())}`, margin, 27);
+
+  // Summary cards
+  let y = 42;
+  doc.setTextColor(26, 26, 26);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Forecast Summary', margin, y);
+
+  y += 8;
+  const cardWidth = (pageWidth - margin * 2 - 12) / 4;
+  const cardHeight = 20;
+  const summary = [
+    { label: 'Tracked Gourds', value: harvestForecasts.length },
+    {
+      label: 'Yearly Expected',
+      value: new Intl.NumberFormat().format(totalExpectedHarvest || 0),
+    },
+    { label: 'Top Quarter', value: strongestQuarter?.label || 'Q1' },
+    {
+      label: 'Quarterly Peak',
+      value: new Intl.NumberFormat().format(strongestQuarter?.value || 0),
+    },
+  ];
+
+  summary.forEach((item, index) => {
+    const x = margin + index * (cardWidth + 4);
+    doc.setFillColor(248, 250, 248);
+    doc.setDrawColor(229, 229, 229);
+    doc.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
+
+    doc.setFontSize(9);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text(item.label, x + 4, y + 6);
+
+    doc.setFontSize(12);
+    doc.setTextColor(26, 26, 26);
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(item.value), x + 4, y + 14);
+  });
+
+  // Per-gourd tables
+  y += cardHeight + 14;
+
+  harvestForecasts.forEach((gourd, gourdIndex) => {
+    // Check if we need a new page
+    if (y > 240) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFontSize(13);
+    doc.setTextColor(26, 26, 26);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${gourd.label} — ${new Intl.NumberFormat().format(gourd.yearlyTotal)} expected yearly`, margin, y);
+
+    y += 6;
+
+    // Monthly table
+    const monthlyRows = MONTHS.map((month, index) => [
+      month,
+      new Intl.NumberFormat().format(gourd.monthlyData[index] || 0),
+      index === gourd.peakMonthIndex ? 'Peak' : index === new Date().getMonth() ? 'Current' : '',
+    ]);
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Month', 'Expected Harvest', 'Note']],
+      body: monthlyRows,
+      headStyles: {
+        fillColor: [45, 106, 79],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        cellPadding: 2,
+      },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 'auto' },
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 248],
+      },
+      didParseCell: function (data) {
+        if (data.section === 'body' && data.column.index === 2) {
+          const note = data.cell.raw;
+          if (note === 'Peak') data.cell.styles.textColor = [5, 150, 105];
+          if (note === 'Current') data.cell.styles.textColor = [25, 118, 210];
+        }
+      },
+    });
+
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Quarter summary
+    const quarterRows = gourd.quarterlyTotals.map((value, index) => [
+      `Q${index + 1}`,
+      new Intl.NumberFormat().format(value || 0),
+    ]);
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Quarter', 'Total']],
+      body: quarterRows,
+      headStyles: {
+        fillColor: [64, 145, 108],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        cellPadding: 2,
+      },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 40 },
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 248],
+      },
+    });
+
+    y = doc.lastAutoTable.finalY + 14;
+  });
+
+  // Footer on all pages
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(136, 136, 136);
+    doc.text(
+      `Page ${i} of ${pageCount} | Generated by EGourd`,
+      pageWidth - margin,
+      doc.internal.pageSize.getHeight() - 8,
+      { align: 'right' }
+    );
+  }
+
+  const filename = `Pollination_Harvest_Forecast_${new Date().getFullYear()}.pdf`;
+  doc.save(filename);
+}

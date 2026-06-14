@@ -1073,7 +1073,7 @@
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .forecast-badge {
@@ -1083,6 +1083,26 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 13px;
+}
+
+.forecast-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #40916c;
+  background: #ffffff;
+  color: #2d6a4f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.forecast-download-btn:hover {
+  background: #40916c;
+  color: #ffffff;
 }
 
 .forecast-overview-grid.small-cards {
