@@ -276,6 +276,30 @@ const plantSchema = new mongoose.Schema(
       default: 'planted',
     },
 
+    // ===== GROWTH HISTORY =====
+    growthHistory: [
+      {
+        date: { type: Date, default: Date.now },
+        vineLength: { type: Number },
+        leafCount: { type: Number },
+        plantHealth: { type: Number, min: 1, max: 5 },
+        status: {
+          type: String,
+          enum: [
+            'planted',
+            'growing',
+            'flowering',
+            'pollinating',
+            'fruiting',
+            'harvesting',
+            'completed',
+            'failed',
+          ],
+        },
+        note: String,
+      },
+    ],
+
     // ===== TIMELINE LOG =====
     timeline: [
       {
@@ -696,6 +720,19 @@ plantSchema.methods.recordHarvest = function (fruitId, harvestData) {
   return this.save();
 };
 
+// Record a growth snapshot
+plantSchema.methods.recordGrowthSnapshot = function (data = {}) {
+  this.growthHistory.push({
+    date: data.date || new Date(),
+    vineLength: data.vineLength !== undefined ? data.vineLength : this.vineLength,
+    leafCount: data.leafCount !== undefined ? data.leafCount : this.leafCount,
+    plantHealth: data.plantHealth !== undefined ? data.plantHealth : this.plantHealth,
+    status: data.status || this.status,
+    note: data.note || '',
+  });
+  return this.save();
+};
+
 // Pre-save middleware
 plantSchema.pre('save', function (next) {
   // Determine season based on planting date
@@ -710,6 +747,16 @@ plantSchema.pre('save', function (next) {
       event: 'planted',
       date: this.datePlanted,
       description: `${this.plantName} (${this.gourdType}) planted`,
+    });
+
+    // Initial growth snapshot
+    this.growthHistory.push({
+      date: this.datePlanted,
+      vineLength: this.vineLength,
+      leafCount: this.leafCount,
+      plantHealth: this.plantHealth,
+      status: this.status,
+      note: 'Plant planted',
     });
   }
 

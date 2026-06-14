@@ -91,6 +91,37 @@
   margin-bottom: 20px;
 }
 
+.report-plant-field {
+  margin-bottom: 16px;
+}
+
+.report-plant-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.report-plant-field select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.report-plant-field select:focus {
+  border-color: #40916c;
+  box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
+}
+
 .report-date-field label {
   display: flex;
   align-items: center;
@@ -139,6 +170,47 @@
   font-size: 13px;
   color: #4b5563;
   line-height: 1.6;
+}
+
+.report-format-selector {
+  margin-bottom: 20px;
+}
+
+.report-format-selector > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.report-format-options {
+  display: flex;
+  gap: 10px;
+}
+
+.report-format-option {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.report-format-option:hover:not(:disabled) {
+  border-color: #40916c;
+  color: #40916c;
+}
+
+.report-format-option.active {
+  background: #eefaf3;
+  border-color: #40916c;
+  color: #2d6a4f;
 }
 
 .report-modal-footer {

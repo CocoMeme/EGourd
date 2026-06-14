@@ -38,7 +38,9 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isHealthReportOpen, setIsHealthReportOpen] = useState(false);
+  const [isFlowerReportOpen, setIsFlowerReportOpen] = useState(false);
+  const [isGrowthReportOpen, setIsGrowthReportOpen] = useState(false);
 
   useEffect(() => {
     if (user?._id || user?.id) {
@@ -954,23 +956,58 @@ const UserDashboard = () => {
                   <ChevronRight size={18} className="qa-arrow" />
                 </Link>
                 <button
-                  onClick={() => setIsReportModalOpen(true)}
+                  onClick={() => setIsHealthReportOpen(true)}
                   className="quick-action-card"
                 >
                   <div className="qa-icon report">
                     <FileText size={24} />
                   </div>
-                  <span className="qa-title">Reports</span>
+                  <span className="qa-title">Health Report</span>
                   <span className="qa-desc">Download scan report</span>
+                  <ChevronRight size={18} className="qa-arrow" />
+                </button>
+                <button
+                  onClick={() => setIsFlowerReportOpen(true)}
+                  className="quick-action-card"
+                >
+                  <div className="qa-icon flower-report">
+                    <Flower2 size={24} />
+                  </div>
+                  <span className="qa-title">Flower Report</span>
+                  <span className="qa-desc">Gender distribution PDF/CSV</span>
+                  <ChevronRight size={18} className="qa-arrow" />
+                </button>
+                <button
+                  onClick={() => setIsGrowthReportOpen(true)}
+                  className="quick-action-card"
+                >
+                  <div className="qa-icon growth-report">
+                    <Sprout size={24} />
+                  </div>
+                  <span className="qa-title">Growth Report</span>
+                  <span className="qa-desc">Plant progress timeline</span>
                   <ChevronRight size={18} className="qa-arrow" />
                 </button>
               </div>
             </div>
 
             <ReportModal
-              isOpen={isReportModalOpen}
-              onClose={() => setIsReportModalOpen(false)}
+              isOpen={isHealthReportOpen}
+              onClose={() => setIsHealthReportOpen(false)}
               user={user}
+              reportType="plant-health"
+            />
+            <ReportModal
+              isOpen={isFlowerReportOpen}
+              onClose={() => setIsFlowerReportOpen(false)}
+              user={user}
+              reportType="flower-distribution"
+            />
+            <ReportModal
+              isOpen={isGrowthReportOpen}
+              onClose={() => setIsGrowthReportOpen(false)}
+              user={user}
+              reportType="growth-progress"
             />
           </>
         ) : (

@@ -43,6 +43,7 @@ const {
   getGourdTypes,
   getLifecyclePrediction,
   getSeasonalPollinationStats,
+  getGrowthReport,
 } = require('../controllers/plantController');
 
 // Import middleware
@@ -90,5 +91,8 @@ router.put('/:id/fruits/:fruitId/harvest', recordHarvest);
 
 // Lifecycle prediction
 router.post('/:id/lifecycle-prediction', getLifecyclePrediction);
+
+// Growth report
+router.get('/:id/growth-report', getGrowthReport);
 
 module.exports = router;

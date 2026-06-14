@@ -930,6 +930,16 @@
   color: #2563eb;
 }
 
+.qa-icon.flower-report {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+  color: #c2185b;
+}
+
+.qa-icon.growth-report {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #059669;
+}
+
 .qa-title {
   font-size: 16px;
   font-weight: 700;

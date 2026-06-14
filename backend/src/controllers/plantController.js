@@ -264,6 +264,23 @@ const updatePlant = async (req, res) => {
 
     plant.addTimelineEvent('conditions_updated', 'Plant conditions updated');
 
+    // Record growth snapshot if metrics changed
+    if (
+      req.body.vineLength !== undefined ||
+      req.body.leafCount !== undefined ||
+      req.body.plantHealth !== undefined ||
+      req.body.status !== undefined
+    ) {
+      plant.growthHistory.push({
+        date: new Date(),
+        vineLength: plant.vineLength,
+        leafCount: plant.leafCount,
+        plantHealth: plant.plantHealth,
+        status: plant.status,
+        note: 'Metrics updated',
+      });
+    }
+
     await plant.save();
     await plant.populate('user', 'username email');
 
@@ -1016,6 +1033,81 @@ const recordHarvest = async (req, res) => {
 // ===== DASHBOARD & STATISTICS =====
 
 /**
+ * @desc    Get growth report for a plant
+ * @route   GET /api/plants/:id/growth-report
+ * @access  Private
+ */
+const getGrowthReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const plant = await Plant.findOne({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+
+    if (!plant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plant not found',
+      });
+    }
+
+    // Filter growth history by date range if provided
+    let history = plant.growthHistory || [];
+    if (startDate || endDate) {
+      history = history.filter((entry) => {
+        const entryDate = new Date(entry.date);
+        if (startDate && entryDate < new Date(startDate)) return false;
+        if (endDate && entryDate > new Date(endDate)) return false;
+        return true;
+      });
+    }
+
+    // Sort by date ascending
+    history = history.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate growth health score trend (simple average of plantHealth)
+    const healthScores = history.map((h) => h.plantHealth).filter((v) => v !== undefined);
+    const avgHealthScore =
+      healthScores.length > 0
+        ? healthScores.reduce((sum, v) => sum + v, 0) / healthScores.length
+        : plant.plantHealth || 0;
+
+    // Compute simple growth health score (0-100)
+    const growthHealthScore = Math.min(100, Math.max(0, (avgHealthScore / 5) * 100));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        plant: {
+          _id: plant._id,
+          plantName: plant.plantName,
+          gourdType: plant.gourdType,
+          datePlanted: plant.datePlanted,
+          ageInDays: plant.ageInDays,
+          currentStatus: plant.status,
+        },
+        history,
+        summary: {
+          totalRecords: history.length,
+          avgHealthScore: avgHealthScore.toFixed(1),
+          growthHealthScore: growthHealthScore.toFixed(1),
+          latestVineLength: history.length > 0 ? history[history.length - 1].vineLength : plant.vineLength,
+          latestLeafCount: history.length > 0 ? history[history.length - 1].leafCount : plant.leafCount,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Get growth report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching growth report',
+      error: error.message,
+    });
+  }
+};
+
+/**
  * @desc    Get dashboard statistics
  * @route   GET /api/plants/dashboard/stats
  * @access  Private
@@ -1393,4 +1485,5 @@ module.exports = {
   getGourdTypes,
   getLifecyclePrediction,
   getSeasonalPollinationStats,
+  getGrowthReport,
 };
