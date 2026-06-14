@@ -1045,37 +1045,46 @@
   color: #d97706;
 }
 
-/* ================== POLLINATION FORECAST SECTION ================== */
 .pollination-forecast-section {
   background: linear-gradient(135deg, #ffffff 0%, #f6fbf7 100%);
   border: 1px solid #e5e5e5;
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px;
   margin-bottom: 32px;
   animation: fadeIn 0.5s ease 0.25s backwards;
+  position: relative;
 }
 
-.forecast-summary {
-  font-size: 13px;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.forecast-badge {
+  background: #eefaf3;
   color: #2d6a4f;
-  font-weight: 600;
-  background: rgba(64, 145, 108, 0.1);
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
 }
 
-.forecast-overview-grid {
+.forecast-overview-grid.small-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.forecast-overview-card {
-  background: linear-gradient(135deg, #f8faf8 0%, #ffffff 100%);
-  border: 1px solid #e8f1eb;
-  border-radius: 14px;
-  padding: 16px;
+.forecast-overview-card.small {
+  background: #ffffff;
+  border: 1px solid #eef3ef;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .overview-label {
@@ -1083,20 +1092,17 @@
   font-size: 12px;
   font-weight: 600;
   color: #6b7280;
-  margin-bottom: 8px;
 }
 
-.forecast-overview-card strong {
-  display: block;
-  font-size: 24px;
+.forecast-overview-card.small strong {
+  font-size: 20px;
   font-weight: 800;
   color: #1a1a1a;
-  line-height: 1.1;
 }
 
 .forecast-gourd-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
 }
 
@@ -1104,16 +1110,8 @@
   background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-}
-
-.forecast-gourd-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .forecast-gourd-header h4 {
@@ -1123,7 +1121,7 @@
   margin-bottom: 4px;
 }
 
-.forecast-gourd-header span {
+.forecast-gourd-header .muted {
   font-size: 12px;
   color: #6b7280;
 }
@@ -1133,29 +1131,104 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  padding: 10px 14px;
-  border-radius: 14px;
+  padding: 8px 12px;
+  border-radius: 12px;
   background: linear-gradient(135deg, rgba(64, 145, 108, 0.12), rgba(82, 183, 136, 0.12));
   color: #2d6a4f;
   white-space: nowrap;
 }
 
-.forecast-total-pill strong {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.forecast-total-pill span {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.forecast-month-row {
+.month-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.month-box {
+  background: #f8faf8;
+  border: 1px solid #eef3ef;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.month-box .month-abbr {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.month-box .month-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.month-box.active {
+  background: linear-gradient(135deg, #f0fbf6 0%, #e8f6ee 100%);
+  border-color: rgba(64, 145, 108, 0.18);
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.quarter-list {
+  display: flex;
+  gap: 8px;
+}
+
+.quarter-item {
+  background: linear-gradient(135deg, #f0f9f4 0%, #e8f5ed 100%);
+  border: 1px solid rgba(64, 145, 108, 0.12);
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.quarter-item .q-label {
+  display: block;
+  font-size: 11px;
+  color: #2d6a4f;
+  font-weight: 700;
+}
+
+.peak-info .peak-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.peak-info .peak-month {
+  font-weight: 800;
+  color: #2d6a4f;
+}
+
+@media (max-width: 900px) {
+  .forecast-overview-grid.small-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .month-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .forecast-overview-grid.small-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .month-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .forecast-month-item {

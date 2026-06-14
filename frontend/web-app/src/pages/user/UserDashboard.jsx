@@ -79,13 +79,13 @@ const UserDashboard = () => {
   const handleNewScan = () => {
     // Check if on Android device
     const isAndroid = /android/i.test(navigator.userAgent);
-    
+
     if (isAndroid) {
       // Use deeplink protocol specific to Expo apps with Camera stack
       // Format: scheme://stack/screen
       const deepLinkUrl = 'egourd://camera/camera-capture';
       window.location.href = deepLinkUrl;
-      
+
       // Fallback to web version after 2 seconds if app is not installed
       setTimeout(() => {
         navigate('/user/scan');
@@ -141,28 +141,23 @@ const UserDashboard = () => {
   }, [seasonalPollinationStats]);
 
   const totalExpectedHarvest = harvestForecasts.reduce((sum, gourd) => sum + gourd.yearlyTotal, 0);
-  const strongestQuarter = harvestForecasts.reduce(
-    (best, gourd) => {
-      const quarterIndex = gourd.quarterlyTotals.reduce(
-        (bestQuarterIndex, value, index, array) =>
-          (Number(value) || 0) > (Number(array[bestQuarterIndex]) || 0)
-            ? index
-            : bestQuarterIndex,
-        0
-      );
-      const quarterValue = gourd.quarterlyTotals[quarterIndex] || 0;
+  const strongestQuarter = harvestForecasts.reduce((best, gourd) => {
+    const quarterIndex = gourd.quarterlyTotals.reduce(
+      (bestQuarterIndex, value, index, array) =>
+        (Number(value) || 0) > (Number(array[bestQuarterIndex]) || 0) ? index : bestQuarterIndex,
+      0
+    );
+    const quarterValue = gourd.quarterlyTotals[quarterIndex] || 0;
 
-      if (!best || quarterValue > best.value) {
-        return {
-          label: `Q${quarterIndex + 1}`,
-          value: quarterValue,
-        };
-      }
+    if (!best || quarterValue > best.value) {
+      return {
+        label: `Q${quarterIndex + 1}`,
+        value: quarterValue,
+      };
+    }
 
-      return best;
-    },
-    null
-  );
+    return best;
+  }, null);
 
   const formatCount = (value) => new Intl.NumberFormat().format(Number(value) || 0);
 
@@ -456,17 +451,19 @@ const UserDashboard = () => {
                     <Calendar size={20} />
                     <h3>Pollination Harvest Forecast</h3>
                   </div>
-                  <span className="forecast-summary">
-                    {formatCount(totalExpectedHarvest)} expected harvests yearly
-                  </span>
+                  <div className="header-right">
+                    <span className="forecast-badge">
+                      {formatCount(totalExpectedHarvest)} expected harvests yearly
+                    </span>
+                  </div>
                 </div>
 
-                <div className="forecast-overview-grid">
-                  <div className="forecast-overview-card">
+                <div className="forecast-overview-grid small-cards">
+                  <div className="forecast-overview-card small">
                     <span className="overview-label">Tracked Gourds</span>
                     <strong>{harvestForecasts.length}</strong>
                   </div>
-                  <div className="forecast-overview-card">
+                  <div className="forecast-overview-card small">
                     <span className="overview-label">Current Month</span>
                     <strong>
                       {formatCount(
@@ -474,11 +471,11 @@ const UserDashboard = () => {
                       )}
                     </strong>
                   </div>
-                  <div className="forecast-overview-card">
+                  <div className="forecast-overview-card small">
                     <span className="overview-label">Top Quarter</span>
                     <strong>{strongestQuarter?.label || 'Q1'}</strong>
                   </div>
-                  <div className="forecast-overview-card">
+                  <div className="forecast-overview-card small">
                     <span className="overview-label">Quarterly Harvest</span>
                     <strong>{formatCount(strongestQuarter?.value || 0)}</strong>
                   </div>
@@ -490,40 +487,44 @@ const UserDashboard = () => {
                       <div className="forecast-gourd-header">
                         <div>
                           <h4>{gourd.label}</h4>
-                          <span>Expected harvest from successful pollinations</span>
+                          <span className="muted">
+                            Expected harvest from successful pollinations
+                          </span>
                         </div>
                         <div className="forecast-total-pill">
                           <strong>{formatCount(gourd.yearlyTotal)}</strong>
-                          <span>yearly</span>
+                          <span>YEARLY</span>
                         </div>
                       </div>
 
-                      <div className="forecast-month-row">
+                      <div className="month-grid">
                         {seasonalPollinationStats.months?.map((month, index) => (
-                          <div key={`${gourd.type}-${month}`} className="forecast-month-item">
-                            <span className="forecast-month-label">{month}</span>
-                            <span
-                              className={`forecast-month-value ${index === new Date().getMonth() ? 'active' : ''}`}
-                            >
+                          <div
+                            key={`${gourd.type}-m-${month}`}
+                            className={`month-box ${index === new Date().getMonth() ? 'active' : ''}`}
+                          >
+                            <div className="month-abbr">{month}</div>
+                            <div className="month-value">
                               {formatCount(gourd.monthlyData[index])}
-                            </span>
+                            </div>
                           </div>
                         ))}
                       </div>
 
-                      <div className="forecast-quarter-grid">
-                        {gourd.quarterlyTotals.map((value, index) => (
-                          <div key={`${gourd.type}-q${index + 1}`} className="forecast-quarter-card">
-                            <span className="forecast-quarter-label">{getQuarterLabel(index)}</span>
-                            <strong>{formatCount(value)}</strong>
-                          </div>
-                        ))}
-                      </div>
+                      <div className="card-bottom">
+                        <div className="quarter-list">
+                          {gourd.quarterlyTotals.map((value, index) => (
+                            <div key={`${gourd.type}-q${index + 1}`} className="quarter-item">
+                              <span className="q-label">{getQuarterLabel(index)}</span>
+                              <strong>{formatCount(value)}</strong>
+                            </div>
+                          ))}
+                        </div>
 
-                      <div className="forecast-footnote">
-                        <span>Peak month</span>
-                        <strong>{gourd.peakMonthLabel}</strong>
-                        <span>{gourd.peakMonths.length ? gourd.peakMonths.join(', ') : 'No peak yet'}</span>
+                        <div className="peak-info">
+                          <span className="peak-label">Peak month:</span>
+                          <strong className="peak-month">{gourd.peakMonthLabel}</strong>
+                        </div>
                       </div>
                     </article>
                   ))}
@@ -641,7 +642,6 @@ const UserDashboard = () => {
                       </div>
                     </div>
                   )}
-
               </div>
             )}
 
