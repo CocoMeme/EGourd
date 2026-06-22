@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,6 +11,7 @@ import { DeveloperModeProvider, useDeveloperMode } from './src/contexts/Develope
 import { AuthProvider } from './src/contexts/AuthContext';
 import { LanguageProvider } from './src/i18n/LanguageContext';
 import { useAppResources } from './src/hooks/useAppResources';
+import { initI18n } from './src/i18n/i18n';
 
 // Inner component that uses the DeveloperMode context
 const AppContent = () => {
@@ -54,6 +55,20 @@ const AppContent = () => {
 };
 
 export default function App() {
+  const [i18nReady, setI18nReady] = useState(false);
+
+  useEffect(() => {
+    initI18n.then(() => setI18nReady(true));
+  }, []);
+
+  if (!i18nReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <ErrorBoundary>
@@ -74,5 +89,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
   },
 });
