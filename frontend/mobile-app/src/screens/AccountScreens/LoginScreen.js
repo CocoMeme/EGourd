@@ -17,6 +17,7 @@ import { authService } from '../../services';
 import { API_BASE_URL } from '../../config/api';
 import { theme } from '../../styles';
 import { CustomAlert } from '../../components';
+import { useTranslation } from 'react-i18next';
 
 export const LoginScreen = ({ navigation, onAuthSuccess }) => {
   const [email, setEmail] = useState('');
@@ -24,6 +25,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
   const [authAction, setAuthAction] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [alert, setAlert] = useState({ visible: false, type: 'info', title: '', message: '', buttons: [] });
+  const { t } = useTranslation();
 
   const isBusy = authAction !== null;
 
@@ -32,8 +34,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'warning',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
+        title: t('auth.login.missingInfo'),
+        message: t('auth.login.missingInfoMessage'),
         buttons: [],
       });
       return;
@@ -45,8 +47,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Invalid Email',
-        message: 'Please enter a valid email address.',
+        title: t('auth.login.invalidEmail'),
+        message: t('auth.login.invalidEmailMessage'),
         buttons: [],
       });
       return;
@@ -75,13 +77,13 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         // Check if account is deactivated
         if (result.accountDeactivated) {
           const message = result.deactivationReason
-            ? `Your account has been deactivated.\n\nReason: ${result.deactivationReason}\n\nPlease contact support for assistance.`
-            : 'Your account has been deactivated. Please contact support for assistance.';
+            ? t('auth.login.accountDeactivatedMessage', { reason: result.deactivationReason })
+            : t('auth.login.accountDeactivatedSimple');
 
           setAlert({
             visible: true,
             type: 'error',
-            title: 'Account Deactivated',
+            title: t('auth.login.accountDeactivated'),
             message: message,
             buttons: [],
           });
@@ -89,8 +91,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
           setAlert({
             visible: true,
             type: 'error',
-            title: 'Login Failed',
-            message: result.message || 'Invalid credentials. Please try again.',
+            title: t('auth.login.loginFailed'),
+            message: result.message || t('auth.login.invalidCredentials'),
             buttons: [],
           });
         }
@@ -100,8 +102,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Connection Error',
-        message: 'Network error. Please check your connection and try again.',
+        title: t('auth.login.connectionError'),
+        message: t('auth.login.connectionErrorMessage'),
         buttons: [],
       });
     } finally {
@@ -140,35 +142,35 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
         // Check if account is deactivated
         if (result.accountDeactivated) {
           const message = result.deactivationReason
-            ? `Your account has been deactivated.\n\nReason: ${result.deactivationReason}\n\nPlease contact support for assistance.`
-            : 'Your account has been deactivated. Please contact support for assistance.';
+            ? t('auth.login.accountDeactivatedMessage', { reason: result.deactivationReason })
+            : t('auth.login.accountDeactivatedSimple');
 
           setAlert({
             visible: true,
             type: 'error',
-            title: 'Account Deactivated',
+            title: t('auth.login.accountDeactivated'),
             message: message,
             buttons: [],
           });
         } else {
           // Show a more detailed error for configuration issues
-          const errorMessage = result.message || 'Unable to sign in with Google';
+          const errorMessage = result.message || t('auth.login.unableToSignInGoogle');
           if (errorMessage.includes('not configured')) {
             setAlert({
               visible: true,
               type: 'info',
-              title: 'Setup Required',
-              message: 'Google Sign-In is running in demo mode. To enable real Google authentication, please follow the setup guide.',
+              title: t('auth.login.setupRequired'),
+              message: t('auth.login.googleDemoModeMessage'),
               buttons: [
-                { text: 'Use Demo Mode', onPress: () => handleGoogleSignIn() },
-                { text: 'Cancel', style: 'cancel' }
+                { text: t('auth.login.useDemoMode'), onPress: () => handleGoogleSignIn() },
+                { text: t('common.cancel'), style: 'cancel' }
               ],
             });
           } else {
             setAlert({
               visible: true,
               type: 'error',
-              title: 'Sign-In Failed',
+              title: t('auth.login.signInFailed'),
               message: errorMessage,
               buttons: [],
             });
@@ -180,8 +182,8 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Connection Error',
-        message: 'Network error. Please check your connection and try again.',
+        title: t('auth.login.connectionError'),
+        message: t('auth.login.connectionErrorMessage'),
         buttons: [],
       });
     } finally {
@@ -231,7 +233,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.inputIcon}
                 />
                 <RNTextInput
-                  placeholder="Email"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   placeholderTextColor={theme.colors.text.secondary}
                   value={email}
                   onChangeText={setEmail}
@@ -251,7 +253,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.inputIcon}
                 />
                 <RNTextInput
-                  placeholder="Password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   placeholderTextColor={theme.colors.text.secondary}
                   value={password}
                   onChangeText={setPassword}
@@ -276,13 +278,13 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                 onPress={() => setAlert({
                   visible: true,
                   type: 'info',
-                  title: 'Coming Soon',
-                  message: 'Password recovery feature will be available soon!',
+                  title: t('auth.login.comingSoon'),
+                  message: t('auth.login.forgotPasswordComingSoon'),
                   buttons: [],
                 })}
                 style={styles.forgotButton}
               >
-                <Text style={styles.forgotText}>Forgot Password?</Text>
+                <Text style={styles.forgotText}>{t('auth.login.forgotPassword')}</Text>
               </TouchableOpacity>
 
               {/* Login Button */}
@@ -298,9 +300,9 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.loginButtonGradient}
                 >
                   {authAction === 'local' ? (
-                    <Text style={styles.buttonText}>Signing In...</Text>
+                    <Text style={styles.buttonText}>{t('auth.login.signingIn')}</Text>
                   ) : (
-                    <Text style={styles.buttonText}>Sign In</Text>
+                    <Text style={styles.buttonText}>{t('auth.login.signInButton')}</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -308,7 +310,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
               {/* Divider */}
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
+                <Text style={styles.dividerText}>{t('auth.login.orContinueWith')}</Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -325,7 +327,7 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.googleIcon}
                 />
                 <Text style={styles.googleButtonText}>
-                  {authAction === 'google' ? 'Connecting to Google...' : 'Continue with Google'}
+                  {authAction === 'google' ? t('auth.login.connectingGoogle') : t('auth.login.continueWithGoogle')}
                 </Text>
               </TouchableOpacity>
 
@@ -345,20 +347,20 @@ export const LoginScreen = ({ navigation, onAuthSuccess }) => {
                   color={theme.colors.text.secondary}
                   style={styles.googleIcon}
                 />
-                <Text style={styles.guestButtonText}>Continue as Guest</Text>
+                <Text style={styles.guestButtonText}>{t('auth.login.continueAsGuest')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
+              <Text style={styles.signupText}>{t('auth.login.noAccount')}</Text>
               <TouchableOpacity onPress={navigateToSignUp}>
-                <Text style={styles.signupLink}>Create Account</Text>
+                <Text style={styles.signupLink}>{t('auth.login.createAccount')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={{ padding: 10, alignItems: 'center' }}>
-               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Server: {API_BASE_URL}</Text>
+               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>{t('auth.login.server')} {API_BASE_URL}</Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

@@ -25,6 +25,7 @@ import { theme } from '../../styles';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
+import { useTranslation } from 'react-i18next';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const CONFIDENCE_THRESHOLD = 0.60; // Minimum confidence to display a detection
@@ -32,6 +33,7 @@ const STABLE_FRAME_GATE = 7; // Consecutive matching frames required for stabili
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const CameraScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -199,7 +201,7 @@ export const CameraScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error(`❌ Failed to switch to ${newMode} mode:`, error);
-      Alert.alert('Mode Switch Error', `Failed to switch to ${newMode} mode.`);
+      Alert.alert(t('camera.failedToSwitchMode'), t('camera.failedToSwitchMode', { mode: newMode }));
       // Revert to previous mode
       setScanMode(scanMode);
     } finally {
@@ -322,9 +324,9 @@ export const CameraScreen = ({ navigation }) => {
       } catch (error) {
         console.error('❌ TM model initialization failed:', error);
         Alert.alert(
-          'Model Error',
-          'Failed to load Teachable Machine model. Please try again.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          t('camera.modelError'),
+          t('camera.modelError'),
+          [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
         );
       }
     };
@@ -499,7 +501,7 @@ export const CameraScreen = ({ navigation }) => {
         console.log('🟢 CAPTURE: FRESH (no scan frame available)');
       } catch (error) {
         console.error('❌ Capture failed:', error);
-        Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
+        Alert.alert(t('camera.captureFailed'), t('camera.captureFailedMessage'));
         setIsCapturing(false);
         startScanning();
         return;
@@ -586,9 +588,9 @@ export const CameraScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={theme.colors.text.secondary} />
-          <Text style={styles.permissionText}>Camera permission required</Text>
+          <Text style={styles.permissionText}>{t('camera.cameraPermissionRequired')}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={styles.permissionButtonText}>{t('camera.grantPermission')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -606,15 +608,15 @@ export const CameraScreen = ({ navigation }) => {
     const color = showDetection ? '#4CAF50' : top.percentage >= 40 ? '#FFA500' : '#9E9E9E';
     const statusText =
       isStable && showDetection
-        ? 'Ready to capture'
-        : 'Point camera at a gourd flower or leaf';
+        ? t('camera.readyToCapture')
+        : t('camera.pointCamera');
 
     return (
       <>
         <View style={[styles.detectionPill, isStable && showDetection && styles.detectionPillActive]}>
           <View style={[styles.pillDot, { backgroundColor: color }]} />
           <Text style={[styles.pillText, { color }]} numberOfLines={1}>
-            {showDetection ? `Gourd  ${top.percentage.toFixed(1)}%` : 'Detecting...'}
+            {showDetection ? `${t('camera.confidence')} ${top.percentage.toFixed(1)}%` : t('camera.detecting')}
           </Text>
         </View>
         <Text style={styles.statusText}>{statusText}</Text>
@@ -648,7 +650,7 @@ export const CameraScreen = ({ navigation }) => {
               <Text style={[
                 styles.segmentText,
                 scanMode === SCAN_MODES.FLOWER && styles.segmentTextActive
-              ]}>Flower</Text>
+              ]}>{t('camera.flower')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -666,7 +668,7 @@ export const CameraScreen = ({ navigation }) => {
               <Text style={[
                 styles.segmentText,
                 scanMode === SCAN_MODES.LEAF && styles.segmentTextActive
-              ]}>Leaf</Text>
+              ]}>{t('camera.leaf')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -750,7 +752,7 @@ export const CameraScreen = ({ navigation }) => {
           <Animated.View style={[styles.floatingTip, { opacity: tipFadeAnim }]} pointerEvents="none">
             <Ionicons name="information-circle-outline" size={16} color="#FFF" />
             <Text style={styles.floatingTipText}>
-              Adjust your angle and show the back of the flower for better prediction quality
+              {t('camera.adjustAngle')}
             </Text>
           </Animated.View>
         )}
@@ -761,12 +763,12 @@ export const CameraScreen = ({ navigation }) => {
         {!isModelReady ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.loadingText}>Loading model...</Text>
+            <Text style={styles.loadingText}>{t('camera.loadingModel')}</Text>
           </View>
         ) : predictions.length === 0 ? (
           <View style={styles.waitingContainer}>
             <Ionicons name="scan" size={48} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.waitingText}>Waiting for predictions...</Text>
+            <Text style={styles.waitingText}>{t('camera.waitingForPredictions')}</Text>
           </View>
         ) : (
           <>

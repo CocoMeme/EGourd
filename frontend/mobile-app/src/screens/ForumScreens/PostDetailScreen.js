@@ -18,11 +18,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { forumService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const PostDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { postId } = route.params;
   const { isGuest, logout } = useAuth();
+  const { t } = useTranslation();
   
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +32,10 @@ const PostDetailScreen = ({ navigation, route }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const categories = [
-    { id: 'tips', label: 'Tips & Tricks', color: theme.colors.success },
-    { id: 'questions', label: 'Q&A', color: theme.colors.info },
-    { id: 'showcase', label: 'Showcase', color: theme.colors.warning },
-    { id: 'discussion', label: 'Discussion', color: theme.colors.primary },
+    { id: 'tips', label: t('forum.categories.tips'), color: theme.colors.success },
+    { id: 'questions', label: t('forum.categories.qa'), color: theme.colors.info },
+    { id: 'showcase', label: t('forum.categories.showcase'), color: theme.colors.warning },
+    { id: 'discussion', label: t('forum.categories.discussion'), color: theme.colors.primary },
   ];
 
   useEffect(() => {
@@ -47,11 +49,11 @@ const PostDetailScreen = ({ navigation, route }) => {
       if (response.success) {
         setPost(response.data);
       } else {
-        Alert.alert('Error', 'Failed to load post');
+        Alert.alert(t('errors.generic'), t('forum.postDetail.failedToLoadPost'));
       }
     } catch (error) {
       console.error('Error fetching post:', error);
-      Alert.alert('Error', 'Failed to load post');
+      Alert.alert(t('errors.generic'), t('forum.postDetail.failedToLoadPost'));
     } finally {
       setLoading(false);
     }
@@ -60,11 +62,11 @@ const PostDetailScreen = ({ navigation, route }) => {
   const requireAccount = (action) => {
     if (isGuest) {
       Alert.alert(
-        'Account Required',
-        'Sign in or create an account to ' + action + '.',
+        t('forum.accountRequired'),
+        t('forum.accountRequiredMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => logout() },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('forum.signIn'), onPress: () => logout() },
         ]
       );
       return true;
@@ -91,7 +93,7 @@ const PostDetailScreen = ({ navigation, route }) => {
   const handleAddComment = async () => {
     if (requireAccount('comment on posts')) return;
     if (!commentText.trim()) {
-      Alert.alert('Empty Comment', 'Please write something');
+      Alert.alert(t('forum.postDetail.emptyComment'), t('forum.postDetail.emptyCommentMessage'));
       return;
     }
 
@@ -103,7 +105,7 @@ const PostDetailScreen = ({ navigation, route }) => {
         setCommentText('');
         fetchPost(); // Refresh to get updated comments
       } else {
-        Alert.alert('Unable to Comment', response.message || 'Failed to add comment');
+        Alert.alert(t('forum.postDetail.unableToComment'), response.message || t('forum.postDetail.failedToAddComment'));
       }
     } finally {
       setSubmitting(false);
@@ -115,7 +117,7 @@ const PostDetailScreen = ({ navigation, route }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Just now';
+    if (!dateString) return t('forum.justNow');
     
     const date = new Date(dateString);
     const now = new Date();
@@ -126,18 +128,18 @@ const PostDetailScreen = ({ navigation, route }) => {
 
     // If less than 1 hour, show relative time
     if (diffInMinutes < 60) {
-      if (diffInMinutes < 1) return 'Just now';
-      return `${diffInMinutes}m ago`;
+      if (diffInMinutes < 1) return t('forum.justNow');
+      return t('forum.minutesAgo', { count: diffInMinutes });
     }
 
     // If less than 24 hours, show hours
     if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
+      return t('forum.hoursAgo', { count: diffInHours });
     }
 
     // If less than 7 days, show days
     if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
+      return t('forum.daysAgo', { count: diffInDays });
     }
 
     // Otherwise show full date with time
@@ -170,7 +172,7 @@ const PostDetailScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Post</Text>
+          <Text style={styles.headerTitle}>{t('forum.postDetail.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.centerContainer}>
@@ -192,12 +194,12 @@ const PostDetailScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Post</Text>
+          <Text style={styles.headerTitle}>{t('forum.postDetail.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={theme.colors.error} />
-          <Text style={styles.errorText}>Post not found</Text>
+          <Text style={styles.errorText}>{t('forum.postDetail.postNotFound')}</Text>
         </View>
       </View>
     );
@@ -220,7 +222,7 @@ const PostDetailScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Post Details</Text>
+          <Text style={styles.headerTitle}>{t('forum.postDetail.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -234,7 +236,7 @@ const PostDetailScreen = ({ navigation, route }) => {
                   <Ionicons name="person" size={24} color={theme.colors.text.secondary} />
                 </View>
                 <View style={styles.authorDetails}>
-                  <Text style={styles.authorName}>{post.author?.username || 'Anonymous'}</Text>
+                  <Text style={styles.authorName}>{post.author?.username || t('forum.anonymous')}</Text>
                   <Text style={styles.postTime}>{formatDate(post.createdAt)}</Text>
                 </View>
               </View>
@@ -305,7 +307,7 @@ const PostDetailScreen = ({ navigation, route }) => {
           {/* Comments Section */}
           <View style={styles.commentsSection}>
             <Text style={styles.commentsTitle}>
-              Comments ({post.comments?.length || 0})
+              {t('forum.postDetail.comments', { count: post.comments?.length || 0 })}
             </Text>
 
             {post.comments && post.comments.length > 0 ? (
@@ -317,7 +319,7 @@ const PostDetailScreen = ({ navigation, route }) => {
                     </View>
                     <View style={styles.commentAuthorInfo}>
                       <Text style={styles.commentAuthor}>
-                        {comment.user?.username || 'Anonymous'}
+                        {comment.user?.username || t('forum.anonymous')}
                       </Text>
                       <Text style={styles.commentTime}>{formatDate(comment.createdAt)}</Text>
                     </View>
@@ -334,8 +336,8 @@ const PostDetailScreen = ({ navigation, route }) => {
             ) : (
               <View style={styles.noComments}>
                 <Ionicons name="chatbubbles-outline" size={48} color={theme.colors.text.secondary} />
-                <Text style={styles.noCommentsText}>No comments yet</Text>
-                <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
+                <Text style={styles.noCommentsText}>{t('forum.postDetail.noComments')}</Text>
+                <Text style={styles.noCommentsSubtext}>{t('forum.postDetail.beFirstComment')}</Text>
               </View>
             )}
           </View>
@@ -348,18 +350,18 @@ const PostDetailScreen = ({ navigation, route }) => {
             onPress={() => requireAccount('join the discussion')}
           >
             <Ionicons name="chatbubble-outline" size={18} color={theme.colors.text.secondary} />
-            <Text style={styles.guestCommentText}>Sign in to join the discussion</Text>
+            <Text style={styles.guestCommentText}>{t('forum.postDetail.signInToComment')}</Text>
           </TouchableOpacity>
         ) : post?.isLocked ? (
           <View style={styles.lockedCommentContainer}>
             <Ionicons name="lock-closed" size={20} color={theme.colors.text.secondary} />
-            <Text style={styles.lockedCommentText}>This post is locked. No new comments allowed.</Text>
+            <Text style={styles.lockedCommentText}>{t('forum.postDetail.postLocked')}</Text>
           </View>
         ) : (
           <View style={styles.commentInputContainer}>
             <TextInput
               style={styles.commentInput}
-              placeholder="Write a comment..."
+              placeholder={t('forum.postDetail.writeComment')}
               placeholderTextColor={theme.colors.text.secondary}
               value={commentText}
               onChangeText={setCommentText}

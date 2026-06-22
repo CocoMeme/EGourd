@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 /**
@@ -8,6 +9,7 @@ import { theme } from '../../styles';
  * @param {Object} healthData - Health data object from Gemini
  */
 export const LeafHealthCard = ({ healthData }) => {
+    const { t } = useTranslation();
     if (!healthData) return null;
 
     const getHealthColor = (score) => {
@@ -23,13 +25,13 @@ export const LeafHealthCard = ({ healthData }) => {
 
     return (
         <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Leaf Health</Text>
+            <Text style={styles.sectionTitle}>{t('scanResults.leaf.health')}</Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/* Score Circle */}
                 <View style={styles.scoreCircle}>
                     <Text style={[styles.scoreText, { color }]}>{score}</Text>
-                    <Text style={styles.scoreLabel}>Health</Text>
+                    <Text style={styles.scoreLabel}>{t('scanResults.leaf.health')}</Text>
                 </View>
 
                 {/* Details */}
@@ -38,7 +40,7 @@ export const LeafHealthCard = ({ healthData }) => {
                         <View style={styles.healthRow}>
                             <Ionicons name="leaf" size={16} color="#4CAF50" />
                             <Text style={styles.healthText}>
-                                Chlorophyll: <Text style={styles.healthValue}>{healthData.chlorophyllLevel}</Text>
+                                {t('scanResults.leaf.chlorophyll')}: <Text style={styles.healthValue}>{healthData.chlorophyllLevel}</Text>
                             </Text>
                         </View>
                     )}
@@ -47,7 +49,7 @@ export const LeafHealthCard = ({ healthData }) => {
                         <View style={styles.healthRow}>
                             <Ionicons name="time-outline" size={16} color="#2196F3" />
                             <Text style={styles.healthText}>
-                                Maturity: <Text style={styles.healthValue}>{healthData.maturityStage}</Text>
+                                {t('scanResults.leaf.maturity')}: <Text style={styles.healthValue}>{healthData.maturityStage}</Text>
                             </Text>
                         </View>
                     )}
@@ -58,7 +60,7 @@ export const LeafHealthCard = ({ healthData }) => {
             {healthData.visibleIssues?.length > 0 && (
                 <View style={styles.issuesContainer}>
                     <Text style={styles.issuesTitle}>
-                        <Ionicons name="warning" size={14} color="#FF9800" /> Issues Detected:
+                        <Ionicons name="warning" size={14} color="#FF9800" /> {t('scanResults.leaf.issuesDetected')}:
                     </Text>
                     {healthData.visibleIssues.map((issue, i) => (
                         <Text key={i} style={styles.issueItem}>• {issue}</Text>
@@ -70,7 +72,7 @@ export const LeafHealthCard = ({ healthData }) => {
             {healthData.nutrientDeficiencies?.length > 0 && (
                 <View style={styles.issuesContainer}>
                     <Text style={[styles.issuesTitle, { color: '#F44336' }]}>
-                        <Ionicons name="alert-circle" size={14} color="#F44336" /> Nutrient Deficiencies:
+                        <Ionicons name="alert-circle" size={14} color="#F44336" /> {t('scanResults.leaf.nutrientDeficiencies')}:
                     </Text>
                     {healthData.nutrientDeficiencies.map((def, i) => (
                         <Text key={i} style={[styles.issueItem, { color: '#D32F2F' }]}>• {def}</Text>

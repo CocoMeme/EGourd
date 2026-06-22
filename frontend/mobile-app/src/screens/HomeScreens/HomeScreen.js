@@ -15,10 +15,12 @@ import { theme } from '../../styles';
 import { getAllNews, getPopupNews, markNewsAsRead } from '../../services/newsService';
 import { authService, connectionService, scanService, pollinationService, guestStorageService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export const HomeScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { isGuest } = useAuth();
+  const { t } = useTranslation();
   // Top Banner
   // Mock data - replace with real data from API/storage
   const [userName] = useState('Coco Meme');
@@ -71,28 +73,28 @@ export const HomeScreen = ({ navigation, route }) => {
         }
       }));
       setShowOptInModal(false);
-      Alert.alert('Saved', value ? 'Gemini Embedding turned on. Thank you!' : 'Settings saved. You can always change this in your profile settings.');
+      Alert.alert(t('home.saved'), value ? t('home.geminiEmbeddingOn') : t('home.settingsSaved'));
     } catch (error) {
       console.error('Failed to save opt-in choice:', error);
-      Alert.alert('Error', 'Failed to save your preference.');
+      Alert.alert(t('common.error'), t('home.failedToSavePref'));
     }
   };
 
   // Handlers for header buttons
   const handleNotificationPress = () => {
-    Alert.alert('Notifications', 'Notification feature coming soon!');
+    Alert.alert(t('home.notificationsComingSoon'), '');
   };
 
   const handleMenuPress = () => {
     Alert.alert(
-      'Menu Options',
-      'What would you like to do?',
+      t('home.menuOptions'),
+      t('home.whatWouldYouLike'),
       [
-        { text: 'How to Use', onPress: () => navigation.navigate('HowToUse') },
-        { text: 'Educational Resources', onPress: () => navigation.navigate('Educational') },
-        { text: 'Settings', onPress: () => console.log('Settings pressed') },
-        { text: 'Help', onPress: () => console.log('Help pressed') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('home.howToUse'), onPress: () => navigation.navigate('HowToUse') },
+        { text: t('home.learn'), onPress: () => navigation.navigate('Educational') },
+        { text: t('home.settings'), onPress: () => console.log('Settings pressed') },
+        { text: t('home.help'), onPress: () => console.log('Help pressed') },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -109,9 +111,9 @@ export const HomeScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const summaryStats = [
-    { id: 'total', label: 'Total Scans', value: stats.totalScans || 0 },
-    { id: 'plants', label: 'Total Plants', value: stats.totalPlants || 0 },
-    { id: 'pollinations', label: 'Pollinations', value: stats.pollinationsCount || 0 },
+    { id: 'total', label: t('home.totalScans'), value: stats.totalScans || 0 },
+    { id: 'plants', label: t('home.totalPlants'), value: stats.totalPlants || 0 },
+    { id: 'pollinations', label: t('home.pollinations'), value: stats.pollinationsCount || 0 },
   ];
 
   const newsPreview = news.slice(0, 3);
@@ -119,38 +121,38 @@ export const HomeScreen = ({ navigation, route }) => {
   const quickTools = [
     {
       id: 'chatbot',
-      label: 'Ask Me',
+      label: t('home.askMe'),
       icon: 'chatbubble-ellipses-outline',
       action: () => navigation.navigate('Chatbot'),
       highlight: true,
     },
     {
       id: 'history',
-      label: 'History',
+      label: t('home.history'),
       icon: 'time-outline',
       action: () => navigation.navigate('Profile', { initialTab: 'history' }),
     },
     {
       id: 'educational',
-      label: 'Learn',
+      label: t('home.learn'),
       icon: 'school-outline',
       action: () => navigation.navigate('Educational'),
     },
     {
       id: 'news',
-      label: 'News',
+      label: t('home.news'),
       icon: 'newspaper-outline',
       action: () => navigation.navigate('NewsMain'),
     },
     {
       id: 'profile',
-      label: 'Profile',
+      label: t('home.profile'),
       icon: 'person-outline',
       action: () => navigation.navigate('Profile'),
     },
     {
       id: 'howto',
-      label: 'How to Use',
+      label: t('home.howToUse'),
       icon: 'help-circle-outline',
       action: () => navigation.navigate('HowToUse'),
     },
@@ -294,15 +296,15 @@ export const HomeScreen = ({ navigation, route }) => {
       console.error('❌ Error refreshing data:', error);
 
       Alert.alert(
-        'Connection Error',
-        'Unable to reconnect to the server. Please check your connection and try again.',
+        t('home.connectionError'),
+        t('errors.networkError'),
         [
           {
-            text: 'Retry',
+            text: t('common.retry'),
             onPress: () => onRefresh()
           },
           {
-            text: 'Cancel',
+            text: t('common.cancel'),
             style: 'cancel'
           }
         ]
@@ -320,8 +322,8 @@ export const HomeScreen = ({ navigation, route }) => {
         setAlert({
           visible: true,
           type: 'success',
-          title: 'Welcome Back!',
-          message: 'Login successful! Ready to scan your gourds.',
+          title: t('home.welcomeBack'),
+          message: t('home.loginSuccessful'),
           buttons: [],
         });
       }, 500);
@@ -392,12 +394,12 @@ export const HomeScreen = ({ navigation, route }) => {
 
   const handleDeleteScan = async (scanId) => {
     Alert.alert(
-      'Delete Scan',
-      'Are you sure you want to delete this scan?',
+      t('home.deleteScan'),
+      t('home.deleteScanConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -412,7 +414,7 @@ export const HomeScreen = ({ navigation, route }) => {
               fetchRecentScans();
             } catch (error) {
               console.error('Error deleting scan:', error);
-              Alert.alert('Error', 'Failed to delete scan. Please try again.');
+              Alert.alert(t('common.error'), t('home.deleteScanError'));
             }
           }
         }
@@ -460,7 +462,7 @@ export const HomeScreen = ({ navigation, route }) => {
         <View style={styles.content}>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>Quick tools</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>{t('home.quickTools')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -483,7 +485,7 @@ export const HomeScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>Snapshot</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStandalone]}>{t('home.snapshot')}</Text>
             <View style={styles.statRow}>
               {summaryStats.map((item, index) => (
                 <TouchableOpacity
@@ -523,10 +525,10 @@ export const HomeScreen = ({ navigation, route }) => {
               <Ionicons name="calendar-outline" size={22} color={theme.colors.primary} />
               <View>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: theme.colors.text.primary }}>
-                  Gourd Season Insights
+                  {t('home.gourdSeasonInsights')}
                 </Text>
                 <Text style={{ fontSize: 12, color: theme.colors.text.secondary, marginTop: 2 }}>
-                  Seasonal trends, analysis & growing tips
+                  {t('home.seasonalTrends')}
                 </Text>
               </View>
             </View>
@@ -535,10 +537,10 @@ export const HomeScreen = ({ navigation, route }) => {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Latest Update</Text>
+              <Text style={styles.sectionTitle}>{t('home.latestUpdate')}</Text>
               {news.length > 1 && !loadingNews && (
                 <TouchableOpacity onPress={() => news[0] && handleNewsPress(news[0])}>
-                  <Text style={styles.sectionAction}>Open feed</Text>
+                  <Text style={styles.sectionAction}>{t('home.openFeed')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -558,7 +560,7 @@ export const HomeScreen = ({ navigation, route }) => {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No updates available</Text>
+                <Text style={styles.emptyText}>{t('home.noUpdatesAvailable')}</Text>
               </View>
             )}
           </View>
@@ -570,19 +572,19 @@ export const HomeScreen = ({ navigation, route }) => {
           ) : recentScans.length > 0 ? (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Scans</Text>
+                <Text style={styles.sectionTitle}>{t('home.recentScans')}</Text>
                 <Text
                   style={styles.sectionAction}
                   onPress={() => navigation.navigate('Profile', { initialTab: 'history' })}
                 >
-                  View all
+                  {t('common.viewAll')}
                 </Text>
               </View>
               {recentScans.map((scan) => (
                 <RecentScanCard
                   key={scan._id}
                   imageUri={scan.imageUrl}
-                  result={`${scan.prediction} Flower`}
+                  result={`${scan.prediction} ${t('scanResults.flower.badge')}`}
                   date={scan.date}
                   confidence={scan.confidence}
                   name={scan.name}

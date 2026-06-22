@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 // Removed @react-native-community/slider due to native module issues with Expo
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { Button } from '../CustomComponents/Button';
 import { ImageCapture } from './ImageCapture';
@@ -85,9 +86,11 @@ export const PlantForm = ({
   initialData = {}, 
   onSubmit, 
   onCancel, 
-  title = 'Add New Plant',
+  title,
   isLoading = false 
 }) => {
+  const { t } = useTranslation();
+  const formTitle = title || t('pollination.addNewPlant');
   // Gourd type configurations from backend
   const [gourdTypeConfigs, setGourdTypeConfigs] = useState({
     bitter_gourd: {
@@ -165,11 +168,11 @@ export const PlantForm = ({
   }, []);
 
   const gourdTypes = [
-    { value: 'bitter_gourd', label: 'Bitter Gourd', icon: '🥒' },
-    { value: 'bottle_gourd', label: 'Bottle Gourd', icon: '🫛' },
-    { value: 'sponge_gourd', label: 'Sponge Gourd', icon: '🌿' },
-    { value: 'cucumber', label: 'Cucumber', icon: '🥒' },
-    { value: 'kalabasa', label: 'Squash', icon: '🎃' },
+    { value: 'bitter_gourd', label: t('plantService.varieties.bitter_gourd'), icon: '🥒' },
+    { value: 'bottle_gourd', label: t('plantService.varieties.bottle_gourd'), icon: '🫛' },
+    { value: 'sponge_gourd', label: t('plantService.varieties.sponge_gourd'), icon: '🌿' },
+    { value: 'cucumber', label: t('plantService.varieties.cucumber'), icon: '🥒' },
+    { value: 'kalabasa', label: t('plantService.varieties.kalabasa'), icon: '🎃' },
   ];
 
   // Removed soilTypes, climateTypes, seasons as they are now auto-determined
@@ -222,13 +225,13 @@ export const PlantForm = ({
   const handleSubmit = () => {
     // Validate required fields
     if (!formData.gourdType || !formData.datePlanted) {
-      Alert.alert('Missing Information', 'Please fill in plant type and planting date.');
+      Alert.alert(t('pollination.missingInfo'), t('pollination.missingInfoDetail'));
       return;
     }
 
     // Check if planting date is not in the future
     if (formData.datePlanted > new Date()) {
-      Alert.alert('Invalid Date', 'Planting date cannot be in the future.');
+      Alert.alert(t('common.invalidDate'), t('pollination.dateCannotBeFuture'));
       return;
     }
 
@@ -263,7 +266,7 @@ export const PlantForm = ({
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{formTitle}</Text>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
         </TouchableOpacity>
@@ -271,7 +274,7 @@ export const PlantForm = ({
 
       {/* Gourd Type Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Gourd Type *</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.gourdType')} *</Text>
         <TouchableOpacity 
           style={styles.selector}
           onPress={() => setShowGourdTypeModal(true)}
@@ -284,7 +287,7 @@ export const PlantForm = ({
         {optimalConditions && (
           <View style={styles.conditionsHint}>
             <Text style={styles.conditionsText}>
-              Optimal: {optimalConditions.minTemp}-{optimalConditions.maxTemp}°C, {optimalConditions.humidity} humidity
+              {t('pollination.optimalConditions', { minTemp: optimalConditions.minTemp, maxTemp: optimalConditions.maxTemp, humidity: optimalConditions.humidity })}
             </Text>
           </View>
         )}
@@ -292,11 +295,11 @@ export const PlantForm = ({
 
       {/* Plant Name (Optional) */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plant Name (Optional)</Text>
-        <Text style={styles.sectionSubtitle}>Give your plant a nickname for easy tracking</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.plantNameOptional')}</Text>
+        <Text style={styles.sectionSubtitle}>{t('pollination.plantNameHint')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., 'Balcony Ampalaya #1'"
+          placeholder={t('pollination.plantNamePlaceholder')}
           value={formData.plantName}
           onChangeText={(value) => handleInputChange('plantName', value)}
           maxLength={50}
@@ -305,7 +308,7 @@ export const PlantForm = ({
 
       {/* Date Planted */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Date Planted *</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.datePlanted')} *</Text>
         <TouchableOpacity 
           style={styles.selector}
           onPress={() => {
@@ -332,8 +335,8 @@ export const PlantForm = ({
       <View style={styles.section}>
         <View style={styles.toggleHeader}>
           <View>
-            <Text style={styles.sectionTitle}>Environment Settings</Text>
-            <Text style={styles.sectionSubtitle}>Configure for better ML predictions</Text>
+            <Text style={styles.sectionTitle}>{t('pollination.environmentSettings')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('pollination.environmentSettingsHint')}</Text>
           </View>
           <Switch
             value={showAdvancedSettings}
@@ -350,51 +353,51 @@ export const PlantForm = ({
           <View style={styles.weatherInfoCard}>
             <View style={styles.weatherHeader}>
               <Ionicons name="cloud-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.weatherTitle}>Weather Data (Auto-filled)</Text>
+              <Text style={styles.weatherTitle}>{t('pollination.weatherData')}</Text>
             </View>
             <Text style={styles.weatherSubtitle}>
-              Based on historical weather for the planting date
+              {t('pollination.weatherDataHint')}
             </Text>
             
             <View style={styles.weatherGrid}>
               <View style={styles.weatherItem}>
                 <Ionicons name="thermometer-outline" size={24} color="#FF6B6B" />
                 <Text style={styles.weatherValue}>{formData.environment.avgTemperature}°C</Text>
-                <Text style={styles.weatherLabel}>Temperature</Text>
+                <Text style={styles.weatherLabel}>{t('pollination.temperature')}</Text>
               </View>
               <View style={styles.weatherItem}>
                 <Ionicons name="water-outline" size={24} color="#4A90E2" />
                 <Text style={styles.weatherValue}>{formData.environment.avgHumidity}%</Text>
-                <Text style={styles.weatherLabel}>Humidity</Text>
+                <Text style={styles.weatherLabel}>{t('pollination.humidity')}</Text>
               </View>
               <View style={styles.weatherItem}>
                 <Ionicons name="sunny-outline" size={24} color="#F5A623" />
                 <Text style={styles.weatherValue}>{formData.environment.sunlightHours}h</Text>
-                <Text style={styles.weatherLabel}>Sunlight</Text>
+                <Text style={styles.weatherLabel}>{t('pollination.sunlight')}</Text>
               </View>
               <View style={styles.weatherItem}>
                 <Ionicons name="leaf-outline" size={24} color="#7ED321" />
                 <Text style={styles.weatherValue}>{formatLabel(formData.environment.season)}</Text>
-                <Text style={styles.weatherLabel}>Season</Text>
+                <Text style={styles.weatherLabel}>{t('pollination.season')}</Text>
               </View>
             </View>
             
             <View style={styles.soilInfo}>
               <Ionicons name="earth-outline" size={16} color={theme.colors.text.secondary} />
               <Text style={styles.soilText}>
-                Soil Type: Silty (Philippine standard)
+                {t('pollination.soilType')}
               </Text>
             </View>
           </View>
 
           {/* Care Settings */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Care Settings</Text>
+            <Text style={styles.sectionTitle}>{t('pollination.careSettings')}</Text>
           </View>
 
           <View style={styles.envRow}>
             <View style={styles.envRowItem}>
-              <Text style={styles.envLabel}>Fertilizer Type</Text>
+              <Text style={styles.envLabel}>{t('pollination.fertilizerType')}</Text>
               <View style={styles.optionRow}>
                 {fertilizerTypes.map(fert => (
                   <TouchableOpacity
@@ -417,7 +420,7 @@ export const PlantForm = ({
 
           <View style={styles.envRow}>
             <View style={styles.envRowItem}>
-              <Text style={styles.envLabel}>Watering Frequency</Text>
+              <Text style={styles.envLabel}>{t('pollination.wateringFrequency')}</Text>
               <View style={styles.optionRow}>
                 {['daily', 'twice_daily', 'every_other_day'].map(freq => (
                   <TouchableOpacity
@@ -442,10 +445,10 @@ export const PlantForm = ({
 
       {/* Initial Notes */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notes (Optional)</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.notesOptional')}</Text>
         <TextInput
           style={styles.textArea}
-          placeholder="Add any observations about the planting..."
+          placeholder={t('pollination.notesPlaceholder')}
           value={formData.notes}
           onChangeText={(value) => handleInputChange('notes', value)}
           multiline
@@ -454,15 +457,15 @@ export const PlantForm = ({
           textAlignVertical="top"
         />
         <Text style={styles.charCount}>
-          {formData.notes.length}/500 characters
+          {t('pollination.charCount', { count: formData.notes.length })}
         </Text>
       </View>
 
       {/* Plant Photo */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plant Photo (Optional)</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.plantPhotoOptional')}</Text>
         <Text style={styles.sectionSubtitle}>
-          Add a photo to track your plant's growth
+          {t('pollination.plantPhotoHint')}
         </Text>
         
         {capturedImage && (
@@ -483,7 +486,7 @@ export const PlantForm = ({
         >
           <Ionicons name="camera" size={24} color={theme.colors.primary} />
           <Text style={styles.addPhotoText}>
-            {capturedImage ? 'Change Photo' : 'Add Photo'}
+            {capturedImage ? t('pollination.changePhoto') : t('pollination.addPhoto')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -491,13 +494,13 @@ export const PlantForm = ({
       {/* Submit Buttons */}
       <View style={styles.buttonContainer}>
         <Button
-          title="Cancel"
+          title={t('common.cancel')}
           variant="outline"
           onPress={onCancel}
           style={styles.cancelButton}
         />
         <Button
-          title={initialData.gourdType ? 'Update Plant' : 'Add Plant'}
+          title={initialData.gourdType ? t('pollination.updatePlant') : t('pollination.addPlant')}
           onPress={handleSubmit}
           disabled={isLoading}
           style={styles.submitButton}
@@ -514,7 +517,7 @@ export const PlantForm = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Gourd Type</Text>
+              <Text style={styles.modalTitle}>{t('pollination.selectGourdType')}</Text>
               <TouchableOpacity onPress={() => setShowGourdTypeModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
@@ -548,7 +551,7 @@ export const PlantForm = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Planting Date</Text>
+              <Text style={styles.modalTitle}>{t('pollination.selectPlantingDate')}</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
@@ -557,11 +560,13 @@ export const PlantForm = ({
             <View style={styles.datePickerContainer}>
               {/* Month Selection */}
               <View style={styles.dateSection}>
-                <Text style={styles.dateSectionTitle}>Month</Text>
+                <Text style={styles.dateSectionTitle}>{t('common.month')}</Text>
                 <ScrollView style={styles.dateScroll} showsVerticalScrollIndicator={false}>
                   {[
-                    'January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
+                    t('common.january'), t('common.february'), t('common.march'),
+                    t('common.april'), t('common.may'), t('common.june'),
+                    t('common.july'), t('common.august'), t('common.september'),
+                    t('common.october'), t('common.november'), t('common.december')
                   ].map((month, index) => (
                     <TouchableOpacity
                       key={month}
@@ -584,7 +589,7 @@ export const PlantForm = ({
 
               {/* Day Selection */}
               <View style={styles.dateSection}>
-                <Text style={styles.dateSectionTitle}>Day</Text>
+                <Text style={styles.dateSectionTitle}>{t('common.day')}</Text>
                 <ScrollView style={styles.dateScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: new Date(selectedYear, selectedMonth + 1, 0).getDate() }, (_, i) => i + 1).map((day) => (
                     <TouchableOpacity
@@ -608,7 +613,7 @@ export const PlantForm = ({
 
               {/* Year Selection */}
               <View style={styles.dateSection}>
-                <Text style={styles.dateSectionTitle}>Year</Text>
+                <Text style={styles.dateSectionTitle}>{t('common.year')}</Text>
                 <ScrollView style={styles.dateScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: 26 }, (_, i) => new Date().getFullYear() - i).map((year) => (
                     <TouchableOpacity
@@ -636,7 +641,7 @@ export const PlantForm = ({
                 style={[styles.dateButton, styles.cancelDateButton]}
                 onPress={() => setShowDatePicker(false)}
               >
-                <Text style={styles.cancelDateText}>Cancel</Text>
+                <Text style={styles.cancelDateText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -644,14 +649,14 @@ export const PlantForm = ({
                 onPress={() => {
                   const newDate = new Date(selectedYear, selectedMonth, selectedDay);
                   if (newDate > new Date()) {
-                    Alert.alert('Invalid Date', 'Planting date cannot be in the future.');
+                    Alert.alert(t('common.invalidDate'), t('pollination.dateCannotBeFuture'));
                     return;
                   }
                   handleDateChange(newDate); // This will also update weather data
                   setShowDatePicker(false);
                 }}
               >
-                <Text style={styles.confirmDateText}>Confirm</Text>
+                <Text style={styles.confirmDateText}>{t('common.confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -663,7 +668,7 @@ export const PlantForm = ({
         visible={showImageCapture}
         onClose={() => setShowImageCapture(false)}
         onImageCaptured={handleImageCaptured}
-        title="Add Plant Photo"
+        title={t('pollination.addPlantPhoto')}
       />
     </ScrollView>
   );

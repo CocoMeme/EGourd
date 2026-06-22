@@ -13,8 +13,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { pollinationService } from '../../services/pollinationService';
+import { useTranslation } from 'react-i18next';
 
 const PredictYieldScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [loadingPlants, setLoadingPlants] = useState(false);
   const [useExistingPlant, setUseExistingPlant] = useState(false);
@@ -50,7 +52,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error fetching plants:', error);
-      Alert.alert('Error', 'Failed to load plants');
+      Alert.alert(t('common.error'), t('errors.fetchPlantsFailed'));
     } finally {
       setLoadingPlants(false);
     }
@@ -139,7 +141,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please check all fields and try again');
+      Alert.alert(t('predictionForms.validationError'), t('predictionForms.validationErrorMessage'));
       return;
     }
 
@@ -166,11 +168,11 @@ const PredictYieldScreen = ({ navigation, route }) => {
           prediction: response.data
         });
       } else {
-        Alert.alert('Error', response.message || 'Failed to generate prediction');
+        Alert.alert(t('common.error'), response.message || t('predictionForms.yieldFailed'));
       }
     } catch (error) {
       console.error('Prediction error:', error);
-      Alert.alert('Error', error.message || 'Failed to generate yield prediction');
+      Alert.alert(t('common.error'), error.message || t('predictionForms.yieldFailed'));
     } finally {
       setLoading(false);
     }
@@ -178,11 +180,11 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
   const getPlantTypeLabel = (type) => {
     const labels = {
-      bitter_gourd: 'Bitter Gourd',
-      bottle_gourd: 'Bottle Gourd',
-      sponge_gourd: 'Sponge Gourd',
-      cucumber: 'Cucumber',
-      kalabasa: 'Squash'
+      bitter_gourd: t('predictionForms.plantTypeBitterGourd'),
+      bottle_gourd: t('predictionForms.plantTypeBottleGourd'),
+      sponge_gourd: t('predictionForms.plantTypeSpongeGourd'),
+      cucumber: t('predictionForms.plantTypeCucumber'),
+      kalabasa: t('predictionForms.plantTypeSquash')
     };
     return labels[type] || type;
   };
@@ -196,7 +198,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
         >
           <Ionicons name="arrow-back" size={24} color="#2e7d32" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Predict Crop Yield</Text>
+        <Text style={styles.headerTitle}>{t('predictionForms.yieldTitle')}</Text>
       </View>
 
       <ScrollView 
@@ -205,7 +207,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
       >
         {/* Data Source Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Source</Text>
+          <Text style={styles.sectionTitle}>{t('predictionForms.dataSource')}</Text>
           
           <View style={styles.toggleContainer}>
             <TouchableOpacity
@@ -227,7 +229,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
                 styles.toggleText,
                 !useExistingPlant && styles.toggleTextActive
               ]}>
-                Manual Entry
+                {t('predictionForms.manualEntry')}
               </Text>
             </TouchableOpacity>
 
@@ -247,7 +249,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
                 styles.toggleText,
                 useExistingPlant && styles.toggleTextActive
               ]}>
-                Select Plant
+                {t('predictionForms.selectPlant')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -263,7 +265,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
                   onValueChange={handlePlantSelection}
                   style={styles.picker}
                 >
-                  <Picker.Item label="-- Select a plant --" value="" />
+                  <Picker.Item label={t('predictionForms.selectPlantPlaceholder')} value="" />
                   {plants.map(plant => (
                     <Picker.Item
                       key={plant._id}
@@ -279,10 +281,10 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
         {/* Plant Type */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Plant Information</Text>
+          <Text style={styles.sectionTitle}>{t('predictionForms.plantInfo')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Plant Type *</Text>
+            <Text style={styles.label}>{t('predictionForms.plantType')} *</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.plantType}
@@ -290,11 +292,11 @@ const PredictYieldScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!useExistingPlant || !selectedPlantId}
               >
-                <Picker.Item label="Bitter Gourd" value="bitter_gourd" />
-                <Picker.Item label="Bottle Gourd" value="bottle_gourd" />
-                <Picker.Item label="Sponge Gourd" value="sponge_gourd" />
-                <Picker.Item label="Cucumber" value="cucumber" />
-                <Picker.Item label="Squash" value="kalabasa" />
+                <Picker.Item label={t('predictionForms.plantTypeBitterGourd')} value="bitter_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeBottleGourd')} value="bottle_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeSpongeGourd')} value="sponge_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeCucumber')} value="cucumber" />
+                <Picker.Item label={t('predictionForms.plantTypeSquash')} value="kalabasa" />
               </Picker>
             </View>
             {errors.plantType && <Text style={styles.errorText}>{errors.plantType}</Text>}
@@ -302,7 +304,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
           {/* Plant Age */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Plant Age (days) *</Text>
+            <Text style={styles.label}>{t('predictionForms.plantAge')} *</Text>
             <TextInput
               style={[styles.input, errors.plantAgeDays && styles.inputError]}
               value={formData.plantAgeDays}
@@ -317,7 +319,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
           {/* Vine Length */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vine Length (cm) *</Text>
+            <Text style={styles.label}>{t('predictionForms.vineLength')} *</Text>
             <TextInput
               style={[styles.input, errors.vineLengthCm && styles.inputError]}
               value={formData.vineLengthCm}
@@ -332,7 +334,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
           {/* Node Count */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Node Count *</Text>
+            <Text style={styles.label}>{t('predictionForms.nodeCount')} *</Text>
             <TextInput
               style={[styles.input, errors.nodeCount && styles.inputError]}
               value={formData.nodeCount}
@@ -348,10 +350,10 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
         {/* Flower Counts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Flowering Information</Text>
+          <Text style={styles.sectionTitle}>{t('predictionForms.floweringInfo')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Male Flower Count *</Text>
+            <Text style={styles.label}>{t('predictionForms.maleFlowerCount')} *</Text>
             <TextInput
               style={[styles.input, errors.maleFlowerCount && styles.inputError]}
               value={formData.maleFlowerCount}
@@ -364,7 +366,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Female Flower Count *</Text>
+            <Text style={styles.label}>{t('predictionForms.femaleFlowerCount')} *</Text>
             <TextInput
               style={[styles.input, errors.femaleFlowerCount && styles.inputError]}
               value={formData.femaleFlowerCount}
@@ -380,10 +382,10 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
         {/* Environmental Conditions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Environmental Conditions</Text>
+          <Text style={styles.sectionTitle}>{t('predictionForms.environConditions')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Temperature (°C) *</Text>
+            <Text style={styles.label}>{t('predictionForms.temperature')} *</Text>
             <TextInput
               style={[styles.input, errors.temperatureCelsius && styles.inputError]}
               value={formData.temperatureCelsius}
@@ -397,7 +399,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Soil Moisture (%) *</Text>
+            <Text style={styles.label}>{t('predictionForms.soilMoisture')} *</Text>
             <TextInput
               style={[styles.input, errors.soilMoisturePercent && styles.inputError]}
               value={formData.soilMoisturePercent}
@@ -413,13 +415,13 @@ const PredictYieldScreen = ({ navigation, route }) => {
 
         {/* Optional Notes */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
+          <Text style={styles.sectionTitle}>{t('predictionForms.additionalNotes')}</Text>
           
           <TextInput
             style={[styles.input, styles.notesInput]}
             value={formData.notes}
             onChangeText={(value) => handleInputChange('notes', value)}
-            placeholder="Any additional observations..."
+            placeholder={t('predictionForms.notesPlaceholder')}
             placeholderTextColor="#999"
             multiline
             numberOfLines={3}
@@ -437,7 +439,7 @@ const PredictYieldScreen = ({ navigation, route }) => {
           ) : (
             <>
               <Ionicons name="analytics-outline" size={20} color="#fff" />
-              <Text style={styles.submitButtonText}>Generate Prediction</Text>
+              <Text style={styles.submitButtonText}>{t('predictionForms.generatePrediction')}</Text>
             </>
           )}
         </TouchableOpacity>

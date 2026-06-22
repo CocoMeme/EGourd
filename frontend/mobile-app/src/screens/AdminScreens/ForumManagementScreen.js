@@ -17,8 +17,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../services';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 export const ForumManagementScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,11 +64,11 @@ export const ForumManagementScreen = ({ navigation, route }) => {
         setPosts(result.posts);
         setPagination(result.pagination);
       } else {
-        Alert.alert('Error', result.message);
+        Alert.alert(t('errors.generic'), result.message);
       }
     } catch (error) {
       console.error('Error loading posts:', error);
-      Alert.alert('Error', 'Failed to load forum posts');
+      Alert.alert(t('errors.generic'), t('admin.forum.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -90,26 +92,27 @@ export const ForumManagementScreen = ({ navigation, route }) => {
   };
 
   const handleTogglePin = async (post) => {
+    const action = post.isPinned ? 'unpin' : 'pin';
     Alert.alert(
-      `${post.isPinned ? 'Unpin' : 'Pin'} Post`,
-      `Are you sure you want to ${post.isPinned ? 'unpin' : 'pin'} this post?`,
+      t('admin.forum.pinUnpin'),
+      t('admin.forum.pinUnpinConfirm', { action }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: post.isPinned ? 'Unpin' : 'Pin',
+          text: post.isPinned ? t('admin.forum.unpin') : t('admin.forum.pin'),
           onPress: async () => {
             try {
               const result = await adminService.togglePinPost(post._id);
 
               if (result.success) {
-                Alert.alert('Success', `Post ${post.isPinned ? 'unpinned' : 'pinned'} successfully`);
+                Alert.alert(t('common.success'), t('admin.forum.postAction', { action }));
                 setShowActionsModal(false);
                 loadPosts();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to toggle pin status');
+              Alert.alert(t('errors.generic'), t('admin.forum.postActionFailed', { action }));
             }
           },
         },
@@ -118,26 +121,27 @@ export const ForumManagementScreen = ({ navigation, route }) => {
   };
 
   const handleToggleLock = async (post) => {
+    const action = post.isLocked ? 'unlock' : 'lock';
     Alert.alert(
-      `${post.isLocked ? 'Unlock' : 'Lock'} Post`,
-      `Are you sure you want to ${post.isLocked ? 'unlock' : 'lock'} this post?`,
+      t('admin.forum.lockUnlock'),
+      t('admin.forum.lockUnlockConfirm', { action }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: post.isLocked ? 'Unlock' : 'Lock',
+          text: post.isLocked ? t('admin.forum.unlock') : t('admin.forum.lock'),
           onPress: async () => {
             try {
               const result = await adminService.toggleLockPost(post._id);
 
               if (result.success) {
-                Alert.alert('Success', `Post ${post.isLocked ? 'unlocked' : 'locked'} successfully`);
+                Alert.alert(t('common.success'), t('admin.forum.postAction', { action }));
                 setShowActionsModal(false);
                 loadPosts();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to toggle lock status');
+              Alert.alert(t('errors.generic'), t('admin.forum.postActionFailed', { action }));
             }
           },
         },
@@ -146,34 +150,29 @@ export const ForumManagementScreen = ({ navigation, route }) => {
   };
 
   const handleChangeStatus = async (post, newStatus) => {
-    const statusLabels = {
-      active: 'activate',
-      archived: 'archive',
-      deleted: 'remove from community',
-      flagged: 'flag',
-    };
+    const action = newStatus;
 
     Alert.alert(
-      `${statusLabels[newStatus] || 'Update'} Post`,
-      `Are you sure you want to ${statusLabels[newStatus]} this post?${newStatus === 'deleted' ? ' (Post will be hidden but kept in database)' : ''}`,
+      t('admin.forum.postActions'),
+      t('admin.forum.changeStatusConfirm', { action }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Confirm',
+          text: t('admin.forum.confirm'),
           style: newStatus === 'deleted' ? 'destructive' : 'default',
           onPress: async () => {
             try {
               const result = await adminService.updateForumPostStatus(post._id, newStatus);
 
               if (result.success) {
-                Alert.alert('Success', `Post ${statusLabels[newStatus]}d successfully`);
+                Alert.alert(t('common.success'), t('admin.forum.postAction', { action }));
                 setShowActionsModal(false);
                 loadPosts();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', `Failed to ${statusLabels[newStatus]} post`);
+              Alert.alert(t('errors.generic'), t('admin.forum.postActionFailed', { action }));
             }
           },
         },
@@ -183,19 +182,19 @@ export const ForumManagementScreen = ({ navigation, route }) => {
 
   const handleApprove = async (post) => {
     Alert.alert(
-      'Approve Post',
-      'Approve this post and publish it to the community?',
+      t('admin.forum.approve'),
+      t('admin.forum.approveConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Approve',
+          text: t('admin.forum.approve'),
           style: 'default',
           onPress: async () => {
             try {
               const result = await adminService.approvePost(post._id);
 
               if (result.success) {
-                Alert.alert('Success', 'Post approved and published to community');
+                Alert.alert(t('common.success'), t('admin.forum.approvedMessage'));
                 setShowActionsModal(false);
                 // Immediately remove the post from the list if filtering by pending
                 if (filters.status === 'pending') {
@@ -211,11 +210,11 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   loadPosts();
                 }
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
               console.error('Approve error:', error);
-              Alert.alert('Error', 'Failed to approve post');
+              Alert.alert(t('errors.generic'), t('admin.forum.postActionFailed', { action: t('admin.forum.approve') }));
             }
           },
         },
@@ -226,21 +225,21 @@ export const ForumManagementScreen = ({ navigation, route }) => {
   const handleReject = async (post) => {
     // Use a simpler alert with a default reason or custom modal
     Alert.alert(
-      'Reject Post',
-      'Are you sure you want to reject this post? It will be removed from pending and marked as rejected.',
+      t('admin.forum.reject'),
+      t('admin.forum.rejectConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Reject',
+          text: t('admin.forum.reject'),
           style: 'destructive',
           onPress: async () => {
             try {
               // Use a default reason or you can implement a custom modal for input
-              const reason = 'Post rejected by admin';
+              const reason = t('admin.forum.rejectedMessage');
               const result = await adminService.rejectPost(post._id, reason);
 
               if (result.success) {
-                Alert.alert('Success', 'Post rejected and removed from pending');
+                Alert.alert(t('common.success'), t('admin.forum.rejectedMessage'));
                 setShowActionsModal(false);
                 // Immediately remove the post from the list
                 setPosts(prevPosts => prevPosts.filter(p => p._id !== post._id));
@@ -252,11 +251,11 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   }));
                 }
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
               console.error('Reject error:', error);
-              Alert.alert('Error', 'Failed to reject post');
+              Alert.alert(t('errors.generic'), t('admin.forum.postActionFailed', { action: t('admin.forum.reject') }));
             }
           },
         },
@@ -304,7 +303,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
               {item.author?.username || 
                (item.author?.firstName && item.author?.lastName
                  ? `${item.author.firstName} ${item.author.lastName}`
-                 : 'Anonymous')}
+                 : t('forum.anonymous'))}
             </Text>
             <Text style={styles.postDate}>
               {new Date(item.createdAt).toLocaleDateString('en-US', {
@@ -398,7 +397,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Post Actions</Text>
+            <Text style={styles.modalTitle}>{t('admin.forum.postActions')}</Text>
             <TouchableOpacity onPress={() => setShowActionsModal(false)}>
               <Ionicons name="close" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
@@ -414,7 +413,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                     onPress={() => handleApprove(selectedPost)}
                   >
                     <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                    <Text style={[styles.actionText, styles.approveText]}>Approve Post</Text>
+                    <Text style={[styles.actionText, styles.approveText]}>{t('admin.forum.approvePost')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -422,7 +421,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                     onPress={() => handleReject(selectedPost)}
                   >
                     <Ionicons name="close-circle" size={24} color="#F44336" />
-                    <Text style={[styles.actionText, styles.rejectText]}>Reject Post</Text>
+                    <Text style={[styles.actionText, styles.rejectText]}>{t('admin.forum.rejectPost')}</Text>
                   </TouchableOpacity>
 
                   <View style={styles.divider} />
@@ -439,7 +438,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   color={theme.colors.primary}
                 />
                 <Text style={styles.actionText}>
-                  {selectedPost.isPinned ? 'Unpin Post' : 'Pin Post'}
+                  {selectedPost.isPinned ? t('admin.forum.unpinPost') : t('admin.forum.pinPost')}
                 </Text>
               </TouchableOpacity>
 
@@ -453,7 +452,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   color={theme.colors.primary}
                 />
                 <Text style={styles.actionText}>
-                  {selectedPost.isLocked ? 'Unlock Post' : 'Lock Post'}
+                  {selectedPost.isLocked ? t('admin.forum.unlockPost') : t('admin.forum.lockPost')}
                 </Text>
               </TouchableOpacity>
 
@@ -463,7 +462,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   onPress={() => handleChangeStatus(selectedPost, 'flagged')}
                 >
                   <Ionicons name="flag" size={24} color="#9C27B0" />
-                  <Text style={styles.actionText}>Flag Post</Text>
+                  <Text style={styles.actionText}>{t('admin.forum.flagPost')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -473,7 +472,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   onPress={() => handleChangeStatus(selectedPost, 'active')}
                 >
                   <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                  <Text style={styles.actionText}>Activate Post</Text>
+                  <Text style={styles.actionText}>{t('admin.forum.activatePost')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -483,7 +482,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                   onPress={() => handleChangeStatus(selectedPost, 'deleted')}
                 >
                   <Ionicons name="trash" size={24} color="#F44336" />
-                  <Text style={styles.actionText}>Remove from Community</Text>
+                  <Text style={styles.actionText}>{t('admin.forum.removeFromCommunity')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -503,14 +502,14 @@ export const ForumManagementScreen = ({ navigation, route }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Filters</Text>
+            <Text style={styles.modalTitle}>{t('admin.forum.filters')}</Text>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
               <Ionicons name="close" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Category</Text>
+            <Text style={styles.filterLabel}>{t('admin.forum.category')}</Text>
             <View style={styles.filterOptions}>
               {['', 'tips', 'questions', 'showcase', 'discussion'].map((category) => (
                 <TouchableOpacity
@@ -525,7 +524,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
                     styles.filterOptionText,
                     filters.category === category && styles.filterOptionTextActive,
                   ]}>
-                    {category || 'All'}
+                    {category || t('admin.forum.allCategories')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -533,15 +532,15 @@ export const ForumManagementScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Status</Text>
+            <Text style={styles.filterLabel}>{t('admin.forum.status')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { label: 'All', value: '' },
-                { label: 'Pending', value: 'pending' },
-                { label: 'Active', value: 'active' },
-                { label: 'Flagged', value: 'flagged' },
-                { label: 'Rejected', value: 'rejected' },
-                { label: 'Deleted', value: 'deleted' },
+                { label: t('admin.forum.allStatuses'), value: '' },
+                { label: t('admin.forum.pending'), value: 'pending' },
+                { label: t('admin.forum.active'), value: 'active' },
+                { label: t('admin.forum.flagged'), value: 'flagged' },
+                { label: t('admin.forum.rejected'), value: 'rejected' },
+                { label: t('admin.forum.deleted'), value: 'deleted' },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -563,12 +562,12 @@ export const ForumManagementScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Pinned</Text>
+            <Text style={styles.filterLabel}>{t('admin.forum.pinned')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { label: 'All Posts', value: '' },
-                { label: 'Pinned Only', value: 'true' },
-                { label: 'Not Pinned', value: 'false' },
+                { label: t('admin.forum.allPosts'), value: '' },
+                { label: t('admin.forum.pinnedOnly'), value: 'true' },
+                { label: t('admin.forum.notPinned'), value: 'false' },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -603,7 +602,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.applyButtonText}>Apply Filters</Text>
+              <Text style={styles.applyButtonText}>{t('admin.forum.applyFilters')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -627,7 +626,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Forum Management</Text>
+          <Text style={styles.headerTitle}>{t('admin.forum.title')}</Text>
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setShowFilters(true)}
@@ -641,7 +640,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
           <Ionicons name="search" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by title or content..."
+            placeholder={t('admin.forum.searchPlaceholder')}
             placeholderTextColor={theme.colors.text.secondary}
             value={search}
             onChangeText={setSearch}
@@ -660,7 +659,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
       {pagination && (
         <View style={styles.paginationInfo}>
           <Text style={styles.paginationText}>
-            Showing {posts.length} of {pagination.totalPosts} posts
+            {t('admin.forum.showingResults', { count: posts.length, total: pagination.totalPosts })}
           </Text>
           {pagination.totalPages > 1 && (
             <Text style={styles.paginationText}>
@@ -674,7 +673,7 @@ export const ForumManagementScreen = ({ navigation, route }) => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading posts...</Text>
+          <Text style={styles.loadingText}>{t('admin.forum.loading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -688,8 +687,8 @@ export const ForumManagementScreen = ({ navigation, route }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubbles" size={64} color={theme.colors.text.secondary} />
-              <Text style={styles.emptyText}>No posts found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+              <Text style={styles.emptyText}>{t('admin.forum.noPostsFound')}</Text>
+              <Text style={styles.emptySubtext}>{t('admin.forum.tryAdjustingFilters')}</Text>
             </View>
           }
         />

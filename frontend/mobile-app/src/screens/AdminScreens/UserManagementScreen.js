@@ -17,8 +17,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { adminService } from '../../services';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 export const UserManagementScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,11 +51,11 @@ export const UserManagementScreen = ({ navigation, route }) => {
         setUsers(visibleUsers);
         setPagination(result.pagination);
       } else {
-        Alert.alert('Error', result.message);
+        Alert.alert(t('errors.generic'), result.message);
       }
     } catch (error) {
       console.error('Error loading users:', error);
-      Alert.alert('Error', 'Failed to load users');
+      Alert.alert(t('errors.generic'), t('admin.users.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -103,12 +105,12 @@ export const UserManagementScreen = ({ navigation, route }) => {
     const action = user.isActive ? 'deactivate' : 'activate';
     
     Alert.alert(
-      `${action === 'activate' ? 'Activate' : 'Deactivate'} User`,
-      `Are you sure you want to ${action} ${user.username || user.email}?`,
+      t('admin.users.activateDeactivate'),
+      t('admin.users.activateDeactivateConfirm', { action }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: action === 'activate' ? 'Activate' : 'Deactivate',
+          text: action === 'activate' ? t('admin.users.activate') : t('admin.users.deactivate'),
           style: action === 'deactivate' ? 'destructive' : 'default',
           onPress: async () => {
             try {
@@ -117,13 +119,13 @@ export const UserManagementScreen = ({ navigation, route }) => {
                 : await adminService.deactivateUser(user._id);
 
               if (result.success) {
-                Alert.alert('Success', `User ${action}d successfully`);
+                Alert.alert(t('common.success'), t('admin.users.userUpdated', { action }));
                 loadUsers();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', `Failed to ${action} user`);
+              Alert.alert(t('errors.generic'), t('admin.users.userUpdateFailed', { action }));
             }
           },
         },
@@ -147,7 +149,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
         <Text style={styles.userName}>
           {item.firstName && item.lastName
             ? `${item.firstName} ${item.lastName}`
-            : item.username || 'No name'}
+            : item.username || t('admin.users.noName')}
         </Text>
         <Text style={styles.userEmail}>{item.email}</Text>
         <View style={styles.userMeta}>
@@ -156,7 +158,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
           </View>
           <View style={[styles.badge, { backgroundColor: item.isActive ? '#4CAF5020' : '#F4433620' }]}>
             <Text style={[styles.badgeText, { color: item.isActive ? '#4CAF50' : '#F44336' }]}>
-              {item.isActive ? 'Active' : 'Inactive'}
+              {item.isActive ? t('admin.users.active') : t('admin.users.inactive')}
             </Text>
           </View>
         </View>
@@ -185,14 +187,14 @@ export const UserManagementScreen = ({ navigation, route }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Filters</Text>
+            <Text style={styles.modalTitle}>{t('admin.users.filters')}</Text>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
               <Ionicons name="close" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Role</Text>
+            <Text style={styles.filterLabel}>{t('admin.users.role')}</Text>
             <View style={styles.filterOptions}>
               {['', 'user', 'admin', 'researcher'].map((role) => (
                 <TouchableOpacity
@@ -207,7 +209,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
                     styles.filterOptionText,
                     filters.role === role && styles.filterOptionTextActive,
                   ]}>
-                    {role || 'All'}
+                    {role || t('admin.users.allRoles')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -215,12 +217,12 @@ export const UserManagementScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Status</Text>
+            <Text style={styles.filterLabel}>{t('admin.users.status')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { label: 'All', value: '' },
-                { label: 'Active', value: 'true' },
-                { label: 'Inactive', value: 'false' },
+                { label: t('admin.users.all'), value: '' },
+                { label: t('admin.users.active'), value: 'true' },
+                { label: t('admin.users.inactive'), value: 'false' },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -255,7 +257,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.applyButtonText}>Apply Filters</Text>
+              <Text style={styles.applyButtonText}>{t('admin.users.applyFilters')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -279,7 +281,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>User Management</Text>
+          <Text style={styles.headerTitle}>{t('admin.users.title')}</Text>
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setShowFilters(true)}
@@ -293,7 +295,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
           <Ionicons name="search" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name or email..."
+            placeholder={t('admin.users.searchPlaceholder')}
             placeholderTextColor={theme.colors.text.secondary}
             value={search}
             onChangeText={setSearch}
@@ -312,7 +314,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
       {pagination && (
         <View style={styles.paginationInfo}>
           <Text style={styles.paginationText}>
-            Showing {users.length} of {pagination.totalUsers} users
+            {t('admin.users.showingResults', { count: users.length, total: pagination.totalUsers })}
           </Text>
           {pagination.totalPages > 1 && (
             <Text style={styles.paginationText}>
@@ -326,7 +328,7 @@ export const UserManagementScreen = ({ navigation, route }) => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading users...</Text>
+          <Text style={styles.loadingText}>{t('admin.users.loading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -340,8 +342,8 @@ export const UserManagementScreen = ({ navigation, route }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="people" size={64} color={theme.colors.text.secondary} />
-              <Text style={styles.emptyText}>No users found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+              <Text style={styles.emptyText}>{t('admin.users.noUsersFound')}</Text>
+              <Text style={styles.emptySubtext}>{t('admin.users.tryAdjustingFilters')}</Text>
             </View>
           }
         />

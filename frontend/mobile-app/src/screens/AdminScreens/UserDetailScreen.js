@@ -15,8 +15,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../services';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 export const UserDetailScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { userId } = route.params;
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
@@ -47,7 +49,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      Alert.alert('Error', 'Failed to load user data');
+      Alert.alert(t('errors.generic'), t('admin.users.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -57,12 +59,12 @@ export const UserDetailScreen = ({ navigation, route }) => {
     const action = user.isActive ? 'deactivate' : 'activate';
     
     Alert.alert(
-      `${action === 'activate' ? 'Activate' : 'Deactivate'} User`,
-      `Are you sure you want to ${action} this user?`,
+      t('admin.users.activateDeactivate'),
+      t('admin.users.activateDeactivateConfirm', { action }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: action === 'activate' ? 'Activate' : 'Deactivate',
+          text: action === 'activate' ? t('admin.users.activate') : t('admin.users.deactivate'),
           style: action === 'deactivate' ? 'destructive' : 'default',
           onPress: async () => {
             try {
@@ -72,13 +74,13 @@ export const UserDetailScreen = ({ navigation, route }) => {
                 : await adminService.deactivateUser(userId);
 
               if (result.success) {
-                Alert.alert('Success', `User ${action}d successfully`);
+                Alert.alert(t('common.success'), t('admin.users.userUpdated', { action }));
                 loadUserData();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', `Failed to ${action} user`);
+              Alert.alert(t('errors.generic'), t('admin.users.userUpdateFailed', { action }));
             } finally {
               setActionLoading(false);
             }
@@ -94,14 +96,14 @@ export const UserDetailScreen = ({ navigation, route }) => {
       const result = await adminService.changeUserRole(userId, newRole);
 
       if (result.success) {
-        Alert.alert('Success', 'User role updated successfully');
+        Alert.alert(t('common.success'), t('admin.users.roleUpdateSuccess'));
         setShowRoleModal(false);
         loadUserData();
       } else {
-        Alert.alert('Error', result.message);
+        Alert.alert(t('errors.generic'), result.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to change user role');
+      Alert.alert(t('errors.generic'), t('admin.users.roleUpdateFailed'));
     } finally {
       setActionLoading(false);
     }
@@ -109,7 +111,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
 
   const handleSuspend = async () => {
     if (!suspendReason.trim()) {
-      Alert.alert('Error', 'Please provide a reason for suspension');
+      Alert.alert(t('errors.generic'), t('admin.users.suspendReason'));
       return;
     }
 
@@ -119,16 +121,16 @@ export const UserDetailScreen = ({ navigation, route }) => {
       const result = await adminService.suspendUser(userId, suspendReason, duration);
 
       if (result.success) {
-        Alert.alert('Success', 'User suspended successfully');
+        Alert.alert(t('common.success'), t('admin.users.suspendSuccess'));
         setShowSuspendModal(false);
         setSuspendReason('');
         setSuspendDuration('');
         loadUserData();
       } else {
-        Alert.alert('Error', result.message);
+        Alert.alert(t('errors.generic'), result.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to suspend user');
+      Alert.alert(t('errors.generic'), t('admin.users.suspendFailed'));
     } finally {
       setActionLoading(false);
     }
@@ -136,12 +138,12 @@ export const UserDetailScreen = ({ navigation, route }) => {
 
   const handleDelete = async () => {
     Alert.alert(
-      'Delete User',
-      'Are you sure you want to delete this user? This action cannot be undone.',
+      t('admin.users.deleteConfirm'),
+      t('admin.users.deleteConfirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('admin.users.deleteButton'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -149,13 +151,13 @@ export const UserDetailScreen = ({ navigation, route }) => {
               const result = await adminService.deleteUser(userId, false);
 
               if (result.success) {
-                Alert.alert('Success', 'User deleted successfully');
+                Alert.alert(t('common.success'), t('admin.users.deleteSuccess'));
                 navigation.goBack();
               } else {
-                Alert.alert('Error', result.message);
+                Alert.alert(t('errors.generic'), result.message);
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete user');
+              Alert.alert(t('errors.generic'), t('admin.users.deleteFailed'));
             } finally {
               setActionLoading(false);
             }
@@ -169,7 +171,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading user details...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -178,7 +180,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <Ionicons name="alert-circle" size={64} color={theme.colors.text.secondary} />
-        <Text style={styles.loadingText}>User not found</Text>
+        <Text style={styles.loadingText}>{t('admin.users.userNotFound')}</Text>
       </View>
     );
   }
@@ -199,7 +201,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>User Details</Text>
+          <Text style={styles.headerTitle}>{t('admin.users.userDetails')}</Text>
           <View style={{ width: 40 }} />
         </View>
       </LinearGradient>
@@ -215,7 +217,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
           <Text style={styles.userName}>
             {user.firstName && user.lastName
               ? `${user.firstName} ${user.lastName}`
-              : user.username || 'No name'}
+              : user.username || t('admin.users.noName')}
           </Text>
           <Text style={styles.userEmail}>{user.email}</Text>
           
@@ -227,14 +229,14 @@ export const UserDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={[styles.badge, { backgroundColor: user.isActive ? '#4CAF5020' : '#F4433620' }]}>
               <Text style={[styles.badgeText, { color: user.isActive ? '#4CAF50' : '#F44336' }]}>
-                {user.isActive ? 'Active' : 'Inactive'}
+                {user.isActive ? t('admin.users.active') : t('admin.users.inactive')}
               </Text>
             </View>
             {user.isEmailVerified && (
               <View style={[styles.badge, { backgroundColor: '#2196F320' }]}>
                 <Ionicons name="shield-checkmark" size={12} color="#2196F3" />
                 <Text style={[styles.badgeText, { color: '#2196F3', marginLeft: 4 }]}>
-                  Verified
+                  {t('admin.users.verified')}
                 </Text>
               </View>
             )}
@@ -243,43 +245,43 @@ export const UserDetailScreen = ({ navigation, route }) => {
 
         {/* User Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+          <Text style={styles.sectionTitle}>{t('admin.users.accountInfo')}</Text>
           <View style={styles.infoCard}>
-            <InfoRow icon="person" label="Username" value={user.username || 'N/A'} />
-            <InfoRow icon="mail" label="Email" value={user.email} />
-            <InfoRow icon="key" label="Provider" value={user.provider} />
-            <InfoRow icon="calendar" label="Member Since" value={formatDate(user.createdAt)} />
-            <InfoRow icon="time" label="Last Login" value={user.lastLogin ? formatDate(user.lastLogin) : 'Never'} />
-            <InfoRow icon="log-in" label="Login Count" value={user.loginCount?.toString() || '0'} />
+            <InfoRow icon="person" label={t('admin.users.username')} value={user.username || 'N/A'} />
+            <InfoRow icon="mail" label={t('admin.users.email')} value={user.email} />
+            <InfoRow icon="key" label={t('admin.users.provider')} value={user.provider} />
+            <InfoRow icon="calendar" label={t('admin.users.memberSince')} value={formatDate(user.createdAt)} />
+            <InfoRow icon="time" label={t('admin.users.lastLogin')} value={user.lastLogin ? formatDate(user.lastLogin) : t('admin.users.never')} />
+            <InfoRow icon="log-in" label={t('admin.users.loginCount')} value={user.loginCount?.toString() || '0'} />
           </View>
         </View>
 
         {/* User Stats */}
         {stats && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Activity Statistics</Text>
+            <Text style={styles.sectionTitle}>{t('admin.users.activityStatistics')}</Text>
             <View style={styles.statsGrid}>
               <StatBox
                 icon="scan"
-                label="Total Scans"
+                label={t('admin.users.totalScans')}
                 value={stats.stats.totalScans || 0}
                 color={theme.colors.primary}
               />
               <StatBox
                 icon="leaf"
-                label="Gourds Detected"
+                label={t('admin.users.gourdsDetected')}
                 value={stats.stats.totalGourdsDetected || 0}
                 color="#4CAF50"
               />
               <StatBox
                 icon="checkmark-circle"
-                label="Accurate Scans"
+                label={t('admin.users.accurateScans')}
                 value={stats.stats.accurateScans || 0}
                 color="#2196F3"
               />
               <StatBox
                 icon="stats-chart"
-                label="Accuracy"
+                label={t('admin.users.accuracy')}
                 value={`${getAccuracy(stats.stats)}%`}
                 color="#FF9800"
               />
@@ -289,32 +291,32 @@ export const UserDetailScreen = ({ navigation, route }) => {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={styles.sectionTitle}>{t('admin.users.actions')}</Text>
           <View style={styles.actionsCard}>
             <ActionButton
               icon={user.isActive ? 'close-circle' : 'checkmark-circle'}
-              label={user.isActive ? 'Deactivate Account' : 'Activate Account'}
+              label={user.isActive ? t('admin.users.deactivateAccount') : t('admin.users.activateAccount')}
               color={user.isActive ? '#F44336' : '#4CAF50'}
               onPress={handleToggleStatus}
               loading={actionLoading}
             />
             <ActionButton
               icon="shield"
-              label="Change Role"
+              label={t('admin.users.changeRole')}
               color={theme.colors.primary}
               onPress={() => setShowRoleModal(true)}
               loading={actionLoading}
             />
             <ActionButton
               icon="pause-circle"
-              label="Suspend Account"
+              label={t('admin.users.suspendAccount')}
               color="#FF9800"
               onPress={() => setShowSuspendModal(true)}
               loading={actionLoading}
             />
             <ActionButton
               icon="trash"
-              label="Delete Account"
+              label={t('admin.users.deleteAccount')}
               color="#F44336"
               onPress={handleDelete}
               loading={actionLoading}
@@ -334,9 +336,9 @@ export const UserDetailScreen = ({ navigation, route }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Change User Role</Text>
+            <Text style={styles.modalTitle}>{t('admin.users.changeRole')}</Text>
             <Text style={styles.modalSubtitle}>
-              Current role: <Text style={styles.modalHighlight}>{user.role}</Text>
+              {t('admin.users.currentRole')}: <Text style={styles.modalHighlight}>{user.role}</Text>
             </Text>
             
             <View style={styles.roleOptions}>
@@ -360,7 +362,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
               style={styles.modalCancelButton}
               onPress={() => setShowRoleModal(false)}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -375,14 +377,14 @@ export const UserDetailScreen = ({ navigation, route }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Suspend Account</Text>
+            <Text style={styles.modalTitle}>{t('admin.users.suspendAccount')}</Text>
             <Text style={styles.modalSubtitle}>
-              Temporarily suspend {user.username || user.email}
+              {t('admin.users.suspendSubtitle', { username: user.username || user.email })}
             </Text>
             
             <TextInput
               style={styles.input}
-              placeholder="Reason for suspension"
+              placeholder={t('admin.users.suspendReason')}
               value={suspendReason}
               onChangeText={setSuspendReason}
               multiline
@@ -391,7 +393,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
 
             <TextInput
               style={styles.input}
-              placeholder="Duration (days) - Optional"
+              placeholder={t('admin.users.suspendDuration')}
               value={suspendDuration}
               onChangeText={setSuspendDuration}
               keyboardType="number-pad"
@@ -408,7 +410,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.modalSubmitText}>Suspend Account</Text>
+                <Text style={styles.modalSubmitText}>{t('admin.users.suspendAccount')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -420,7 +422,7 @@ export const UserDetailScreen = ({ navigation, route }) => {
                 setSuspendDuration('');
               }}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

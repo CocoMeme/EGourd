@@ -28,6 +28,7 @@ import { scanService } from '../../services/scanService';
 import { authService } from '../../services/authService';
 import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -72,17 +73,18 @@ const MetricBar = ({ label, value, color }) => (
  * Harvest Timeline Component (collapsible, collapsed by default)
  */
 const HarvestTimeline = ({ data, backendData }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   if (!data && !backendData) return null;
 
   const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'wilting', 'fruiting'];
   const stageLabels = {
-    bud: 'Bud',
-    blooming: 'Blooming',
-    peak_bloom: 'Peak',
-    pollinated: 'Pollinated',
-    wilting: 'Wilting',
-    fruiting: 'Fruiting',
+    bud: t('scanResults.flower.stage_bud'),
+    blooming: t('scanResults.flower.stage_blooming'),
+    peak_bloom: t('scanResults.flower.stage_peak_bloom'),
+    pollinated: t('scanResults.flower.stage_pollinated'),
+    wilting: t('scanResults.flower.stage_wilting'),
+    fruiting: t('scanResults.flower.stage_fruiting'),
   };
 
   const currentStage = backendData?.currentStage || data?.currentStage;
@@ -94,7 +96,7 @@ const HarvestTimeline = ({ data, backendData }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Growth Timeline</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.growthTimeline')}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
       </TouchableOpacity>
 
@@ -150,14 +152,14 @@ const HarvestTimeline = ({ data, backendData }) => {
 
             {backendData?.rationale && (
               <View style={styles.rationaleContainer}>
-                <Text style={styles.rationaleTitle}>Rationale:</Text>
+                <Text style={styles.rationaleTitle}>{t('scanResults.flower.rationale')}</Text>
                 <Text style={styles.rationaleText}>{backendData.rationale}</Text>
               </View>
             )}
 
             {backendData?.recommendations?.length > 0 && (
               <View style={styles.backendRecsContainer}>
-                <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
+                <Text style={styles.rationaleTitle}>{t('scanResults.flower.aiRecommendations')}</Text>
                 {backendData.recommendations.map((rec, i) => (
                   <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
                 ))}
@@ -241,15 +243,16 @@ const AnimatedMetricBar = ({ label, value }) => {
  * Quality Metrics Chart Component (collapsible, collapsed by default)
  */
 const QualityMetricsChart = ({ metrics }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   if (!metrics) return null;
 
   const metricsList = [
-    { label: 'Petal Quality', value: metrics.petalQuality },
-    { label: 'Color Score', value: metrics.colorScore },
-    { label: 'Development', value: metrics.developmentScore },
-    { label: 'Health Score', value: metrics.healthScore },
-    { label: 'Pollination', value: metrics.pollinationPotential },
+    { label: t('scanResults.flower.petalQuality'), value: metrics.petalQuality },
+    { label: t('scanResults.flower.colorScore'), value: metrics.colorScore },
+    { label: t('scanResults.flower.development'), value: metrics.developmentScore },
+    { label: t('scanResults.flower.healthScore'), value: metrics.healthScore },
+    { label: t('scanResults.flower.pollination'), value: metrics.pollinationPotential },
   ];
 
   return (
@@ -258,7 +261,7 @@ const QualityMetricsChart = ({ metrics }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Quality Metrics</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.qualityMetrics')}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
       </TouchableOpacity>
       {expanded && (
@@ -280,6 +283,7 @@ const QualityMetricsChart = ({ metrics }) => {
  * Flower Quality Card Component with Animated Donut
  */
 const FlowerQualityCard = ({ quality }) => {
+  const { t } = useTranslation();
   if (!quality) return null;
 
   const animatedScore = useRef(new Animated.Value(0)).current;
@@ -313,7 +317,7 @@ const FlowerQualityCard = ({ quality }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Flower Quality</Text>
+      <Text style={styles.sectionTitle}>{t('scanResults.flower.flowerQuality')}</Text>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {/* Donut Chart Simulation (Left) */}
@@ -352,26 +356,26 @@ const FlowerQualityCard = ({ quality }) => {
             {/* Inner White Circle (The "Hole") */}
             <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{score}</Text>
-              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
+              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>{t('scanResults.flower.score')}</Text>
             </View>
           </View>
 
           <Text style={{ fontSize: 14, fontWeight: '600', color: scoreColor, textAlign: 'center' }}>
             {quality.petalCondition?.toUpperCase() || 'UNKNOWN'}
           </Text>
-          <Text style={{ fontSize: 10, color: '#666' }}>Overall Condition</Text>
+          <Text style={{ fontSize: 10, color: '#666' }}>{t('scanResults.flower.overallCondition')}</Text>
         </View>
 
         {/* Details (Right) */}
         <View style={{ marginLeft: 24, flex: 1 }}>
           <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8, marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Size Assessment</Text>
+            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>{t('scanResults.flower.sizeAssessment')}</Text>
             <Text style={{ fontSize: 15, fontWeight: '500', color: '#333' }}>{quality.sizeAssessment}</Text>
           </View>
 
           {quality.healthIndicators?.length > 0 && (
             <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8 }}>
-              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>Health Indicators</Text>
+              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>{t('scanResults.flower.healthIndicators')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {quality.healthIndicators.map((ind, i) => (
                   <Text key={i} style={{ fontSize: 12, fontWeight: '500', color: '#2E7D32' }}>• {ind}</Text>
@@ -389,6 +393,7 @@ const FlowerQualityCard = ({ quality }) => {
  * Observations Card Component
  */
 const ObservationsCard = ({ observations }) => {
+  const { t } = useTranslation();
   if (!observations) return null;
   const [expanded, setExpanded] = useState(false); // Collapsed by default
 
@@ -398,7 +403,7 @@ const ObservationsCard = ({ observations }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.aiReasoning')}</Text>
         <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
       </TouchableOpacity>
 
@@ -408,7 +413,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#4CAF50', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="thumbs-up" size={18} color="#4CAF50" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Strengths</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.strengths')}</Text>
               </View>
               {observations.strengths.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -420,7 +425,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#FF9800', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="warning" size={18} color="#FF9800" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Concerns</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.concerns')}</Text>
               </View>
               {observations.concerns.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -432,7 +437,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#2196F3', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="bulb" size={18} color="#2196F3" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Recommendations</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.recommendations')}</Text>
               </View>
               {observations.recommendations.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -625,6 +630,7 @@ const skeletonStyles = StyleSheet.create({
  * Main Results Screen Component
  */
 export const FlowerPredictionScreen = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const { isGuest } = useAuth();
   // Logic Preservation: Retrieve width and height to pass to model service for distortion fix
   const { imageUri, isLoading: initialLoading, width, height, scanMode = SCAN_MODES.FLOWER } = route.params ?? {};
@@ -642,7 +648,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
   const [isTmComplete, setIsTmComplete] = useState(false);
   const [isGeminiLoading, setIsGeminiLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState('Initializing...');
+  const [loadingStage, setLoadingStage] = useState(t('scanResults.flower.analyzing'));
   const [analysisError, setAnalysisError] = useState(null);
 
   // Results state
@@ -689,7 +695,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
     console.log('🔄 Retrying Gemini analysis...');
     setIsGeminiLoading(true);
-    setLoadingStage('Retrying Gemini AI analysis...');
+    setLoadingStage(t('scanResults.flower.retryAI'));
 
     let geminiPred = null;
     let comparison = null;
@@ -716,9 +722,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
     } catch (error) {
       console.warn('⚠️ Gemini retry failed:', error.message);
       if (isMounted.current) Alert.alert(
-        'AI Analysis Unavailable',
-        'The Gemini AI service is temporarily unavailable. Please try again later.',
-        [{ text: 'OK' }]
+        t('scanResults.flower.aiAnalysisUnavailable'),
+        t('scanResults.flower.aiUnavailableMessage'),
+        [{ text: t('common.ok') }]
       );
     } finally {
       if (isMounted.current) setIsGeminiLoading(false);
@@ -811,9 +817,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         await guestStorageService.saveLocalScan(scanData, imageUri);
         if (!isMounted.current) return;
         Alert.alert(
-          'Saved Locally! 🎉',
-          'Scan saved on your device. Sign in to sync it to your account.',
-          [{ text: 'OK', onPress: () => handleBack() }]
+          t('scanResults.flower.savedLocallyTitle'),
+          t('scanResults.flower.savedLocallyMessage'),
+          [{ text: t('common.ok'), onPress: () => handleBack() }]
         );
       } else {
         const savedScan = await scanService.saveScan(scanData, imageUri);
@@ -825,15 +831,15 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
           setShowFeedbackModal(true);
         } else {
           Alert.alert(
-            'Success! 🎉',
-            'Scan saved to your history!',
-            [{ text: 'OK', onPress: () => handleBack() }]
+            t('scanResults.flower.successTitle'),
+            t('scanResults.flower.successMessage'),
+            [{ text: t('common.ok'), onPress: () => handleBack() }]
           );
         }
       }
     } catch (error) {
       console.error('Save error:', error);
-      Alert.alert('Save Failed', 'Failed to save scan. Please try again.');
+      Alert.alert(t('scanResults.flower.saveFailed'), t('scanResults.flower.saveFailedMessage'));
     } finally {
       setIsSaving(false);
     }
@@ -846,11 +852,11 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         body: JSON.stringify(feedbackData)
       });
       setShowFeedbackModal(false);
-      Alert.alert('Success! 🎉', 'Scan and feedback saved to your history!', [{ text: 'OK', onPress: () => handleBack() }]);
+      Alert.alert(t('scanResults.flower.feedbackSaved'), t('scanResults.flower.feedbackSaved'), [{ text: t('common.ok'), onPress: () => handleBack() }]);
     } catch (e) {
       console.error('Failed to save feedback:', e);
       setShowFeedbackModal(false);
-      Alert.alert('Feedback Failed', 'Scan was saved but feedback could not be submitted. Please try again later.', [{ text: 'OK', onPress: () => handleBack() }]);
+      Alert.alert(t('scanResults.flower.feedbackFailed'), t('scanResults.flower.feedbackFailed'), [{ text: t('common.ok'), onPress: () => handleBack() }]);
     }
   };
 
@@ -977,7 +983,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
     if (isAnalyzing) {
       timer = setTimeout(() => {
         setLoadingStage((prev) =>
-          prev === 'Complete!' ? prev : 'Optimizing results (taking a bit longer)...'
+          prev === t('scanResults.flower.quickScanCompleted') ? prev : t('scanResults.flower.analyzing')
         );
       }, 12000); // 12 seconds
     }
@@ -998,7 +1004,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       setAnalysisError(null);
 
       // Step 1: TM Model Prediction (Show immediately when done)
-      setLoadingStage('Analyzing with TM model...');
+      setLoadingStage(t('scanResults.flower.analyzing'));
       console.log('🤖 Running TM prediction...');
 
       // Logic Preservation: Pass width and height to fix aspect ratio distortion
@@ -1054,7 +1060,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
       // Step 2: Gemini AI Analysis (runs in background)
       setIsGeminiLoading(true);
-      setLoadingStage('Running Gemini AI analysis...');
+      setLoadingStage(t('scanResults.flower.analyzing'));
 
       let geminiPred = null;
       let comparison = null;
@@ -1106,7 +1112,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       const finalPred = geminiPred || tmPred;
       if (finalPred && !finalPred.isNotFlower) {
         try {
-          setLoadingStage('Refining harvest prediction...');
+          setLoadingStage(t('scanResults.flower.analyzing'));
           const bPrediction = await scanService.getHarvestPrediction(
             {
               prediction: finalPred.gender,
@@ -1124,7 +1130,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         }
       }
 
-      setLoadingStage('Complete!');
+      setLoadingStage(t('scanResults.flower.quickScanCompleted'));
 
     } catch (error) {
       console.error('❌ Analysis failed:', error);
@@ -1139,7 +1145,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
    */
   const runGeminiAnalysisOnly = async (tmPred) => {
     setIsGeminiLoading(true);
-    setLoadingStage('Validating with AI...');
+    setLoadingStage(t('scanResults.flower.analyzing'));
     console.log('🤖 Running Gemini flower analysis...');
 
     try {
@@ -1162,7 +1168,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       const finalPred = geminiPred || tmPred;
       if (finalPred && !finalPred.isNotFlower) {
         try {
-          setLoadingStage('Refining harvest prediction...');
+          setLoadingStage(t('scanResults.flower.analyzing'));
           const bPrediction = await scanService.getHarvestPrediction(
             {
               prediction: finalPred.gender,
@@ -1210,14 +1216,14 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
       {/* Header using CustomHeader for consistency */}
       <CustomHeader
         variant="results"
-        title="Scan Results"
+        title={t('scanResults.flower.title')}
         onBackPress={handleBack}
         rightComponent={() => {
           if (isGeminiLoading) {
             return (
               <View style={[styles.aiBadge, { backgroundColor: '#E3F2FD', borderColor: '#90CAF9' }]}>
                 <ActivityIndicator size={12} color="#1976D2" />
-                <Text style={[styles.aiBadgeText, { color: '#1976D2' }]}>AI</Text>
+                <Text style={[styles.aiBadgeText, { color: '#1976D2' }]}>{t('scanResults.flower.ai')}</Text>
               </View>
             );
           }
@@ -1225,7 +1231,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
             return (
               <View style={styles.aiBadge}>
                 <Ionicons name="sparkles" size={14} color="#FFB300" />
-                <Text style={styles.aiBadgeText}>AI</Text>
+                <Text style={styles.aiBadgeText}>{t('scanResults.flower.ai')}</Text>
               </View>
             );
           }
@@ -1260,11 +1266,11 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
         {analysisError && !isAnalyzing && (
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle" size={48} color="#F44336" />
-            <Text style={styles.errorTitle}>Analysis Failed</Text>
+            <Text style={styles.errorTitle}>{t('scanResults.flower.analysisFailed')}</Text>
             <Text style={styles.errorText}>{analysisError}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={runAnalysis}>
               <Ionicons name="refresh" size={20} color="#FFF" />
-              <Text style={styles.retryText}>Try Again</Text>
+              <Text style={styles.retryText}>{t('scanResults.flower.tryAgain')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -1276,7 +1282,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               <View style={styles.loadingContent}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
                 <Text style={styles.loadingStageText}>{loadingStage}</Text>
-                <Text style={styles.loadingSubtext}>Please wait while we analyze your flower...</Text>
+                <Text style={styles.loadingSubtext}>{t('scanResults.flower.analyzing')}</Text>
               </View>
             </View>
           </Animated.View>
@@ -1290,9 +1296,9 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               {isNotFlower ? (
                 <View style={styles.notFlowerResult}>
                   <Ionicons name="close-circle" size={64} color="#F44336" />
-                  <Text style={styles.notFlowerText}>Not a Gourd Flower</Text>
+                  <Text style={styles.notFlowerText}>{t('scanResults.flower.notAGourdFlower')}</Text>
                   <Text style={styles.notFlowerSubtext}>
-                    The image doesn't appear to be a gourd flower. Try capturing a clearer image of the flower.
+                    {t('scanResults.flower.notAGourdFlowerMessage')}
                   </Text>
                 </View>
               ) : (
@@ -1361,7 +1367,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
                       style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: reasoningExpanded ? 12 : 0 }}
                       onPress={() => setReasoningExpanded(!reasoningExpanded)}
                     >
-                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
+                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.aiReasoning')}</Text>
                       <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                     </TouchableOpacity>
 
@@ -1386,7 +1392,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
 
             {/* Skeleton — only on the Gemini AI Insights card while loading */}
             {isGeminiLoading && !isNotFlower && (
-              <SkeletonCard title="AI Insights" lines={4} />
+              <SkeletonCard title={t('scanResults.flower.aiReasoning')} lines={4} />
             )}
 
             {/* TM Only Notice - Show only when Gemini finished but no data */}
@@ -1395,7 +1401,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
                 <View style={styles.tmOnlyContent}>
                   <Ionicons name="information-circle" size={24} color="#FF9800" />
                   <Text style={styles.tmOnlyText}>
-                    Quick scan completed using TM model only. Gemini AI analysis was unavailable.
+                    {t('scanResults.flower.quickScanCompleted')}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1403,7 +1409,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
                   onPress={handleRetryGemini}
                 >
                   <Ionicons name="refresh" size={16} color="#FFF" />
-                  <Text style={styles.retryGeminiText}>Retry AI</Text>
+                  <Text style={styles.retryGeminiText}>{t('scanResults.flower.retryAI')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -1418,7 +1424,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
             disabled={isSaving}
           >
             <Ionicons name="camera" size={20} color="#FFF" />
-            <Text style={styles.actionButtonText}>Scan Again</Text>
+            <Text style={styles.actionButtonText}>{t('scanResults.flower.scanAgain')}</Text>
           </TouchableOpacity>
 
             <TouchableOpacity
@@ -1431,7 +1437,7 @@ export const FlowerPredictionScreen = ({ route, navigation }) => {
               ) : (
                 <>
                   <Ionicons name="save-outline" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Save Result</Text>
+                  <Text style={styles.actionButtonText}>{t('scanResults.flower.saveResult')}</Text>
                 </>
               )}
             </TouchableOpacity>

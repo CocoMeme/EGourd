@@ -11,6 +11,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 export const SimpleDatePicker = ({ 
   value, 
@@ -19,6 +20,7 @@ export const SimpleDatePicker = ({
   minimumDate,
   style 
 }) => {
+  const { t } = useTranslation();
   const [showPicker, setShowPicker] = useState(false);
   const [tempDate, setTempDate] = useState(value);
 
@@ -60,7 +62,7 @@ export const SimpleDatePicker = ({
     
     // Validate date is not in the future
     if (newDate > maximumDate) {
-      Alert.alert('Invalid Date', 'Date cannot be in the future');
+      Alert.alert(t('common.invalidDate'), t('common.dateInFuture'));
       return;
     }
 
@@ -78,7 +80,7 @@ export const SimpleDatePicker = ({
   };
 
   const formatDate = (date) => {
-    if (!date) return 'Select date';
+    if (!date) return t('common.selectDate');
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
@@ -109,7 +111,7 @@ export const SimpleDatePicker = ({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date</Text>
+              <Text style={styles.modalTitle}>{t('common.selectDate')}</Text>
               <TouchableOpacity onPress={handleDateCancel}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
@@ -117,7 +119,7 @@ export const SimpleDatePicker = ({
 
             <View style={styles.pickerContainer}>
               <View style={styles.pickerColumn}>
-                <Text style={styles.pickerLabel}>Month</Text>
+                <Text style={styles.pickerLabel}>{t('common.month')}</Text>
                 <Picker
                   selectedValue={selectedMonth}
                   onValueChange={(value) => setSelectedMonth(value)}
@@ -130,7 +132,7 @@ export const SimpleDatePicker = ({
               </View>
 
               <View style={styles.pickerColumn}>
-                <Text style={styles.pickerLabel}>Day</Text>
+                <Text style={styles.pickerLabel}>{t('common.day')}</Text>
                 <Picker
                   selectedValue={selectedDay}
                   onValueChange={(value) => setSelectedDay(value)}
@@ -143,7 +145,7 @@ export const SimpleDatePicker = ({
               </View>
 
               <View style={styles.pickerColumn}>
-                <Text style={styles.pickerLabel}>Year</Text>
+                <Text style={styles.pickerLabel}>{t('common.year')}</Text>
                 <Picker
                   selectedValue={selectedYear}
                   onValueChange={(value) => setSelectedYear(value)}
@@ -161,14 +163,14 @@ export const SimpleDatePicker = ({
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={handleDateCancel}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={handleDateConfirm}
               >
-                <Text style={styles.confirmButtonText}>Confirm</Text>
+                <Text style={styles.confirmButtonText}>{t('common.confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>

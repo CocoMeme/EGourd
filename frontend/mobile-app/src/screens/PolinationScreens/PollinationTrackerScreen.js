@@ -34,17 +34,42 @@ import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
 import { pollinationNotificationHelper } from '../../utils/pollinationNotificationHelper';
-
-// Days to result by gourd type (for display)
-const DAYS_TO_RESULT = {
-  bitter_gourd: { min: 5, max: 7, average: 6, name: 'Bitter Gourd' },
-  bottle_gourd: { min: 7, max: 10, average: 8, name: 'Bottle Gourd' },
-  sponge_gourd: { min: 4, max: 6, average: 5, name: 'Sponge Gourd' },
-  cucumber: { min: 3, max: 5, average: 4, name: 'Cucumber' },
-  kalabasa: { min: 8, max: 12, average: 10, name: 'Squash' }
-};
+import { useTranslation } from 'react-i18next';
 
 export const PollinationTrackerScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const DAYS_TO_RESULT = {
+    bitter_gourd: {
+      min: 5,
+      max: 7,
+      average: 6,
+      name: t('pollinationTracker.gourdTypes.bitter_gourd'),
+    },
+    bottle_gourd: {
+      min: 7,
+      max: 10,
+      average: 8,
+      name: t('pollinationTracker.gourdTypes.bottle_gourd'),
+    },
+    sponge_gourd: {
+      min: 4,
+      max: 6,
+      average: 5,
+      name: t('pollinationTracker.gourdTypes.sponge_gourd'),
+    },
+    cucumber: {
+      min: 3,
+      max: 5,
+      average: 4,
+      name: t('pollinationTracker.gourdTypes.cucumber'),
+    },
+    kalabasa: {
+      min: 8,
+      max: 12,
+      average: 10,
+      name: t('pollinationTracker.gourdTypes.kalabasa'),
+    },
+  };
   const { isGuest } = useAuth();
   const { plantId, plant: initialPlant } = route.params;
   
@@ -85,7 +110,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error fetching pollinations:', error);
-      Alert.alert('Error', 'Failed to load pollinations');
+      Alert.alert(t('common.error'), t('pollinationTracker.pollinationFailed'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -105,7 +130,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
   // Format date
   const formatDate = (date) => {
-    if (!date) return 'Not set';
+    if (!date) return t('common.notSet');
     return new Date(date).toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -177,10 +202,10 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         );
         if (response.success && response.data?.pollination) {
           Alert.alert(
-            '✅ Pollination Added!',
-            `${response.data.pollination.label} recorded locally.\n\n` +
-            `📅 Check for results on: ${formatDate(response.data.pollination.expectedResultDate)}`,
-            [{ text: 'OK' }]
+            t('pollinationTracker.successNotification'),
+            `${response.data.pollination.label} ${t('pollinationTracker.successLocalMessage')}\n\n` +
+            `${t('pollinationTracker.checkResultsMessage')} ${formatDate(response.data.pollination.expectedResultDate)}`,
+            [{ text: t('common.ok') }]
           );
         }
         setShowAddModal(false);
@@ -201,11 +226,11 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         await scheduleResultNotification(response.data.pollination);
         
         Alert.alert(
-          '✅ Pollination Added!',
-          `${response.data.pollination.label} recorded.\n\n` +
-          `📅 Check for results on: ${formatDate(response.data.pollination.expectedResultDate)}\n` +
-          `⏰ Notification set for 6:00 AM`,
-          [{ text: 'OK' }]
+          t('pollinationTracker.successNotification'),
+          `${response.data.pollination.label} ${t('pollinationTracker.notificationBody')}\n\n` +
+          `${t('pollinationTracker.checkResultsMessage')} ${formatDate(response.data.pollination.expectedResultDate)}\n` +
+          `${t('pollinationTracker.notificationSetMessage')}`,
+          [{ text: t('common.ok') }]
         );
       }
 
@@ -214,7 +239,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       fetchPollinations(false);
     } catch (error) {
       console.error('Error adding pollination:', error);
-      Alert.alert('Error', 'Failed to add pollination');
+      Alert.alert(t('common.error'), t('pollinationTracker.pollinationFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -242,7 +267,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
       if (isGuest) {
         await guestStorageService.updateLocalPollination(plantId, selectedPollination._id, updateData);
-        Alert.alert('Success', `${selectedPollination.label} updated!`);
+        Alert.alert(t('common.success'), `${selectedPollination.label} ${t('pollinationTracker.pollinationUpdated')}`);
         setShowEditModal(false);
         resetForm();
         fetchPollinations(false);
@@ -269,13 +294,13 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
       await plantService.updatePollination(plantId, selectedPollination._id, updateData);
 
-      Alert.alert('Success', `${selectedPollination.label} updated!`);
+      Alert.alert(t('common.success'), `${selectedPollination.label} ${t('pollinationTracker.pollinationUpdated')}`);
       setShowEditModal(false);
       resetForm();
       fetchPollinations(false);
     } catch (error) {
       console.error('Error updating pollination:', error);
-      Alert.alert('Error', 'Failed to update pollination');
+      Alert.alert(t('common.error'), t('pollinationTracker.pollinationFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -284,12 +309,12 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
   // Delete pollination
   const handleDeletePollination = (pollination) => {
     Alert.alert(
-      'Delete Pollination',
-      `Are you sure you want to delete ${pollination.label}?`,
+      t('pollinationTracker.deleteTitle'),
+      t('pollinationTracker.deleteConfirm', { label: pollination.label }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('pollinationTracker.deleteTitle'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -308,7 +333,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
               fetchPollinations(false);
             } catch (error) {
               console.error('Error deleting pollination:', error);
-              Alert.alert('Error', 'Failed to delete pollination');
+              Alert.alert(t('common.error'), t('pollinationTracker.deleteFailed'));
             }
           }
         }
@@ -365,17 +390,17 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       // Show confirmation
       let message = '';
       if (status === 'success') {
-        message = `Great! All ${successfulCount} fruit(s) developing!`;
+        message = t('pollinationTracker.greatAllDeveloping', { count: successfulCount });
       } else if (status === 'partial') {
-        message = `${successfulCount} out of ${totalPollinated} fruit(s) developing!`;
+        message = t('pollinationTracker.partialResult', { count: successfulCount, total: totalPollinated });
       } else {
-        message = 'No worries, try again with the next pollination.';
+        message = t('pollinationTracker.noWorriesResult');
       }
       
       Alert.alert(
-        status === 'failed' ? '😔 Failed' : '🎉 Result Recorded!',
+        status === 'failed' ? t('pollinationTracker.resultFailed') : t('pollinationTracker.resultRecorded'),
         message,
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
       
       setShowResultModal(false);
@@ -384,7 +409,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       fetchPollinations(false);
     } catch (error) {
       console.error('Error recording result:', error);
-      Alert.alert('Error', 'Failed to record result');
+      Alert.alert(t('common.error'), t('pollinationTracker.pollinationFailed'));
     }
   };
 
@@ -421,17 +446,17 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
       );
       
       Alert.alert(
-        status === 'success' ? '🎉 Success!' : '😔 Failed',
+        status === 'success' ? t('pollinationTracker.successNotificationTitle') : t('pollinationTracker.resultFailed'),
         status === 'success' 
-          ? `Great! ${successfulCount} fruit(s) developing!`
-          : 'No worries, try again with the next pollination.',
-        [{ text: 'OK' }]
+          ? t('pollinationTracker.greatAllDeveloping', { count: successfulCount })
+          : t('pollinationTracker.noWorriesResult'),
+        [{ text: t('common.ok') }]
       );
       
       fetchPollinations(false);
     } catch (error) {
       console.error('Error recording result:', error);
-      Alert.alert('Error', 'Failed to record result');
+      Alert.alert(t('common.error'), t('pollinationTracker.pollinationFailed'));
     }
   };
 
@@ -519,9 +544,9 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             <View style={[styles.infoRow, styles.expectedResultRow]}>
               <Ionicons name="time-outline" size={16} color={isCheckTime ? '#FF9800' : theme.colors.primary} />
               <Text style={[styles.infoText, isCheckTime && styles.checkTimeText]}>
-                {isCheckTime 
-                  ? '🔔 Time to check for fruit!' 
-                  : `Check on: ${formatDate(pollination.expectedResultDate)} (${daysUntil} day${daysUntil !== 1 ? 's' : ''})`
+                  {isCheckTime 
+                    ? t('pollinationTracker.timeToCheck')
+                    : `${t('pollinationTracker.checkOn')} ${formatDate(pollination.expectedResultDate)} (${daysUntil} ${t('common.days')})`
                 }
               </Text>
             </View>
@@ -563,7 +588,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
                 color="#fff" 
               />
               <Text style={styles.recordResultButtonText}>
-                {isCheckTime ? '🔔 Time to Record Result!' : 'Record Result'}
+                {isCheckTime ? t('pollinationTracker.timeToRecord') : t('pollinationTracker.recordResultModal')}
               </Text>
               <Ionicons name="chevron-forward" size={18} color="#fff" />
             </TouchableOpacity>
@@ -588,7 +613,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {isEdit ? `Edit ${selectedPollination?.label}` : 'Add Pollination'}
+              {isEdit ? `${t('pollinationTracker.editPollinationTitle')} ${selectedPollination?.label}` : t('pollinationTracker.addPollinationTitle')}
             </Text>
             <TouchableOpacity 
               onPress={() => {
@@ -602,7 +627,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
           <ScrollView style={styles.modalBody}>
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Female Flowers Pollinated</Text>
+              <Text style={styles.formLabel}>{t('pollinationTracker.femaleFlowersPollinated')}</Text>
               <TextInput
                 style={styles.input}
                 value={femaleFlowerCount}
@@ -614,7 +639,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
             <View style={styles.formGroup}>
               <View style={styles.switchRow}>
-                <Text style={styles.formLabel}>Hand Pollinated</Text>
+                <Text style={styles.formLabel}>{t('pollinationTracker.handPollinated')}</Text>
                 <Switch
                   value={isHandPollinated}
                   onValueChange={setIsHandPollinated}
@@ -625,12 +650,12 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Notes (Optional)</Text>
+              <Text style={styles.formLabel}>{t('pollinationTracker.notesOptional')}</Text>
               <TextInput
                 style={[styles.input, styles.notesInput]}
                 value={notes}
                 onChangeText={setNotes}
-                placeholder="Any observations..."
+                placeholder={t('pollinationTracker.notesPlaceholder')}
                 multiline
                 numberOfLines={3}
               />
@@ -638,7 +663,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
             {isEdit && (
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Result Status</Text>
+                <Text style={styles.formLabel}>{t('pollinationTracker.resultStatus')}</Text>
                 <View style={styles.statusButtons}>
                   {['pending', 'success', 'partial', 'failed'].map((status) => (
                     <TouchableOpacity
@@ -663,7 +688,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
             {isEdit && (resultStatus === 'success' || resultStatus === 'partial') && (
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Successful Count</Text>
+                <Text style={styles.formLabel}>{t('pollinationTracker.successfulCount')}</Text>
                 <TextInput
                   style={styles.input}
                   value={successCount}
@@ -678,9 +703,8 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
               <View style={styles.infoBox}>
                 <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
                 <Text style={styles.infoBoxText}>
-                  For {gourdInfo.name}, you'll know if pollination was successful in about{' '}
-                  <Text style={styles.boldText}>{gourdInfo.average} days</Text>.
-                  {'\n\n'}A notification will be sent at 6:00 AM on the expected date.
+                  {t('pollinationTracker.infoDaysText', { name: gourdInfo.name, min: gourdInfo.min, max: gourdInfo.max })}
+                   {'\n\n'}{t('pollinationTracker.notificationSetMessage')}
                 </Text>
               </View>
             )}
@@ -694,7 +718,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
                 resetForm();
               }}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.saveButton, isSaving && styles.disabledButton]}
@@ -706,7 +730,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
               ) : (
                 <>
                   <Ionicons name={isEdit ? "checkmark" : "add"} size={20} color="#fff" />
-                  <Text style={styles.saveButtonText}>{isEdit ? 'Save' : 'Add'}</Text>
+                  <Text style={styles.saveButtonText}>{isEdit ? t('common.save') : t('common.add')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -720,7 +744,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading pollinations...</Text>
+        <Text style={styles.loadingText}>{t('pollinationTracker.loading')}</Text>
       </View>
     );
   }
@@ -728,7 +752,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <CustomHeader 
-        title="Pollination Tracker"
+        title={t('pollinationTracker.title')}
         onBackPress={() => navigation.goBack()}
       />
 
@@ -755,7 +779,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
           <View style={styles.summaryItem}>
             <Ionicons name="heart" size={22} color="#FF9800" />
             <Text style={styles.summaryNumber}>{pollinations.length}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
+            <Text style={styles.summaryLabel}>{t('pollinationTracker.summary.total')}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
@@ -763,7 +787,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             <Text style={styles.summaryNumber}>
               {pollinations.filter(p => p.status === 'pending').length}
             </Text>
-            <Text style={styles.summaryLabel}>Pending</Text>
+            <Text style={styles.summaryLabel}>{t('pollinationTracker.summary.pending')}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
@@ -771,7 +795,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             <Text style={styles.summaryNumber}>
               {pollinations.filter(p => p.status === 'success' || p.status === 'partial').length}
             </Text>
-            <Text style={styles.summaryLabel}>Success</Text>
+            <Text style={styles.summaryLabel}>{t('pollinationTracker.summary.success')}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
@@ -779,7 +803,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
             <Text style={styles.summaryNumber}>
               {pollinations.filter(p => p.status === 'failed').length}
             </Text>
-            <Text style={styles.summaryLabel}>Failed</Text>
+            <Text style={styles.summaryLabel}>{t('pollinationTracker.summary.failed')}</Text>
           </View>
         </View>
 
@@ -787,7 +811,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
         <View style={styles.daysInfoCard}>
           <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
           <Text style={styles.daysInfoText}>
-            For {gourdInfo.name}, fruit is typically visible {gourdInfo.min}-{gourdInfo.max} days after pollination.
+            {t('pollinationTracker.infoDaysText', { name: gourdInfo.name, min: gourdInfo.min, max: gourdInfo.max })}
           </Text>
         </View>
 
@@ -826,13 +850,13 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
 
         {/* Pollination List */}
         <View style={styles.listContainer}>
-          <Text style={styles.sectionTitle}>Pollination History</Text>
+          <Text style={styles.sectionTitle}>{t('pollinationTracker.pollinationHistory')}</Text>
           
           {pollinations.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="flower-outline" size={48} color={theme.colors.text.secondary} />
-              <Text style={styles.emptyText}>No pollinations recorded yet</Text>
-              <Text style={styles.emptySubtext}>Tap the + button to add your first pollination</Text>
+              <Text style={styles.emptyText}>{t('pollinationTracker.noPollinations')}</Text>
+              <Text style={styles.emptySubtext}>{t('pollinationTracker.tapPlusButton')}</Text>
             </View>
           ) : (
             pollinations
@@ -871,7 +895,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
           <View style={[styles.modalContent, { maxHeight: 400 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                Record Result
+                {t('pollinationTracker.recordResultModal')}
               </Text>
               <TouchableOpacity 
                 onPress={() => {
@@ -893,7 +917,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
               </Text>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>How many fruits are developing?</Text>
+                <Text style={styles.formLabel}>{t('pollinationTracker.howManyFruits')}</Text>
                 <View style={styles.resultCountContainer}>
                   <TouchableOpacity 
                     style={styles.countButton}
@@ -916,7 +940,7 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.countHint}>
-                  Enter 0 if all failed, or the number of successful fruits
+                  {t('pollinationTracker.enterZeroIfFailed')}
                 </Text>
               </View>
 
@@ -925,13 +949,13 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
                   style={[styles.quickSetButton, styles.failedButton]}
                   onPress={() => setResultSuccessCount('0')}
                 >
-                  <Text style={styles.quickSetButtonText}>All Failed (0)</Text>
+                  <Text style={styles.quickSetButtonText}>{t('pollinationTracker.allFailedButton')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.quickSetButton, styles.successButton]}
                   onPress={() => setResultSuccessCount(String(selectedPollination?.femaleFlowersPollinated || 1))}
                 >
-                  <Text style={styles.quickSetButtonText}>All Success ({selectedPollination?.femaleFlowersPollinated || 1})</Text>
+                  <Text style={styles.quickSetButtonText}>{t('pollinationTracker.allSuccessButton', { count: selectedPollination?.femaleFlowersPollinated || 1 })}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -945,13 +969,13 @@ export const PollinationTrackerScreen = ({ navigation, route }) => {
                   setResultSuccessCount('0');
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.saveButton]}
                 onPress={handleRecordResult}
               >
-                <Text style={styles.saveButtonText}>Record Result</Text>
+                <Text style={styles.saveButtonText}>{t('pollinationTracker.recordResultModal')}</Text>
               </TouchableOpacity>
             </View>
           </View>

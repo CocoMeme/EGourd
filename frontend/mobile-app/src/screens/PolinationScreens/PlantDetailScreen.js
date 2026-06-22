@@ -20,8 +20,10 @@ import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, ImageCapture } from '../../components';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
+import { useTranslation } from 'react-i18next';
 
 export const PlantDetailScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { isGuest } = useAuth();
   const { plantId, plant: initialPlant } = route.params;
   const [plant, setPlant] = useState(initialPlant);
@@ -135,7 +137,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error fetching plant details:', error);
-      Alert.alert('Error', 'Failed to load plant details.');
+      Alert.alert(t('common.error'), t('pollination.failedToLoadDetails'));
       navigation.goBack();
     } finally {
       setIsLoading(false);
@@ -152,7 +154,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     navigation.navigate('PlantForm', {
       plant,
       mode: 'edit',
-      title: 'Edit Plant'
+      title: t('pollination.editPlant')
     });
   };
 
@@ -163,7 +165,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   };
 
   const formatDate = (date) => {
-    if (!date) return 'Not set';
+    if (!date) return t('common.notSet');
     return new Date(date).toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
@@ -223,16 +225,16 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       const prediction = response.data;
       
       Alert.alert(
-        '🌸 Flowering Prediction',
-        `Expected in ~${prediction.predicted_days_to_flower} days\n\n` +
-        `📅 Expected Date: ${formatDate(prediction.expected_date)}\n` +
-        `📊 Confidence: ${(prediction.confidence * 100).toFixed(0)}%\n\n` +
+        t('pollination.floweringPrediction'),
+        `${t('pollination.predictedFloweringIn')} ~${prediction.predicted_days_to_flower} ${t('common.days')}\n\n` +
+        `📅 ${t('common.expectedDate')}: ${formatDate(prediction.expected_date)}\n` +
+        `📊 ${t('common.confidence')}: ${(prediction.confidence * 100).toFixed(0)}%\n\n` +
         (prediction.recommendations?.length > 0 ? `💡 ${prediction.recommendations[0]}` : ''),
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
     } catch (error) {
       console.error('Error getting flowering prediction:', error);
-      Alert.alert('Error', 'Failed to get flowering prediction.');
+      Alert.alert(t('common.error'), t('pollination.failedFloweringPrediction'));
     }
   };
 
@@ -242,17 +244,17 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       const prediction = response.data;
       
       Alert.alert(
-        '🌿 Pollination Success Prediction',
-        `Success Rate: ${prediction.success_rate_percentage?.toFixed(1) || (prediction.success_rate * 100).toFixed(1)}%\n\n` +
-        `🌸 Female Flowers: ${prediction.female_flowers || plant.flowering?.femaleFlowerCount || 0}\n` +
-        `✅ Expected Successful: ${prediction.expected_successful_pollinations || 0}\n` +
-        `⏰ Result Visible In: ${prediction.days_until_result_visible || 5} days\n\n` +
+        t('pollination.pollinationPrediction'),
+        `${t('common.successRate')}: ${prediction.success_rate_percentage?.toFixed(1) || (prediction.success_rate * 100).toFixed(1)}%\n\n` +
+        `🌸 ${t('pollination.femaleFlowersLabel')}: ${prediction.female_flowers || plant.flowering?.femaleFlowerCount || 0}\n` +
+        `✅ ${t('common.expectedSuccessful')}: ${prediction.expected_successful_pollinations || 0}\n` +
+        `⏰ ${t('common.resultVisibleIn')}: ${prediction.days_until_result_visible || 5} ${t('common.days')}\n\n` +
         (prediction.recommendations?.length > 0 ? `💡 ${prediction.recommendations[0]}` : ''),
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
     } catch (error) {
       console.error('Error getting pollination prediction:', error);
-      Alert.alert('Error', 'Failed to get pollination prediction.');
+      Alert.alert(t('common.error'), t('pollination.failedPollinationPrediction'));
     }
   };
 
@@ -262,17 +264,17 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       const prediction = response.data;
       
       Alert.alert(
-        '🍈 Fruit Maturity Prediction',
-        `Days to Maturity: ~${prediction.days_to_maturity} days\n\n` +
-        `📅 Expected Harvest: ${formatDate(prediction.expected_harvest_date)}\n` +
-        `🍇 Expected Fruits: ${prediction.expected_fruits || 0}\n` +
-        `⚖️ Expected Yield: ${prediction.expected_yield_kg?.toFixed(2) || 0} kg\n\n` +
+        t('pollination.maturityPrediction'),
+        `${t('common.daysToMaturity')}: ~${prediction.days_to_maturity} ${t('common.days')}\n\n` +
+        `📅 ${t('common.expectedHarvest')}: ${formatDate(prediction.expected_harvest_date)}\n` +
+        `🍇 ${t('common.expectedFruits')}: ${prediction.expected_fruits || 0}\n` +
+        `⚖️ ${t('common.expectedYield')}: ${prediction.expected_yield_kg?.toFixed(2) || 0} kg\n\n` +
         (prediction.recommendations?.length > 0 ? `💡 ${prediction.recommendations[0]}` : ''),
-        [{ text: 'OK' }]
+        [{ text: t('common.ok') }]
       );
     } catch (error) {
       console.error('Error getting maturity prediction:', error);
-      Alert.alert('Error', 'Failed to get maturity prediction.');
+      Alert.alert(t('common.error'), t('pollination.failedMaturityPrediction'));
     }
   };
 
@@ -285,18 +287,18 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       await plantService.recordFlowering(plantId, male, female);
       
       Alert.alert(
-        'Success',
-        `Flowering recorded!\n\n` +
-        `🌼 Male flowers: ${male}\n` +
-        `🌸 Female flowers: ${female}`,
-        [{ text: 'OK', onPress: () => {
+        t('pollination.floweringRecorded'),
+        `${t('pollination.floweringRecorded')}\n\n` +
+        `🌼 ${t('pollination.maleFlowersLabel')}: ${male}\n` +
+        `🌸 ${t('pollination.femaleFlowersLabel')}: ${female}`,
+        [{ text: t('common.ok'), onPress: () => {
           setShowFloweringModal(false);
           fetchPlantDetails(false);
         }}]
       );
     } catch (error) {
       console.error('Error recording flowering:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to record flowering.');
+      Alert.alert(t('common.error'), error.response?.data?.message || t('pollination.failedToRecordFlowering'));
     }
   };
 
@@ -308,12 +310,12 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       
       await plantService.updateFlowerCounts(plantId, male, female);
       
-      Alert.alert('Success', 'Flower counts updated!');
+      Alert.alert(t('pollination.flowerCountsUpdated'), t('pollination.flowerCountsUpdated'));
       setShowFloweringModal(false);
       fetchPlantDetails(false);
     } catch (error) {
       console.error('Error updating flower counts:', error);
-      Alert.alert('Error', 'Failed to update flower counts.');
+      Alert.alert(t('common.error'), t('pollination.failedToUpdateCounts'));
     }
   };
 
@@ -337,9 +339,9 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     if (detectedGourdType && plantGourdType && detectedGourdType !== plantGourdType) {
       const plantDisplayName = getGourdDisplayName(plantGourdType);
       Alert.alert(
-        'Wrong Flower Type',
-        `This flower appears to be a ${gourdType} flower, but your plant is a ${plantDisplayName}.\n\nPlease only count flowers from this plant.`,
-        [{ text: 'OK' }]
+        t('pollination.wrongFlowerType'),
+        t('pollination.wrongFlowerTypeMessage', { detectedType: gourdType, plantType: plantDisplayName }),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -374,7 +376,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           isHandPollinated,
           pollinationNotes
         );
-        Alert.alert('Success', `Pollination recorded locally! (${count} female flowers)`, [{
+        Alert.alert(t('pollination.addNewPollination'), t('pollination.addPollination', { count }), [{
           text: 'OK',
           onPress: () => {
             setShowPollinationModal(false);
@@ -401,8 +403,8 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         successMessage += `\n✅ Expected Successful: ${prediction.expectedSuccessfulPollinations}`;
       }
       
-      Alert.alert('Success', successMessage, [{ 
-        text: 'OK', 
+      Alert.alert(t('pollination.addNewPollination'), successMessage, [{ 
+        text: t('common.ok'), 
         onPress: () => {
           setShowPollinationModal(false);
           setPollinationCount('1');
@@ -412,7 +414,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       }]);
     } catch (error) {
       console.error('Error adding pollination:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to record pollination.');
+      Alert.alert(t('common.error'), error.response?.data?.message || t('pollination.failedPollinationPrediction'));
     }
   };
 
@@ -422,14 +424,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       await plantService.recordPollinationResult(plantId, pollinationId, successCount);
       
       Alert.alert(
-        'Success',
-        `Pollination result recorded!\n\n` +
-        `✅ Successful: ${successCount} fruit(s) developing`,
-        [{ text: 'OK', onPress: () => fetchPlantDetails(false) }]
+        t('pollination.resultRecorded'),
+        `${t('pollination.resultRecorded')}\n\n` +
+        `✅ ${t('common.successful')}: ${successCount} ${t('common.fruits')}`,
+        [{ text: t('common.ok'), onPress: () => fetchPlantDetails(false) }]
       );
     } catch (error) {
       console.error('Error recording pollination result:', error);
-      Alert.alert('Error', 'Failed to record pollination result.');
+      Alert.alert(t('common.error'), t('pollination.failedPollinationPrediction'));
     }
   };
 
@@ -437,7 +439,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
   const handleRecordHarvest = async () => {
     try {
       if (!selectedFruitId || !harvestWeight) {
-        Alert.alert('Missing Information', 'Please select a fruit and enter the weight.');
+        Alert.alert(t('pollination.missingInfo'), t('pollination.selectFruitRequired'));
         return;
       }
       
@@ -447,14 +449,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🎉 Harvest Complete!',
-          body: `Harvested ${weight} kg from your ${formatLabel(plant.gourdType)}!`,
+          title: t('pollination.harvestComplete'),
+          body: t('pollination.harvestCompleteMessage', { weight, type: formatLabel(plant.gourdType) }),
           sound: 'default',
         },
         trigger: { seconds: 1 }
       });
       
-      Alert.alert('Success', `Fruit harvested! Weight: ${weight} kg`, [{ 
+      Alert.alert(t('pollination.harvestComplete'), t('pollination.harvestCompleteMessage', { weight, type: '' }).trim(), [{ 
         text: 'OK', 
         onPress: () => {
           setShowHarvestModal(false);
@@ -465,7 +467,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       }]);
     } catch (error) {
       console.error('Error recording harvest:', error);
-      Alert.alert('Error', 'Failed to record harvest.');
+      Alert.alert(t('common.error'), t('pollination.harvestFailed'));
     }
   };
 
@@ -476,16 +478,16 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       const imageUri = imageData?.uri || imageData;
       if (isGuest) {
         await guestStorageService.setLocalPlantImage(plantId, imageUri, 'Plant photo');
-        Alert.alert('Success', 'Image saved locally!');
+        Alert.alert(t('pollination.imageSavedLocally'), t('pollination.imageSavedLocally'));
       } else {
         await plantService.uploadImage(plantId, imageUri, 'Plant photo');
-        Alert.alert('Success', 'Image uploaded successfully!');
+        Alert.alert(t('pollination.imageUploaded'), t('pollination.imageUploaded'));
       }
       setShowImageCapture(false);
       fetchPlantDetails(false);
     } catch (error) {
       console.error('Error uploading image:', error);
-      Alert.alert('Error', 'Failed to upload image.');
+      Alert.alert(t('common.error'), t('pollination.imageUploadFailed'));
     }
   };
 
@@ -513,14 +515,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🌸 Flowering Status</Text>
+          <Text style={styles.sectionTitle}>{t('pollination.floweringStatus')}</Text>
           {hasStartedFlowering ? (
             <View style={[styles.badge, { backgroundColor: '#4CAF50' }]}>
-              <Text style={styles.badgeText}>FLOWERING</Text>
+              <Text style={styles.badgeText}>{t('pollination.flowering')}</Text>
             </View>
           ) : (
             <TouchableOpacity onPress={handleGetFloweringPrediction} style={styles.predictButton}>
-              <Text style={styles.predictButtonText}>Get Prediction</Text>
+              <Text style={styles.predictButtonText}>{t('pollination.getPrediction')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -534,12 +536,12 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               <View style={styles.flowerCount}>
                 <Ionicons name="male" size={20} color="#4A90E2" />
                 <Text style={styles.flowerCountNumber}>{male || 0}</Text>
-                <Text style={styles.flowerCountLabel}>Male</Text>
+                <Text style={styles.flowerCountLabel}>{t('pollination.maleFlowersLabel')}</Text>
               </View>
               <View style={styles.flowerCount}>
                 <Ionicons name="female" size={20} color="#E94B8A" />
                 <Text style={styles.flowerCountNumber}>{female || 0}</Text>
-                <Text style={styles.flowerCountLabel}>Female</Text>
+                <Text style={styles.flowerCountLabel}>{t('pollination.femaleFlowersLabel')}</Text>
               </View>
             </View>
             <TouchableOpacity 
@@ -550,14 +552,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                 setShowFloweringModal(true);
               }}
             >
-              <Text style={styles.updateButtonText}>Update Flower Counts</Text>
+              <Text style={styles.updateButtonText}>{t('pollination.updateFlowerCounts')}</Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
             {daysToFlower && (
               <View style={styles.predictionInfo}>
-                <Text style={styles.predictionLabel}>Predicted flowering in:</Text>
+                <Text style={styles.predictionLabel}>{t('pollination.predictedFloweringIn')}</Text>
                 <Text style={styles.predictionValue}>
                   ~{Math.max(0, daysToFlower - plantAge)} days
                 </Text>
@@ -578,7 +580,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               onPress={() => setShowFloweringModal(true)}
             >
               <Ionicons name="flower" size={20} color="#fff" />
-              <Text style={styles.actionButtonPrimaryText}>Record Flowering Started</Text>
+              <Text style={styles.actionButtonPrimaryText}>{t('pollination.recordFloweringTitle')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -614,16 +616,16 @@ export const PlantDetailScreen = ({ navigation, route }) => {
       return (
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🌿 Pollination</Text>
+            <Text style={styles.sectionTitle}>{t('pollination.pollination')}</Text>
           </View>
-          <Text style={styles.infoText}>No pollinations recorded yet.</Text>
+          <Text style={styles.infoText}>{t('pollination.noPollinations')}</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.actionButtonPrimary}
               onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
             >
               <Ionicons name="heart" size={18} color="#fff" />
-              <Text style={styles.actionButtonPrimaryText}>Add Pollination</Text>
+              <Text style={styles.actionButtonPrimaryText}>{t('pollination.addPollination')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -633,12 +635,12 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🌿 Pollination Counter</Text>
+            <Text style={styles.sectionTitle}>{t('pollination.pollinationCounter')}</Text>
           <TouchableOpacity 
             style={styles.viewAllButton}
             onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
           >
-            <Text style={styles.viewAllButtonText}>View All</Text>
+            <Text style={styles.viewAllButtonText}>{t('pollination.viewAll')}</Text>
             <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -649,19 +651,19 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             <View style={styles.pollinationCounterItem}>
               <Ionicons name="heart" size={24} color="#FF9800" />
               <Text style={styles.pollinationCounterNumber}>{pollinations.length}</Text>
-              <Text style={styles.pollinationCounterLabel}>Total Entries</Text>
+              <Text style={styles.pollinationCounterLabel}>{t('pollination.successLabel')}</Text>
             </View>
             <View style={styles.pollinationCounterDivider} />
             <View style={styles.pollinationCounterItem}>
               <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
               <Text style={styles.pollinationCounterNumber}>{totalSuccessful}</Text>
-              <Text style={styles.pollinationCounterLabel}>Successful</Text>
+              <Text style={styles.pollinationCounterLabel}>{t('pollination.successLabel')}</Text>
             </View>
             <View style={styles.pollinationCounterDivider} />
             <View style={styles.pollinationCounterItem}>
               <Ionicons name="time" size={24} color="#2196F3" />
               <Text style={styles.pollinationCounterNumber}>{pendingPollinations.length}</Text>
-              <Text style={styles.pollinationCounterLabel}>Pending</Text>
+              <Text style={styles.pollinationCounterLabel}>{t('pollination.pending')}</Text>
             </View>
           </View>
         </View>
@@ -714,7 +716,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           onPress={() => navigation.navigate('PollinationTracker', { plantId, plant })}
         >
           <Ionicons name="add-circle" size={20} color={theme.colors.primary} />
-          <Text style={styles.addPollinationButtonText}>Add New Pollination</Text>
+          <Text style={styles.addPollinationButtonText}>{t('pollination.addNewPollination')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -730,34 +732,34 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🍈 Fruits</Text>
+          <Text style={styles.sectionTitle}>{t('pollination.fruits')}</Text>
           <TouchableOpacity onPress={handleGetMaturityPrediction} style={styles.predictButton}>
-            <Text style={styles.predictButtonText}>Predict Maturity</Text>
+            <Text style={styles.predictButtonText}>{t('pollination.predictMaturity')}</Text>
           </TouchableOpacity>
         </View>
         
         <View style={styles.fruitStats}>
           <View style={styles.fruitStat}>
             <Text style={styles.fruitStatNumber}>{plant.fruits.length}</Text>
-            <Text style={styles.fruitStatLabel}>Total</Text>
+            <Text style={styles.fruitStatLabel}>{t('common.total')}</Text>
           </View>
           <View style={styles.fruitStat}>
             <Text style={styles.fruitStatNumber}>{unharvested.length}</Text>
-            <Text style={styles.fruitStatLabel}>Growing</Text>
+            <Text style={styles.fruitStatLabel}>{t('pollination.growingFruits')}</Text>
           </View>
           <View style={styles.fruitStat}>
             <Text style={styles.fruitStatNumber}>{harvested.length}</Text>
-            <Text style={styles.fruitStatLabel}>Harvested</Text>
+            <Text style={styles.fruitStatLabel}>{t('pollination.harvestComplete')}</Text>
           </View>
           <View style={styles.fruitStat}>
             <Text style={styles.fruitStatNumber}>{totalYield.toFixed(1)}</Text>
-            <Text style={styles.fruitStatLabel}>kg Yield</Text>
+            <Text style={styles.fruitStatLabel}>{t('pollination.harvest')}</Text>
           </View>
         </View>
         
         {unharvested.length > 0 && (
           <>
-            <Text style={styles.subTitle}>Growing Fruits:</Text>
+            <Text style={styles.subTitle}>{t('pollination.growingFruits')}:</Text>
             {unharvested.map((fruit, index) => (
               <View key={fruit._id || index} style={styles.fruitItem}>
                 <Text style={styles.fruitItemText}>
@@ -770,7 +772,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                     setShowHarvestModal(true);
                   }}
                 >
-                  <Text style={styles.harvestButtonText}>Harvest</Text>
+                  <Text style={styles.harvestButtonText}>{t('pollination.harvest')}</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -787,23 +789,23 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     
     return (
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🌡️ Environment</Text>
+        <Text style={styles.sectionTitle}>{t('predictionForms.environConditions')}</Text>
         <View style={styles.envGrid}>
           <View style={styles.envItem}>
             <Text style={styles.envValue}>{avgTemperature}°C</Text>
-            <Text style={styles.envLabel}>Temperature</Text>
+            <Text style={styles.envLabel}>{t('predictionForms.temperature')}</Text>
           </View>
           <View style={styles.envItem}>
             <Text style={styles.envValue}>{avgHumidity}%</Text>
-            <Text style={styles.envLabel}>Humidity</Text>
+            <Text style={styles.envLabel}>{t('predictionForms.humidity')}</Text>
           </View>
           <View style={styles.envItem}>
             <Text style={styles.envValue}>{sunlightHours}h</Text>
-            <Text style={styles.envLabel}>Sunlight</Text>
+            <Text style={styles.envLabel}>{t('predictionForms.dailySunlight')}</Text>
           </View>
           <View style={styles.envItem}>
             <Text style={styles.envValue}>{formatLabel(soilType)}</Text>
-            <Text style={styles.envLabel}>Soil</Text>
+            <Text style={styles.envLabel}>{t('predictionForms.soilType')}</Text>
           </View>
         </View>
         <Text style={styles.envExtraInfo}>
@@ -821,7 +823,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         ) : (
           <View style={styles.noImage}>
             <Ionicons name="image-outline" size={48} color={theme.colors.text.secondary} />
-            <Text style={styles.noImageText}>No photo</Text>
+            <Text style={styles.noImageText}>{t('pollination.noPhoto')}</Text>
           </View>
         )}
         <TouchableOpacity 
@@ -839,7 +841,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading plant details...</Text>
+        <Text style={styles.loadingText}>{t('pollination.loadingPlantDetails')}</Text>
       </View>
     );
   }
@@ -848,8 +850,8 @@ export const PlantDetailScreen = ({ navigation, route }) => {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={48} color={theme.colors.error} />
-        <Text style={styles.errorText}>Plant not found</Text>
-        <Button title="Go Back" onPress={() => navigation.goBack()} />
+        <Text style={styles.errorText}>{t('pollination.plantNotFound')}</Text>
+        <Button title={t('common.goBack')} onPress={() => navigation.goBack()} />
       </View>
     );
   }
@@ -899,7 +901,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.ageInfo}>
               <Text style={styles.ageNumber}>{plantAge}</Text>
-              <Text style={styles.ageLabel}>days old</Text>
+              <Text style={styles.ageLabel}>{t('common.daysOld')}</Text>
             </View>
           </View>
           <View style={styles.datesRow}>
@@ -926,7 +928,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         <View style={styles.lifecyclePredictionCard}>
           <View style={styles.lifecyclePredictionHeader}>
             <Ionicons name="analytics" size={24} color={theme.colors.primary} />
-            <Text style={styles.lifecyclePredictionTitle}>Growth Timeline</Text>
+            <Text style={styles.lifecyclePredictionTitle}>{t('pollination.growthTimeline')}</Text>
             {loadingPredictions && (
               <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginLeft: 'auto' }} />
             )}
@@ -943,7 +945,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                   <Text style={styles.lifecycleTimelineDays}>
                     {lifecyclePredictions.summary?.plantingToFlowering || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Days to First Flower</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>{t('pollination.floweringPrediction')}</Text>
                   {lifecyclePredictions.summary?.expectedFloweringDate && (
                     <Text style={styles.lifecycleTimelineDate}>
                       {formatDate(lifecyclePredictions.summary.expectedFloweringDate)}
@@ -962,8 +964,8 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                   <Text style={styles.lifecycleTimelineDays}>
                     +{lifecyclePredictions.summary?.floweringToHarvest || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Flower → Pollination</Text>
-                  <Text style={styles.lifecycleTimelineSubLabel}>(After flowering starts)</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>{t('pollination.flowerToPollination')}</Text>
+                  <Text style={styles.lifecycleTimelineSubLabel}>{t('pollination.afterFloweringStarts')}</Text>
                 </View>
                 
                 <View style={styles.lifecycleTimelineArrow}>
@@ -977,7 +979,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
                   <Text style={styles.lifecycleTimelineDays}>
                     {lifecyclePredictions.summary?.totalDaysToHarvest || '—'} days
                   </Text>
-                  <Text style={styles.lifecycleTimelineLabel}>Total (Plant → Harvest)</Text>
+                  <Text style={styles.lifecycleTimelineLabel}>{t('pollination.totalPlantToHarvest')}</Text>
                   {lifecyclePredictions.summary?.expectedHarvestDate && (
                     <Text style={styles.lifecycleTimelineDate}>
                       {formatDate(lifecyclePredictions.summary.expectedHarvestDate)}
@@ -990,8 +992,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               <View style={styles.timelineExplanation}>
                 <Ionicons name="information-circle-outline" size={16} color={theme.colors.text.secondary} />
                 <Text style={styles.timelineExplanationText}>
-                  "Flower → Harvest" is the time from the flowers to be pollinated. 
-                  "Total" is from planting date to harvest.
+                  {t('pollination.timelineExplanation')}
                 </Text>
               </View>
             </View>
@@ -1001,7 +1002,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               onPress={fetchLifecyclePredictions}
             >
               <Ionicons name="refresh" size={18} color={theme.colors.primary} />
-              <Text style={styles.lifecycleLoadButtonText}>Load Predictions</Text>
+              <Text style={styles.lifecycleLoadButtonText}>{t('pollination.loadPredictions')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -1020,7 +1021,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {plant.flowering?.hasStarted ? 'Update Flower Counts' : 'Record Flowering'}
+                {plant.flowering?.hasStarted ? t('pollination.updateFlowerCountsTitle') : t('pollination.recordFloweringTitle')}
               </Text>
               <TouchableOpacity onPress={() => setShowFloweringModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
@@ -1034,20 +1035,20 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             >
               <Ionicons name="camera" size={24} color={theme.colors.primary} />
               <View style={styles.cameraCounterTextContainer}>
-                <Text style={styles.cameraCounterTitle}>Use Camera to Count</Text>
-                <Text style={styles.cameraCounterSubtitle}>Detect and add flowers automatically</Text>
+                <Text style={styles.cameraCounterTitle}>{t('pollination.useCameraToCount')}</Text>
+                <Text style={styles.cameraCounterSubtitle}>{t('pollination.detectFlowersDesc')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
             </TouchableOpacity>
 
             <View style={styles.modalDivider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or enter manually</Text>
+              <Text style={styles.dividerText}>{t('pollination.orEnterManually')}</Text>
               <View style={styles.dividerLine} />
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Male Flowers 🌼</Text>
+              <Text style={styles.inputLabel}>{t('pollination.maleFlowersLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={maleFlowerCount}
@@ -1058,7 +1059,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Female Flowers 🌸</Text>
+              <Text style={styles.inputLabel}>{t('pollination.femaleFlowersLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={femaleFlowerCount}
@@ -1073,7 +1074,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
               onPress={plant.flowering?.hasStarted ? handleUpdateFlowerCounts : handleRecordFlowering}
             >
               <Text style={styles.modalButtonText}>
-                {plant.flowering?.hasStarted ? 'Update' : 'Record Flowering'}
+                {plant.flowering?.hasStarted ? t('common.update') : t('pollination.recordFloweringTitle')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1090,14 +1091,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Pollination</Text>
+              <Text style={styles.modalTitle}>{t('pollination.addPollination')}</Text>
               <TouchableOpacity onPress={() => setShowPollinationModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Female Flowers Pollinated</Text>
+              <Text style={styles.inputLabel}>{t('pollinationTracker.femaleFlowersPollinated')}</Text>
               <TextInput
                 style={styles.input}
                 value={pollinationCount}
@@ -1108,30 +1109,30 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             </View>
             
             <View style={styles.toggleRow}>
-              <Text style={styles.inputLabel}>Hand Pollinated?</Text>
+              <Text style={styles.inputLabel}>{t('pollinationTracker.handPollinated')}</Text>
               <TouchableOpacity
                 style={[styles.toggleButton, isHandPollinated && styles.toggleButtonActive]}
                 onPress={() => setIsHandPollinated(!isHandPollinated)}
               >
                 <Text style={[styles.toggleButtonText, isHandPollinated && styles.toggleButtonTextActive]}>
-                  {isHandPollinated ? 'Yes' : 'No'}
+                  {isHandPollinated ? t('common.yes') : t('common.no')}
                 </Text>
               </TouchableOpacity>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes (optional)</Text>
+              <Text style={styles.inputLabel}>{t('pollinationTracker.notesOptional')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={pollinationNotes}
                 onChangeText={setPollinationNotes}
-                placeholder="Any observations..."
+                placeholder={t('pollinationTracker.notesPlaceholder')}
                 multiline
               />
             </View>
             
             <TouchableOpacity style={styles.modalButton} onPress={handleAddPollination}>
-              <Text style={styles.modalButtonText}>Add Pollination</Text>
+              <Text style={styles.modalButtonText}>{t('pollination.addPollination')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1147,14 +1148,14 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>🎉 Record Harvest</Text>
+              <Text style={styles.modalTitle}>{t('pollination.recordHarvest')}</Text>
               <TouchableOpacity onPress={() => setShowHarvestModal(false)}>
                 <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
               </TouchableOpacity>
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Harvest Weight (kg)</Text>
+              <Text style={styles.inputLabel}>{t('pollination.harvest')}</Text>
               <TextInput
                 style={styles.input}
                 value={harvestWeight}
@@ -1165,7 +1166,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
             </View>
             
             <TouchableOpacity style={styles.modalButton} onPress={handleRecordHarvest}>
-              <Text style={styles.modalButtonText}>Record Harvest</Text>
+              <Text style={styles.modalButtonText}>{t('pollination.recordHarvest')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1176,7 +1177,7 @@ export const PlantDetailScreen = ({ navigation, route }) => {
         visible={showImageCapture}
         onClose={() => setShowImageCapture(false)}
         onImageCaptured={handleImageCaptured}
-        title="Add Plant Photo"
+        title={t('pollination.addPlantPhoto')}
       />
     </View>
   );

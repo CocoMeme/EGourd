@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../../services';
 import { theme } from '../../styles';
 import { CustomAlert } from '../../components';
+import { useTranslation } from 'react-i18next';
 
 export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [alert, setAlert] = useState({ visible: false, type: 'info', title: '', message: '', buttons: [] });
+  const { t } = useTranslation();
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -43,8 +45,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'warning',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
+        title: t('auth.signUp.missingInfo'),
+        message: t('auth.signUp.missingInfoMessage'),
         buttons: [],
       });
       return false;
@@ -56,8 +58,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Invalid Email',
-        message: 'Please enter a valid email address.',
+        title: t('auth.signUp.invalidEmail'),
+        message: t('auth.signUp.invalidEmailMessage'),
         buttons: [],
       });
       return false;
@@ -68,8 +70,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Password Too Short',
-        message: 'Password must be at least 8 characters long.',
+        title: t('auth.signUp.passwordTooShort'),
+        message: t('auth.signUp.passwordTooShortMessage'),
         buttons: [],
       });
       return false;
@@ -80,8 +82,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'warning',
-        title: 'Weak Password',
-        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
+        title: t('auth.signUp.weakPassword'),
+        message: t('auth.signUp.weakPasswordMessage'),
         buttons: [],
       });
       return false;
@@ -92,8 +94,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Password Mismatch',
-        message: 'Passwords do not match. Please try again.',
+        title: t('auth.signUp.passwordMismatch'),
+        message: t('auth.signUp.passwordMismatchMessage'),
         buttons: [],
       });
       return false;
@@ -104,8 +106,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'warning',
-        title: 'Terms Required',
-        message: 'Please agree to the Terms of Service and Privacy Policy to continue.',
+        title: t('auth.signUp.termsRequired'),
+        message: t('auth.signUp.termsRequiredMessage'),
         buttons: [],
       });
       return false;
@@ -130,11 +132,11 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
         setAlert({
           visible: true,
           type: 'success',
-          title: 'Account Created!',
-          message: 'We have sent a verification code to your email.',
+          title: t('auth.signUp.accountCreated'),
+          message: t('auth.signUp.accountCreatedMessage'),
           buttons: [
             {
-              text: 'Verify Email',
+              text: t('auth.signUp.verifyEmail'),
               onPress: () => {
                 navigation.navigate('VerifyEmail', { email: signupData.email, sendPin: true });
               }
@@ -145,8 +147,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
         setAlert({
           visible: true,
           type: 'error',
-          title: 'Registration Failed',
-          message: result.message || 'Unable to create account. Please try again.',
+          title: t('auth.signUp.registrationFailed'),
+          message: result.message || t('auth.signUp.registrationFailedMessage'),
           buttons: [],
         });
       }
@@ -155,8 +157,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Connection Error',
-        message: 'Network error. Please check your connection and try again.',
+        title: t('auth.login.connectionError'),
+        message: t('auth.login.connectionErrorMessage'),
         buttons: [],
       });
     } finally {
@@ -180,11 +182,11 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
           setAlert({
             visible: true,
             type: 'success',
-            title: 'Welcome to eGourd!',
-            message: 'Google Sign-Up successful! Start scanning your gourds now.',
+            title: t('auth.signUp.welcomeToEgourd'),
+            message: t('auth.signUp.googleSignupSuccess'),
             buttons: [
               {
-                text: 'Get Started',
+                text: t('auth.signUp.getStarted'),
                 onPress: () => {
                   if (onAuthSuccess) onAuthSuccess();
                 }
@@ -194,23 +196,23 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
         }
       } else {
         // Show a more detailed error for configuration issues
-        const errorMessage = result.message || 'Unable to sign up with Google';
+        const errorMessage = result.message || t('auth.signUp.signUpFailed');
         if (errorMessage.includes('not configured')) {
           setAlert({
             visible: true,
             type: 'info',
-            title: 'Setup Required',
-            message: 'Google Sign-Up is running in demo mode. To enable real Google authentication, please follow the setup guide.',
+            title: t('auth.login.setupRequired'),
+            message: t('auth.login.googleDemoModeMessage'),
             buttons: [
-              { text: 'Use Demo Mode', onPress: () => handleGoogleSignUp() },
-              { text: 'Cancel', style: 'cancel' }
+              { text: t('auth.login.useDemoMode'), onPress: () => handleGoogleSignUp() },
+              { text: t('common.cancel'), style: 'cancel' }
             ],
           });
         } else {
           setAlert({
             visible: true,
             type: 'error',
-            title: 'Sign-Up Failed',
+            title: t('auth.signUp.signUpFailed'),
             message: errorMessage,
             buttons: [],
           });
@@ -221,8 +223,8 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
       setAlert({
         visible: true,
         type: 'error',
-        title: 'Connection Error',
-        message: 'Network error. Please check your connection and try again.',
+        title: t('auth.login.connectionError'),
+        message: t('auth.login.connectionErrorMessage'),
         buttons: [],
       });
     } finally {
@@ -237,7 +239,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
   const getPasswordStrength = () => {
     const { password } = formData;
     if (password.length === 0) return { text: '', color: '#ccc' };
-    if (password.length < 8) return { text: 'Too Short', color: '#f44336' };
+    if (password.length < 8) return { text: t('auth.signUp.tooShort'), color: '#f44336' };
 
     let strength = 0;
     if (/[a-z]/.test(password)) strength++;
@@ -245,10 +247,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
     if (/\d/.test(password)) strength++;
     if (/[^a-zA-Z\d]/.test(password)) strength++;
 
-    if (strength === 1) return { text: 'Weak', color: '#ff9800' };
-    if (strength === 2) return { text: 'Fair', color: '#ffeb3b' };
-    if (strength === 3) return { text: 'Good', color: '#8bc34a' };
-    return { text: 'Strong', color: '#4caf50' };
+    if (strength === 1) return { text: t('auth.signUp.weak'), color: '#ff9800' };
+    if (strength === 2) return { text: t('auth.signUp.fair'), color: '#ffeb3b' };
+    if (strength === 3) return { text: t('auth.signUp.good'), color: '#8bc34a' };
+    return { text: t('auth.signUp.strong'), color: '#4caf50' };
   };
 
   const passwordStrength = getPasswordStrength();
@@ -292,7 +294,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                     style={styles.inputIcon}
                   />
                   <RNTextInput
-                    placeholder="First Name"
+                    placeholder={t('auth.signUp.firstName')}
                     placeholderTextColor={theme.colors.text.secondary}
                     value={formData.firstName}
                     onChangeText={(value) => updateField('firstName', value)}
@@ -303,7 +305,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
 
                 <View style={[styles.inputContainer, styles.nameInput]}>
                   <RNTextInput
-                    placeholder="Last Name"
+                    placeholder={t('auth.signUp.lastName')}
                     placeholderTextColor={theme.colors.text.secondary}
                     value={formData.lastName}
                     onChangeText={(value) => updateField('lastName', value)}
@@ -322,7 +324,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.inputIcon}
                 />
                 <RNTextInput
-                  placeholder="Email"
+                  placeholder={t('auth.signUp.emailPlaceholder')}
                   placeholderTextColor={theme.colors.text.secondary}
                   value={formData.email}
                   onChangeText={(value) => updateField('email', value)}
@@ -342,7 +344,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.inputIcon}
                 />
                 <RNTextInput
-                  placeholder="Password"
+                  placeholder={t('auth.signUp.passwordPlaceholder')}
                   placeholderTextColor={theme.colors.text.secondary}
                   value={formData.password}
                   onChangeText={(value) => updateField('password', value)}
@@ -366,7 +368,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
               {formData.password.length > 0 && (
                 <View style={styles.passwordStrength}>
                   <Text style={[styles.strengthText, { color: passwordStrength.color }]}>
-                    Password Strength: {passwordStrength.text}
+                    {t('auth.signUp.passwordStrength')} {passwordStrength.text}
                   </Text>
                 </View>
               )}
@@ -380,7 +382,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.inputIcon}
                 />
                 <RNTextInput
-                  placeholder="Confirm Password"
+                  placeholder={t('auth.signUp.confirmPassword')}
                   placeholderTextColor={theme.colors.text.secondary}
                   value={formData.confirmPassword}
                   onChangeText={(value) => updateField('confirmPassword', value)}
@@ -411,10 +413,10 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   )}
                 </View>
                 <Text style={styles.checkboxText}>
-                  I agree to the{' '}
-                  <Text style={styles.linkText}>Terms of Service</Text>
-                  {' '}and{' '}
-                  <Text style={styles.linkText}>Privacy Policy</Text>
+                  {t('auth.signUp.agreeToTerms')}
+                  <Text style={styles.linkText}>{t('auth.signUp.termsOfService')}</Text>
+                  {' '}{t('auth.signUp.and')}{' '}
+                  <Text style={styles.linkText}>{t('auth.signUp.privacyPolicy')}</Text>
                 </Text>
               </TouchableOpacity>
 
@@ -431,9 +433,9 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   style={styles.signupButtonGradient}
                 >
                   {loading ? (
-                    <Text style={styles.buttonText}>Creating Account...</Text>
+                    <Text style={styles.buttonText}>{t('auth.signUp.creatingAccount')}</Text>
                   ) : (
-                    <Text style={styles.buttonText}>Create Account</Text>
+                    <Text style={styles.buttonText}>{t('auth.signUp.signUpButton')}</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -441,7 +443,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
               {/* Divider */}
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or sign up with</Text>
+                <Text style={styles.dividerText}>{t('auth.signUp.orSignUpWith')}</Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -457,7 +459,7 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   color={theme.colors.primary}
                   style={styles.googleIcon}
                 />
-                <Text style={styles.googleButtonText}>Sign up with Google</Text>
+                <Text style={styles.googleButtonText}>{t('auth.signUp.signUpWithGoogle')}</Text>
               </TouchableOpacity>
 
               {/* Guest Button */}
@@ -476,15 +478,15 @@ export const SignUpScreen = ({ navigation, onAuthSuccess }) => {
                   color={theme.colors.text.secondary}
                   style={styles.googleIcon}
                 />
-                <Text style={styles.guestButtonText}>Continue as Guest</Text>
+                <Text style={styles.guestButtonText}>{t('auth.signUp.continueAsGuest')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Login Link */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={styles.loginText}>{t('auth.signUp.alreadyHaveAccount')}</Text>
               <TouchableOpacity onPress={navigateToLogin}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Text style={styles.loginLink}>{t('auth.signUp.signIn')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const TipCard = ({ tip, onDismiss, onNext }) => {
+  const { t } = useTranslation();
   const slideAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -52,7 +54,7 @@ export const TipCard = ({ tip, onDismiss, onNext }) => {
             >
               <Ionicons name="bulb-outline" size={20} color="#FFFFFF" />
             </LinearGradient>
-            <Text style={styles.title}>Pro Tip</Text>
+            <Text style={styles.title}>{t('home.proTip')}</Text>
           </View>
           {onDismiss && (
             <TouchableOpacity 
@@ -69,7 +71,7 @@ export const TipCard = ({ tip, onDismiss, onNext }) => {
         
         {onNext && (
           <TouchableOpacity style={styles.nextButton} onPress={onNext}>
-            <Text style={styles.nextButtonText}>Next Tip</Text>
+            <Text style={styles.nextButtonText}>{t('home.nextTip')}</Text>
             <Ionicons name="arrow-forward" size={18} color={theme.colors.secondary} />
           </TouchableOpacity>
         )}

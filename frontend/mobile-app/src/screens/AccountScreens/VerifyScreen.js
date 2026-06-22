@@ -17,6 +17,7 @@ import { theme } from '../../styles';
 import { authService } from '../../services';
 import { CustomAlert } from '../../components';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export const VerifyScreen = ({ route, navigation }) => {
     const { email, sendPin } = route.params || {};
@@ -28,6 +29,7 @@ export const VerifyScreen = ({ route, navigation }) => {
 
     // Use the global auth context to update state after verification
     const { checkAuthStatus } = useAuth();
+    const { t } = useTranslation();
 
     const inputRefs = useRef([]);
 
@@ -81,16 +83,16 @@ export const VerifyScreen = ({ route, navigation }) => {
                 setAlert({
                     visible: true,
                     type: 'success',
-                    title: 'Code Sent',
-                    message: 'A new verification code has been sent to your email.',
+                    title: t('auth.verify.codeSent'),
+                    message: t('auth.verify.codeSentMessage'),
                     buttons: [],
                 });
             } else {
                 setAlert({
                     visible: true,
                     type: 'error',
-                    title: 'Failed to Send',
-                    message: result.message || 'Could not send verification code.',
+                    title: t('auth.verify.failedToSend'),
+                    message: result.message || t('auth.verify.failedToSendMessage'),
                     buttons: [],
                 });
             }
@@ -99,8 +101,8 @@ export const VerifyScreen = ({ route, navigation }) => {
             setAlert({
                 visible: true,
                 type: 'error',
-                title: 'Error',
-                message: 'Network error. Please try again.',
+                title: t('common.error'),
+                message: t('errors.networkError'),
                 buttons: [],
             });
         } finally {
@@ -116,8 +118,8 @@ export const VerifyScreen = ({ route, navigation }) => {
             setAlert({
                 visible: true,
                 type: 'warning',
-                title: 'Invalid Code',
-                message: 'Please enter the 6-digit code sent to your email.',
+                title: t('auth.verify.invalidCode'),
+                message: t('auth.verify.invalidCodeMessage'),
                 buttons: [],
             });
             return;
@@ -131,11 +133,11 @@ export const VerifyScreen = ({ route, navigation }) => {
                 setAlert({
                     visible: true,
                     type: 'success',
-                    title: 'Email Verified!',
-                    message: 'You have successfully verified your email.',
+                    title: t('auth.verify.emailVerified'),
+                    message: t('auth.verify.emailVerifiedMessage'),
                     buttons: [
                         {
-                            text: 'Continue',
+                            text: t('auth.verify.continue'),
                             onPress: async () => {
                                 // Critical step: Update global auth state to trigger AppNavigator switch
                                 await checkAuthStatus();
@@ -148,8 +150,8 @@ export const VerifyScreen = ({ route, navigation }) => {
                 setAlert({
                     visible: true,
                     type: 'error',
-                    title: 'Verification Failed',
-                    message: result.message || 'Invalid code. Please try again.',
+                    title: t('auth.verify.verificationFailed'),
+                    message: result.message || t('auth.verify.verificationFailedMessage'),
                     buttons: [],
                 });
             }
@@ -158,8 +160,8 @@ export const VerifyScreen = ({ route, navigation }) => {
             setAlert({
                 visible: true,
                 type: 'error',
-                title: 'Error',
-                message: 'Network error. Please try again.',
+                title: t('common.error'),
+                message: t('errors.networkError'),
                 buttons: [],
             });
         } finally {
@@ -189,9 +191,9 @@ export const VerifyScreen = ({ route, navigation }) => {
                             <View style={styles.iconContainer}>
                                 <Ionicons name="mail-open-outline" size={48} color={theme.colors.primary} />
                             </View>
-                            <Text style={styles.title}>Verify Email</Text>
+                            <Text style={styles.title}>{t('auth.verify.title')}</Text>
                             <Text style={styles.subtitle}>
-                                We sent a 6-digit code to
+                                {t('auth.verify.subtitle')}
                             </Text>
                             <Text style={styles.emailText}>{email}</Text>
                         </View>
@@ -227,7 +229,7 @@ export const VerifyScreen = ({ route, navigation }) => {
                                     {loading ? (
                                         <ActivityIndicator color="#FFFFFF" />
                                     ) : (
-                                        <Text style={styles.buttonText}>Verify Email</Text>
+                                        <Text style={styles.buttonText}>{t('auth.verify.verifyButton')}</Text>
                                     )}
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -242,8 +244,8 @@ export const VerifyScreen = ({ route, navigation }) => {
                                     (resendTimer > 0 || loading) && styles.resendTextDisabled
                                 ]}>
                                     {resendTimer > 0
-                                        ? `Resend code in ${resendTimer}s`
-                                        : 'Resend Code'}
+                                        ? t('auth.verify.resendIn', { seconds: resendTimer })
+                                        : t('auth.verify.resendCode')}
                                 </Text>
                             </TouchableOpacity>
                         </View>

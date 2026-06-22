@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 const { width } = Dimensions.get('window');
@@ -17,6 +18,7 @@ export const NewsCard = ({
   onPress, 
   compact = false 
 }) => {
+  const { t } = useTranslation();
   const getCategoryIcon = (category) => {
     const icons = {
       model_update: 'analytics-outline',
@@ -51,9 +53,9 @@ export const NewsCard = ({
     const diffTime = Math.abs(now - newsDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 1) return 'Today';
-    if (diffDays < 2) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 1) return t('news.today');
+    if (diffDays < 2) return t('news.yesterday');
+    if (diffDays < 7) return t('news.daysAgo', { count: diffDays });
     
     return newsDate.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -89,7 +91,7 @@ export const NewsCard = ({
             </Text>
             {news.isNew && (
               <View style={styles.newBadge}>
-                <Text style={styles.newBadgeText}>NEW</Text>
+                <Text style={styles.newBadgeText}>{t('news.new')}</Text>
               </View>
             )}
           </View>
@@ -129,7 +131,7 @@ export const NewsCard = ({
           <View style={styles.badges}>
             {news.isNew && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>NEW</Text>
+                <Text style={styles.badgeText}>{t('news.new')}</Text>
               </View>
             )}
             {news.display?.isPinned && (

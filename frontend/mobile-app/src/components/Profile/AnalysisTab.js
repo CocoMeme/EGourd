@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts';
 import { theme } from '../../styles';
 import { analyticsService, authService, guestStorageService } from '../../services';
@@ -19,6 +20,7 @@ const { width } = Dimensions.get('window');
 const chartWidth = width - 48; // Account for padding
 
 export const AnalysisTab = ({ isGuest }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [analytics, setAnalytics] = useState(null);
@@ -123,7 +125,7 @@ export const AnalysisTab = ({ isGuest }) => {
       </View>
       <View style={styles.harvestDays}>
         <Text style={styles.harvestDaysNumber}>{harvest.daysToHarvest}</Text>
-        <Text style={styles.harvestDaysLabel}>days</Text>
+        <Text style={styles.harvestDaysLabel}>{t('common.days', defaultValue='days')}</Text>
       </View>
     </View>
   );
@@ -132,7 +134,7 @@ export const AnalysisTab = ({ isGuest }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Analyzing your data...</Text>
+        <Text style={styles.loadingText}>{t('profile.analysisTab.analyzing')}</Text>
       </View>
     );
   }
@@ -141,8 +143,8 @@ export const AnalysisTab = ({ isGuest }) => {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="analytics-outline" size={80} color={theme.colors.text.disabled} />
-        <Text style={styles.emptyTitle}>No Data Yet</Text>
-        <Text style={styles.emptySubtitle}>Start scanning to see your analytics</Text>
+        <Text style={styles.emptyTitle}>{t('profile.analysisTab.noDataYet')}</Text>
+        <Text style={styles.emptySubtitle}>{t('profile.analysisTab.noDataMessage')}</Text>
       </View>
     );
   }
@@ -169,22 +171,22 @@ export const AnalysisTab = ({ isGuest }) => {
   const genderData = [
     {
       value: analytics.distributions.gender.male,
-      label: 'Male',
+      label: t('profile.historyTab.male'),
       frontColor: '#2196F3',
       spacing: 2,
     },
     {
       value: analytics.distributions.gender.female,
-      label: 'Female',
+      label: t('profile.historyTab.female'),
       frontColor: '#E91E63',
       spacing: 2,
     },
   ];
 
   const confidenceData = [
-    { value: analytics.distributions.confidence.high, label: 'High', frontColor: '#4CAF50' },
-    { value: analytics.distributions.confidence.medium, label: 'Medium', frontColor: '#FF9800', spacing: 2 },
-    { value: analytics.distributions.confidence.low, label: 'Low', frontColor: '#F44336', spacing: 2 },
+    { value: analytics.distributions.confidence.high, label: t('profile.analysisTab.high'), frontColor: '#4CAF50' },
+    { value: analytics.distributions.confidence.medium, label: t('profile.analysisTab.medium'), frontColor: '#FF9800', spacing: 2 },
+    { value: analytics.distributions.confidence.low, label: t('profile.analysisTab.low'), frontColor: '#F44336', spacing: 2 },
   ];
 
   return (
@@ -196,7 +198,7 @@ export const AnalysisTab = ({ isGuest }) => {
       <View style={styles.filterSection}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
           {['7days', '30days', '90days', 'all'].map((range) => {
-            const labels = { '7days': '7 Days', '30days': '30 Days', '90days': '90 Days', 'all': 'All Time' };
+            const labels = { '7days': t('profile.analysisTab.rangeLabels.7days'), '30days': t('profile.analysisTab.rangeLabels.30days'), '90days': t('profile.analysisTab.rangeLabels.90days'), 'all': t('profile.analysisTab.rangeLabels.allTime') };
             return (
               <TouchableOpacity
                 key={range}
@@ -212,7 +214,9 @@ export const AnalysisTab = ({ isGuest }) => {
         </ScrollView>
 
         <View style={styles.typeFilterContainer}>
-          {['all', 'flower', 'leaf'].map((type) => (
+          {['all', 'flower', 'leaf'].map((type) => {
+            const typeLabels = { all: t('profile.analysisTab.typeFilters.all'), flower: t('profile.analysisTab.typeFilters.flower'), leaf: t('profile.analysisTab.typeFilters.leaf') };
+            return (
             <TouchableOpacity
               key={type}
               style={[styles.typeFilter, selectedFilter === type && styles.typeFilterActive]}
@@ -224,17 +228,18 @@ export const AnalysisTab = ({ isGuest }) => {
                 color={selectedFilter === type ? '#FFFFFF' : theme.colors.text.secondary}
               />
               <Text style={[styles.typeFilterText, selectedFilter === type && styles.typeFilterTextActive]}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                {typeLabels[type]}
               </Text>
             </TouchableOpacity>
-          ))}
+            );
+          })}
         </View>
       </View>
 
       {/* Summary Cards */}
       <View style={styles.summarySection}>
         {renderSummaryCard(
-          'Total Scans',
+          t('profile.analysisTab.totalScans'),
           analytics.summary.totalScans,
           null,
           'scan-outline',
@@ -242,23 +247,23 @@ export const AnalysisTab = ({ isGuest }) => {
           parseFloat(analytics.summary.weeklyComparison.percentChange)
         )}
         {renderSummaryCard(
-          'Avg Confidence',
+          t('profile.analysisTab.avgConfidence'),
           `${analytics.summary.avgConfidence}%`,
           null,
           'shield-checkmark-outline',
           '#2196F3'
         )}
         {renderSummaryCard(
-          'This Week',
+          t('profile.analysisTab.thisWeek'),
           analytics.summary.weeklyComparison.thisWeek,
-          `${analytics.summary.weeklyComparison.change >= 0 ? '+' : ''}${analytics.summary.weeklyComparison.change} from last week`,
+          `${analytics.summary.weeklyComparison.change >= 0 ? '+' : ''}${analytics.summary.weeklyComparison.change} ${t('profile.analysisTab.totalScans')}`,
           'calendar-outline',
           '#FF9800'
         )}
         {renderSummaryCard(
-          'Success Rate',
+          t('profile.analysisTab.successRate'),
           `${(((analytics.distributions.confidence.high + analytics.distributions.confidence.medium) / analytics.summary.totalScans) * 100).toFixed(0)}%`,
-          'High & Medium confidence',
+          t('profile.analysisTab.successRate'),
           'checkmark-circle-outline',
           '#4CAF50'
         )}
@@ -267,7 +272,7 @@ export const AnalysisTab = ({ isGuest }) => {
       {/* Insights */}
       {analytics.insights && analytics.insights.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insights</Text>
+          <Text style={styles.sectionTitle}>{t('profile.analysisTab.insights')}</Text>
           {analytics.insights.map(renderInsightCard)}
         </View>
       )}
@@ -275,7 +280,7 @@ export const AnalysisTab = ({ isGuest }) => {
       {/* Activity Chart */}
       {timeSeriesData.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Scan Activity</Text>
+          <Text style={styles.sectionTitle}>{t('profile.analysisTab.scanActivity')}</Text>
           <View style={styles.chartCard}>
             <BarChart
               data={timeSeriesData}
@@ -301,7 +306,7 @@ export const AnalysisTab = ({ isGuest }) => {
       {/* Variety Distribution */}
       {varietyPieData.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Variety Distribution</Text>
+          <Text style={styles.sectionTitle}>{t('profile.analysisTab.varietyDistribution')}</Text>
           <View style={styles.chartCard}>
             <View style={styles.pieChartContainer}>
               <PieChart
@@ -312,7 +317,7 @@ export const AnalysisTab = ({ isGuest }) => {
                 centerLabelComponent={() => (
                   <View style={styles.pieCenter}>
                     <Text style={styles.pieCenterValue}>{analytics.summary.totalScans}</Text>
-                    <Text style={styles.pieCenterLabel}>Total</Text>
+                    <Text style={styles.pieCenterLabel}>{t('pollinationTracker.summary.total')}</Text>
                   </View>
                 )}
               />
@@ -332,7 +337,7 @@ export const AnalysisTab = ({ isGuest }) => {
 
       {/* Gender Distribution */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Gender Distribution</Text>
+        <Text style={styles.sectionTitle}>{t('profile.analysisTab.genderDistribution')}</Text>
         <View style={styles.chartCard}>
           <BarChart
             data={genderData}
@@ -355,7 +360,7 @@ export const AnalysisTab = ({ isGuest }) => {
 
       {/* Confidence Breakdown */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Confidence Levels</Text>
+        <Text style={styles.sectionTitle}>{t('profile.analysisTab.confidenceLevels')}</Text>
         <View style={styles.chartCard}>
           <BarChart
             data={confidenceData}
@@ -376,15 +381,15 @@ export const AnalysisTab = ({ isGuest }) => {
           <View style={styles.confidenceLegend}>
             <View style={styles.confidenceItem}>
               <View style={[styles.confidenceDot, { backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.confidenceLegendText}>High (≥85%)</Text>
+              <Text style={styles.confidenceLegendText}>{t('profile.analysisTab.high')}</Text>
             </View>
             <View style={styles.confidenceItem}>
               <View style={[styles.confidenceDot, { backgroundColor: '#FF9800' }]} />
-              <Text style={styles.confidenceLegendText}>Medium (70-85%)</Text>
+              <Text style={styles.confidenceLegendText}>{t('profile.analysisTab.medium')}</Text>
             </View>
             <View style={styles.confidenceItem}>
               <View style={[styles.confidenceDot, { backgroundColor: '#F44336' }]} />
-              <Text style={styles.confidenceLegendText}>Low (&lt;70%)</Text>
+              <Text style={styles.confidenceLegendText}>{t('profile.analysisTab.low')}</Text>
             </View>
           </View>
         </View>
@@ -393,7 +398,7 @@ export const AnalysisTab = ({ isGuest }) => {
       {/* Upcoming Harvests */}
       {analytics.upcomingHarvests && analytics.upcomingHarvests.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming Harvests</Text>
+          <Text style={styles.sectionTitle}>{t('profile.analysisTab.upcomingHarvests')}</Text>
           <View style={styles.chartCard}>
             {analytics.upcomingHarvests.map(renderHarvestItem)}
           </View>
@@ -403,7 +408,7 @@ export const AnalysisTab = ({ isGuest }) => {
       {/* Quality Metrics (if available) */}
       {analytics.qualityMetrics && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Average Quality Metrics</Text>
+          <Text style={styles.sectionTitle}>{t('profile.analysisTab.avgQualityMetrics')}</Text>
           <View style={styles.chartCard}>
             {Object.entries(analytics.qualityMetrics).map(([key, value]) => (
               <View key={key} style={styles.qualityMetricRow}>

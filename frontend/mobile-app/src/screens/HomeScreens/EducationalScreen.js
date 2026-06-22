@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 const EducationalScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [expandedSection, setExpandedSection] = useState(null);
 
   // Extract YouTube video ID from URL
@@ -38,172 +40,172 @@ const EducationalScreen = ({ navigation }) => {
   const videoTutorials = [
     {
       id: 'v1',
-      title: 'How to Hand Pollinate Gourds',
-      description: 'Step-by-step guide on manual pollination techniques for better fruit production.',
+      title: t('educational.video.pollinationTitle'),
+      description: t('educational.video.pollinationDesc'),
       duration: '5:30',
       thumbnail: null,
       url: 'https://www.youtube.com/watch?v=zF_ZQFaaEkc',
-      category: 'Pollination',
+      category: t('educational.video.pollination'),
     },
     {
       id: 'v2',
-      title: 'Identifying Male vs Female Flowers',
-      description: 'Learn to distinguish between male and female gourd flowers quickly.',
+      title: t('educational.video.identifyingTitle'),
+      description: t('educational.video.identifyingDesc'),
       duration: '3:45',
       thumbnail: null,
       url: 'https://www.youtube.com/watch?v=rWodaeBEinM',
-      category: 'Identification',
+      category: t('educational.video.identification'),
     },
     {
       id: 'v3',
-      title: 'Insect and Wind Pollination',
-      description: 'Understand the pollination process carried out by insects and wind.',
+      title: t('educational.video.insectTitle'),
+      description: t('educational.video.insectDesc'),
       duration: '4:20',
       thumbnail: null,
       url: 'https://www.youtube.com/watch?v=bAr6Ccg-1PA',
-      category: 'Pollination',
+      category: t('educational.video.pollination'),
     },
   ];
 
   const guides = [
     {
       id: 'g1',
-      title: 'Male vs Female Gourd Flowers',
+      title: t('educational.guide.maleFemaleTitle'),
       icon: 'flower-outline',
       color: theme.colors.primary,
       sections: [
         {
-          subtitle: 'Male Flowers',
+          subtitle: t('educational.guide.maleFlowers'),
           points: [
-            'Appear first, usually 1-2 weeks before female flowers',
-            'Grow on long, thin stems',
-            'Have a thin stalk with no swelling at the base',
-            'Produce pollen on the stamen in the center',
-            'More abundant than female flowers',
+            t('educational.guide.malePoint1'),
+            t('educational.guide.malePoint2'),
+            t('educational.guide.malePoint3'),
+            t('educational.guide.malePoint4'),
+            t('educational.guide.malePoint5'),
           ],
         },
         {
-          subtitle: 'Female Flowers',
+          subtitle: t('educational.guide.femaleFlowers'),
           points: [
-            'Have a small gourd-shaped swelling at the base (ovary)',
-            'Shorter, thicker stems than male flowers',
-            'Contain a stigma that receives pollen',
-            'Will develop into fruit if successfully pollinated',
-            'Open for only one day, usually early morning',
+            t('educational.guide.femalePoint1'),
+            t('educational.guide.femalePoint2'),
+            t('educational.guide.femalePoint3'),
+            t('educational.guide.femalePoint4'),
+            t('educational.guide.femalePoint5'),
           ],
         },
         {
-          subtitle: 'Visual Identification',
+          subtitle: t('educational.guide.visualId'),
           points: [
-            'Look for the miniature gourd at the base - this is ALWAYS female',
-            'No swelling at base = male flower',
-            'Male flowers outnumber female flowers typically 10:1',
+            t('educational.guide.visualPoint1'),
+            t('educational.guide.visualPoint2'),
+            t('educational.guide.visualPoint3'),
           ],
         },
       ],
     },
     {
       id: 'g2',
-      title: 'Hand Pollination Steps',
+      title: t('educational.guide.pollinationStepsTitle'),
       icon: 'hand-right-outline',
       color: theme.colors.success,
       sections: [
         {
-          subtitle: 'Best Time',
+          subtitle: t('educational.guide.bestTime'),
           points: [
-            'Early morning (6-10 AM) when flowers are fresh',
-            'Before bees and other pollinators become active',
-            'On dry, sunny days for best results',
+            t('educational.guide.bestTimePoint1'),
+            t('educational.guide.bestTimePoint2'),
+            t('educational.guide.bestTimePoint3'),
           ],
         },
         {
-          subtitle: 'Step-by-Step Process',
+          subtitle: t('educational.guide.stepByStep'),
           points: [
-            '1. Identify fresh male and female flowers (both must be open)',
-            '2. Pick a male flower and remove all petals',
-            '3. Gently brush the pollen-covered stamen against the stigma',
-            '4. Use one male flower for 2-3 female flowers',
-            '5. Mark pollinated flowers with string or ribbon',
-            '6. Close female flower petals gently after pollination',
+            t('educational.guide.stepPoint1'),
+            t('educational.guide.stepPoint2'),
+            t('educational.guide.stepPoint3'),
+            t('educational.guide.stepPoint4'),
+            t('educational.guide.stepPoint5'),
+            t('educational.guide.stepPoint6'),
           ],
         },
         {
-          subtitle: 'Success Tips',
+          subtitle: t('educational.guide.successTips'),
           points: [
-            'Use fresh pollen from flowers that just opened',
-            'Pollinate multiple female flowers to increase chances',
-            'Track pollination dates for harvest timing',
-            'Protect pollinated flowers from insects for a few hours',
+            t('educational.guide.successTip1'),
+            t('educational.guide.successTip2'),
+            t('educational.guide.successTip3'),
+            t('educational.guide.successTip4'),
           ],
         },
       ],
     },
     {
       id: 'g3',
-      title: 'Ripeness Indicators',
+      title: t('educational.guide.ripenessTitle'),
       icon: 'checkmark-circle-outline',
       color: theme.colors.warning,
       sections: [
         {
-          subtitle: 'Visual Signs',
+          subtitle: t('educational.guide.visualSigns'),
           points: [
-            'Skin color changes from light to deep, rich tones',
-            'Surface becomes harder and less glossy',
-            'Stem begins to dry and turn brown',
-            'Tendril near the fruit dries and turns brown',
+            t('educational.guide.visualSignPoint1'),
+            t('educational.guide.visualSignPoint2'),
+            t('educational.guide.visualSignPoint3'),
+            t('educational.guide.visualSignPoint4'),
           ],
         },
         {
-          subtitle: 'Physical Tests',
+          subtitle: t('educational.guide.physicalTests'),
           points: [
-            'Knock on the gourd - should sound hollow',
-            'Press thumbnail into skin - should resist puncturing',
-            'Stem should be dry and woody, not green',
-            'Gourd should feel heavy for its size',
+            t('educational.guide.physicalTestPoint1'),
+            t('educational.guide.physicalTestPoint2'),
+            t('educational.guide.physicalTestPoint3'),
+            t('educational.guide.physicalTestPoint4'),
           ],
         },
         {
-          subtitle: 'Harvest Timing',
+          subtitle: t('educational.guide.harvestTiming'),
           points: [
-            'Wait until after first light frost for best hardening',
-            'Leave 2-3 inches of stem attached when cutting',
-            'Handle carefully to avoid bruising',
-            'Cure in dry, warm location for several weeks',
+            t('educational.guide.harvestTimingPoint1'),
+            t('educational.guide.harvestTimingPoint2'),
+            t('educational.guide.harvestTimingPoint3'),
+            t('educational.guide.harvestTimingPoint4'),
           ],
         },
       ],
     },
     {
       id: 'g4',
-      title: 'Common Growing Problems',
+      title: t('educational.guide.growingProblemsTitle'),
       icon: 'alert-circle-outline',
       color: theme.colors.error,
       sections: [
         {
-          subtitle: 'Poor Fruit Set',
+          subtitle: t('educational.guide.poorFruitSet'),
           points: [
-            'Insufficient pollination - try hand pollination',
-            'Too much nitrogen fertilizer - reduce feeding',
-            'Extreme temperatures affecting flower development',
-            'Lack of male flowers - be patient, they come first',
+            t('educational.guide.poorFruitPoint1'),
+            t('educational.guide.poorFruitPoint2'),
+            t('educational.guide.poorFruitPoint3'),
+            t('educational.guide.poorFruitPoint4'),
           ],
         },
         {
-          subtitle: 'Fruit Rot',
+          subtitle: t('educational.guide.fruitRot'),
           points: [
-            'Remove rotting fruit immediately to prevent spread',
-            'Improve air circulation around plants',
-            'Avoid overhead watering - water at base',
-            'Elevate fruit off ground with straw or boards',
+            t('educational.guide.fruitRotPoint1'),
+            t('educational.guide.fruitRotPoint2'),
+            t('educational.guide.fruitRotPoint3'),
+            t('educational.guide.fruitRotPoint4'),
           ],
         },
         {
-          subtitle: 'Yellowing Leaves',
+          subtitle: t('educational.guide.yellowingLeaves'),
           points: [
-            'Normal for older leaves - remove them',
-            'Overwatering - reduce watering frequency',
-            'Nutrient deficiency - apply balanced fertilizer',
-            'Pest damage - inspect for insects',
+            t('educational.guide.yellowingPoint1'),
+            t('educational.guide.yellowingPoint2'),
+            t('educational.guide.yellowingPoint3'),
+            t('educational.guide.yellowingPoint4'),
           ],
         },
       ],
@@ -214,38 +216,38 @@ const EducationalScreen = ({ navigation }) => {
     {
       id: 'f1',
       icon: 'time-outline',
-      title: 'Flower Lifespan',
-      fact: 'Gourd flowers are only viable for pollination for a few hours in the early morning.',
+      title: t('educational.fact.flowerLifespan'),
+      fact: t('educational.fact.flowerLifespanDesc'),
     },
     {
       id: 'f2',
       icon: 'water-outline',
-      title: 'Watering Needs',
-      fact: 'Gourds need 1-2 inches of water per week, more during fruit development.',
+      title: t('educational.fact.wateringNeeds'),
+      fact: t('educational.fact.wateringNeedsDesc'),
     },
     {
       id: 'f3',
       icon: 'sunny-outline',
-      title: 'Sunlight',
-      fact: 'Gourds require full sun (6-8 hours daily) for optimal growth and fruit production.',
+      title: t('educational.fact.sunlight'),
+      fact: t('educational.fact.sunlightDesc'),
     },
     {
       id: 'f4',
       icon: 'leaf-outline',
-      title: 'Pollination Success',
-      fact: 'Only 20-30% of female flowers naturally get pollinated. Hand pollination increases this to 80-90%.',
+      title: t('educational.fact.pollinationSuccess'),
+      fact: t('educational.fact.pollinationSuccessDesc'),
     },
     {
       id: 'f5',
       icon: 'calendar-outline',
-      title: 'Days to Maturity',
-      fact: 'Most gourds take 90-120 days from pollination to full maturity.',
+      title: t('educational.fact.daysToMaturity'),
+      fact: t('educational.fact.daysToMaturityDesc'),
     },
     {
       id: 'f6',
       icon: 'thermometer-outline',
-      title: 'Temperature',
-      fact: 'Gourds grow best in temperatures between 70-95°F (21-35°C).',
+      title: t('educational.fact.temperature'),
+      fact: t('educational.fact.temperatureDesc'),
     },
   ];
 
@@ -263,16 +265,16 @@ const EducationalScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Educational Resources</Text>
+        <Text style={styles.headerTitle}>{t('educational.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.welcomeCard}>
           <Ionicons name="school" size={48} color={theme.colors.primary} />
-          <Text style={styles.welcomeTitle}>Learn About Gourd Cultivation</Text>
+          <Text style={styles.welcomeTitle}>{t('educational.welcome')}</Text>
           <Text style={styles.welcomeText}>
-            Master the art of growing, pollinating, and harvesting gourds with our comprehensive guides and video tutorials.
+            {t('educational.welcomeDesc')}
           </Text>
         </View>
 
@@ -280,7 +282,7 @@ const EducationalScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="play-circle" size={24} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Video Tutorials</Text>
+            <Text style={styles.sectionTitle}>{t('educational.videoTutorials')}</Text>
           </View>
           {videoTutorials.map((video) => {
             const thumbnailUrl = getYouTubeThumbnail(video.url);
@@ -329,7 +331,7 @@ const EducationalScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="flash" size={24} color={theme.colors.warning} />
-            <Text style={styles.sectionTitle}>Quick Facts</Text>
+            <Text style={styles.sectionTitle}>{t('educational.quickFacts')}</Text>
           </View>
           <View style={styles.factsGrid}>
             {quickFacts.map((item) => (
@@ -346,7 +348,7 @@ const EducationalScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="book" size={24} color={theme.colors.success} />
-            <Text style={styles.sectionTitle}>Detailed Guides</Text>
+            <Text style={styles.sectionTitle}>{t('educational.detailedGuides')}</Text>
           </View>
           {guides.map((guide) => (
             <View key={guide.id} style={styles.guideCard}>
@@ -391,14 +393,14 @@ const EducationalScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="link" size={24} color={theme.colors.info} />
-            <Text style={styles.sectionTitle}>Additional Resources</Text>
+            <Text style={styles.sectionTitle}>{t('educational.additionalResources')}</Text>
           </View>
           <View style={styles.resourceCard}>
             <Ionicons name="chatbubble-ellipses-outline" size={24} color={theme.colors.primary} />
             <View style={styles.resourceContent}>
-              <Text style={styles.resourceTitle}>Need Help?</Text>
+              <Text style={styles.resourceTitle}>{t('educational.needHelp')}</Text>
               <Text style={styles.resourceText}>
-                Check our FAQ section or contact support for personalized assistance with your gourd growing questions.
+                {t('educational.needHelpDesc')}
               </Text>
             </View>
           </View>
@@ -409,12 +411,12 @@ const EducationalScreen = ({ navigation }) => {
           >
             <Ionicons name="people-outline" size={24} color={theme.colors.success} />
             <View style={styles.resourceContent}>
-              <Text style={styles.resourceTitle}>Community Forum</Text>
+              <Text style={styles.resourceTitle}>{t('educational.communityForum')}</Text>
               <Text style={styles.resourceText}>
-                Join our growing community of gourd enthusiasts to share tips, photos, and experiences.
+                {t('educational.communityForumDesc')}
               </Text>
               <View style={styles.resourceAction}>
-                <Text style={styles.resourceActionText}>Join Discussion</Text>
+                <Text style={styles.resourceActionText}>{t('educational.joinDiscussion')}</Text>
                 <Ionicons name="arrow-forward" size={16} color={theme.colors.success} />
               </View>
             </View>
@@ -426,7 +428,7 @@ const EducationalScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Pollination')}
         >
           <Ionicons name="leaf" size={20} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.actionButtonText}>Go to Pollination Management</Text>
+          <Text style={styles.actionButtonText}>{t('educational.goToPollination')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

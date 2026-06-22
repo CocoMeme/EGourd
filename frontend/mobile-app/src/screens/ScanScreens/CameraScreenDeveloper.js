@@ -28,6 +28,7 @@ import { theme } from '../../styles';
 import { modelService, SCAN_MODES } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
+import { useTranslation } from 'react-i18next';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions (fast like TM)
 const TOP_N = 3; // Show top 3 predictions
@@ -35,6 +36,7 @@ const STABLE_FRAME_GATE = 5; // Consecutive matching frames required for stabili
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const CameraScreenTest = ({ navigation }) => {
+  const { t } = useTranslation();
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -126,7 +128,7 @@ export const CameraScreenTest = ({ navigation }) => {
       }
     } catch (error) {
       console.error(`❌ Failed to switch to ${newMode} mode:`, error);
-      Alert.alert('Mode Switch Error', `Failed to switch to ${newMode} mode.`);
+      Alert.alert(t('camera.failedToSwitchMode'), t('camera.failedToSwitchMode', { mode: newMode }));
       // Revert to previous mode
       setScanMode(scanMode);
     } finally {
@@ -276,9 +278,9 @@ export const CameraScreenTest = ({ navigation }) => {
       } catch (error) {
         console.error('❌ TM model initialization failed:', error);
         Alert.alert(
-          'Model Error',
-          'Failed to load Teachable Machine model. Please try again.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          t('camera.modelError'),
+          t('camera.modelError'),
+          [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
         );
       }
     };
@@ -420,7 +422,7 @@ export const CameraScreenTest = ({ navigation }) => {
         console.log('🟢 CAPTURE: FRESH (no scan frame available)');
       } catch (error) {
         console.error('❌ Capture failed:', error);
-        Alert.alert('Capture Failed', 'Unable to capture image. Please try again.');
+        Alert.alert(t('camera.captureFailed'), t('camera.captureFailedMessage'));
         setIsCapturing(false);
         startScanning();
         return;
@@ -467,9 +469,9 @@ export const CameraScreenTest = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={theme.colors.text.secondary} />
-          <Text style={styles.permissionText}>Camera permission required</Text>
+          <Text style={styles.permissionText}>{t('camera.cameraPermissionRequired')}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={styles.permissionButtonText}>{t('camera.grantPermission')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -507,7 +509,7 @@ export const CameraScreenTest = ({ navigation }) => {
             {top.label}
           </Text>
           <Text style={[styles.mainResultConfidence, { color }]}>
-            {top.percentage.toFixed(1)}% Confidence
+            {top.percentage.toFixed(1)}% {t('camera.confidence')}
           </Text>
         </View>
       </View>
@@ -540,7 +542,7 @@ export const CameraScreenTest = ({ navigation }) => {
               <Text style={[
                 styles.segmentText,
                 scanMode === SCAN_MODES.FLOWER && styles.segmentTextActive
-              ]}>Flower</Text>
+              ]}>{t('camera.flower')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -558,7 +560,7 @@ export const CameraScreenTest = ({ navigation }) => {
               <Text style={[
                 styles.segmentText,
                 scanMode === SCAN_MODES.LEAF && styles.segmentTextActive
-              ]}>Leaf</Text>
+              ]}>{t('camera.leaf')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -585,22 +587,22 @@ export const CameraScreenTest = ({ navigation }) => {
         {!isModelReady ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.loadingText}>Loading model...</Text>
+            <Text style={styles.loadingText}>{t('camera.loadingModel')}</Text>
           </View>
         ) : predictions.length === 0 ? (
           <View style={styles.waitingContainer}>
             <Ionicons name="scan" size={48} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.waitingText}>Waiting for predictions...</Text>
+            <Text style={styles.waitingText}>{t('camera.waitingForPredictions')}</Text>
           </View>
         ) : (
           <>
             <View style={styles.predictionsHeader}>
               <Text style={styles.predictionsTitle}>
-                {isPaused ? 'Analysis Paused' : 'Real-time Analysis'}
+                {isPaused ? t('camera.analysisPaused') : t('camera.realTimeAnalysis')}
               </Text>
               {isPaused && (
                 <View style={styles.pausedBadge}>
-                  <Text style={styles.pausedText}>PAUSED</Text>
+                  <Text style={styles.pausedText}>{t('camera.paused')}</Text>
                 </View>
               )}
             </View>
@@ -610,7 +612,7 @@ export const CameraScreenTest = ({ navigation }) => {
 
             {/* Secondary Predictions */}
             <View style={styles.secondaryPredictions}>
-              <Text style={styles.secondaryTitle}>Other Possibilities</Text>
+              <Text style={styles.secondaryTitle}>{t('camera.otherPossibilities')}</Text>
               {predictions.slice(1, TOP_N).map((pred, index) => {
                 const key = pred.label;
                 const animatedWidth = animatedBars.current[key] || new Animated.Value(pred.percentage);

@@ -16,15 +16,17 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Tako AI Chat Panel
 // ---------------------------------------------------------------------------
 const TakoChat = ({ visible, onClose }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hi! I'm Tako 🪴 Your learning guide for the Gourd Ripeness Scanner. Ask me anything about using the app!",
+      content: t('howToUse.takoGreeting'),
     },
   ]);
   const [input, setInput] = useState('');
@@ -114,16 +116,16 @@ const TakoChat = ({ visible, onClose }) => {
     }
     
     // Default answer if no match found
-    return 'I\'m not sure about that specific question, but I can help with:\n\n• How to take photos for scanning\n• Understanding ripeness levels\n• Best lighting and positioning\n• Using History to track progress\n• Logging pollination events\n• Camera tips and best practices\n\nTry asking about any of these topics!';
+    return t('howToUse.takoDefaultAnswer');
   };
 
   const suggestedQuestions = [
-    'How do I take the best photo?',
-    'What do ripeness levels mean?',
-    'How should I position my camera?',
-    'What about lighting conditions?',
-    'How do I use the History tab?',
-    'How do I log pollination events?',
+    t('howToUse.suggestedPhoto'),
+    t('howToUse.suggestedRipeness'),
+    t('howToUse.suggestedPosition'),
+    t('howToUse.suggestedLighting'),
+    t('howToUse.suggestedHistory'),
+    t('howToUse.suggestedPollination'),
   ];
 
   const handleSuggestedQuestion = (question) => {
@@ -163,8 +165,8 @@ const TakoChat = ({ visible, onClose }) => {
             <Text style={styles.takoAvatarEmoji}>🪴</Text>
           </View>
           <View>
-            <Text style={styles.takoName}>Tako</Text>
-            <Text style={styles.takoSubtitle}>Gourd AI Assistant</Text>
+            <Text style={styles.takoName}>{t('howToUse.takoLabel')}</Text>
+            <Text style={styles.takoSubtitle}>{t('howToUse.takoSubtitle')}</Text>
           </View>
         </View>
         <TouchableOpacity onPress={onClose} style={styles.takoCloseBtn}>
@@ -209,7 +211,7 @@ const TakoChat = ({ visible, onClose }) => {
 
         {/* Suggested Questions - Always visible */}
         <View style={styles.previewSection}>
-          <Text style={styles.previewTitle}>Try asking about:</Text>
+          <Text style={styles.previewTitle}>{t('howToUse.tryAsking')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -245,7 +247,7 @@ const TakoChat = ({ visible, onClose }) => {
         <View style={styles.takoInputRow}>
           <TextInput
             style={styles.takoInput}
-            placeholder="Ask Tako anything..."
+            placeholder={t('howToUse.takoPlaceholder')}
             placeholderTextColor={theme.colors.text.secondary}
             value={input}
             onChangeText={setInput}
@@ -271,6 +273,7 @@ const TakoChat = ({ visible, onClose }) => {
 // Main Screen
 // ---------------------------------------------------------------------------
 const HowToUseScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [takoVisible, setTakoVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('guide'); // 'guide', 'faqs', 'checkpoints'
@@ -302,37 +305,37 @@ const HowToUseScreen = ({ navigation }) => {
     {
       id: '1',
       icon: 'hand-left-outline',
-      title: 'Prepare the Gourd',
-      desc: 'Place the gourd on a clean, flat surface. Remove any leaves, stems, or objects that might obstruct the view. Ensure the gourd is dry and clean for better image quality.',
-      details: 'Clean the surface thoroughly but gently. Avoid scratching the gourd. Pat dry with a soft cloth if any moisture is present.',
+      title: t('howToUse.step1Title'),
+      desc: t('howToUse.step1Desc'),
+      details: t('howToUse.step1Details'),
     },
     {
       id: '2',
       icon: 'sunny-outline',
-      title: 'Good Lighting',
-      desc: 'Natural daylight works best. Avoid direct harsh sunlight or dark shadows. If indoors, use diffuse white light from multiple angles to eliminate shadows on the gourd surface.',
-      details: 'Best times: early morning (6-9 AM) or late afternoon (4-6 PM). Use 3-4 light sources at 45-degree angles for optimal illumination.',
+      title: t('howToUse.step2Title'),
+      desc: t('howToUse.step2Desc'),
+      details: t('howToUse.step2Details'),
     },
     {
       id: '3',
       icon: 'crop-outline',
-      title: 'Position the Camera',
-      desc: 'Hold your phone steady and align the gourd within the on-screen guide frame. Keep the camera at a 90-degree angle to the gourd surface, approximately 20-30cm away for optimal focus.',
-      details: 'Use both hands. Position the phone directly above the gourd center. The entire gourd should fit in the frame with slight margins.',
+      title: t('howToUse.step3Title'),
+      desc: t('howToUse.step3Desc'),
+      details: t('howToUse.step3Details'),
     },
     {
       id: '4',
       icon: 'camera-outline',
-      title: 'Capture & Analyze',
-      desc: "Tap the \"Scan\" button to capture the image. The app will automatically process the image using AI to determine the gourd's ripeness level. Wait a few seconds for analysis to complete.",
-      details: 'Keep the phone still while capturing. The AI processes in 2-5 seconds. Ensure good focus before tapping scan.',
+      title: t('howToUse.step4Title'),
+      desc: t('howToUse.step4Desc'),
+      details: t('howToUse.step4Details'),
     },
     {
       id: '5',
       icon: 'checkbox-outline',
-      title: 'Review Results',
-      desc: 'Check the detailed results including ripeness percentage, recommended actions, and confidence level. Save the scan to your history to track ripeness progression over time.',
-      details: 'Confidence > 85% is highly reliable. Compare with previous scans. Save scan to track daily progression.',
+      title: t('howToUse.step5Title'),
+      desc: t('howToUse.step5Desc'),
+      details: t('howToUse.step5Details'),
     },
   ];
 
@@ -340,26 +343,26 @@ const HowToUseScreen = ({ navigation }) => {
     {
       id: 'f1',
       icon: 'time-outline',
-      title: 'History Tracking',
-      desc: 'Access all your previous scans in the History tab. Compare results over time to monitor gourd development.',
+      title: t('howToUse.featureHistoryTitle'),
+      desc: t('howToUse.featureHistoryDesc'),
     },
     {
       id: 'f2',
       icon: 'leaf-outline',
-      title: 'Pollination Management',
-      desc: 'Track your gourd plants, manage pollination records, and monitor growth stages in the Pollination tab.',
+      title: t('howToUse.featurePollinationTitle'),
+      desc: t('howToUse.featurePollinationDesc'),
     },
     {
       id: 'f3',
       icon: 'newspaper-outline',
-      title: 'Stay Updated',
-      desc: 'Read the latest news, tips, and best practices for gourd cultivation in the News section.',
+      title: t('howToUse.featureNewsTitle'),
+      desc: t('howToUse.featureNewsDesc'),
     },
     {
       id: 'f4',
       icon: 'person-outline',
-      title: 'Profile & Settings',
-      desc: 'Manage your account, view statistics, and customize app settings in your Profile.',
+      title: t('howToUse.featureProfileTitle'),
+      desc: t('howToUse.featureProfileDesc'),
     },
   ];
 
@@ -367,63 +370,63 @@ const HowToUseScreen = ({ navigation }) => {
   const faqs = [
     {
       id: 'faq-1',
-      category: 'Scanning Basics',
-      q: '❓ What exactly does "ripeness" mean in this app?',
-      a: 'Ripeness is measured on a scale from Unripe (0-25%) to Over-ripe (75-100%). Semi-ripe (25-50%) means the gourd is developing flavor. Fully ripe (50-75%) is the ideal harvest window. The app calculates this based on color, texture, and other visual indicators.',
+      category: t('howToUse.faqCategoryBasics'),
+      q: t('howToUse.faq1Q'),
+      a: t('howToUse.faq1A'),
     },
     {
       id: 'faq-2',
-      category: 'Scanning Basics',
-      q: '❓ Why do I get different ripeness readings for the same gourd?',
-      a: 'Lighting conditions are the primary factor. Changes in shadows, camera angle, or surface cleanliness affect readings. Always scan in consistent lighting. Minor variations (±5%) are normal.',
+      category: t('howToUse.faqCategoryBasics'),
+      q: t('howToUse.faq2Q'),
+      a: t('howToUse.faq2A'),
     },
     {
       id: 'faq-3',
-      category: 'Camera & Positioning',
-      q: '❓ How close should the camera be to the gourd?',
-      a: 'Keep the camera 20-30cm (8-12 inches) away. Too close causes focus blur; too far reduces detail. The entire gourd should fit in the frame with slight margins on all sides.',
+      category: t('howToUse.faqCategoryCamera'),
+      q: t('howToUse.faq3Q'),
+      a: t('howToUse.faq3A'),
     },
     {
       id: 'faq-4',
-      category: 'Camera & Positioning',
-      q: '❓ Does camera angle affect the scan results?',
-      a: 'Yes! Always keep the camera perpendicular (90 degrees) to the gourd surface. Angled shots miss ripeness indicators on different parts of the gourd. Scan multiple angles if needed.',
+      category: t('howToUse.faqCategoryCamera'),
+      q: t('howToUse.faq4Q'),
+      a: t('howToUse.faq4A'),
     },
     {
       id: 'faq-5',
-      category: 'History & Tracking',
-      q: '❓ How do I compare scans over time?',
-      a: 'Go to History tab. Select two scans to view side-by-side comparison. Look for ripeness % increase (typically 5-10% per day). Graph view shows trends over weeks/months.',
+      category: t('howToUse.faqCategoryHistory'),
+      q: t('howToUse.faq5Q'),
+      a: t('howToUse.faq5A'),
     },
     {
       id: 'faq-6',
-      category: 'History & Tracking',
-      q: '❓ Can I export my scan history?',
-      a: 'Yes! In Profile > Settings > Export Data. Choose date range. Data exports as CSV (for spreadsheets) or PDF (for reports). Useful for record-keeping.',
+      category: t('howToUse.faqCategoryHistory'),
+      q: t('howToUse.faq6Q'),
+      a: t('howToUse.faq6A'),
     },
     {
       id: 'faq-7',
-      category: 'Pollination',
-      q: '❓ How do I log pollination events?',
-      a: 'Go to Pollination tab > Select plant > Add Event. Record date, time, pollination method (hand, insect, etc.). Tag relevant gourds. This helps predict ripeness timelines.',
+      category: t('howToUse.faqCategoryPollination'),
+      q: t('howToUse.faq7Q'),
+      a: t('howToUse.faq7A'),
     },
     {
       id: 'faq-8',
-      category: 'Results & Interpretation',
-      q: '❓ What does "Confidence Level" mean?',
-      a: 'Confidence shows AI certainty (0-100%). 90%+ = very reliable. 70-89% = reliable but rescan recommended. <70% = poor lighting/positioning, try again.',
+      category: t('howToUse.faqCategoryResults'),
+      q: t('howToUse.faq8Q'),
+      a: t('howToUse.faq8A'),
     },
     {
       id: 'faq-9',
-      category: 'Results & Interpretation',
-      q: '❓ What action should I take based on ripeness %?',
-      a: 'Unripe (0-25%): Continue monitoring. Semi-ripe (25-50%): Start daily scans. Fully ripe (50-75%): Ready to harvest soon. Over-ripe (75%+): Harvest within 1-2 days or quality declines.',
+      category: t('howToUse.faqCategoryResults'),
+      q: t('howToUse.faq9Q'),
+      a: t('howToUse.faq9A'),
     },
     {
       id: 'faq-10',
-      category: 'Troubleshooting',
-      q: '❓ Scan keeps saying "Poor lighting detected"?',
-      a: 'Move to natural light or add more light sources. Avoid direct sunlight (causes harsh shadows). If indoors, use 3+ bulbs at 45-degree angles. Clean your camera lens!',
+      category: t('howToUse.faqCategoryTroubleshooting'),
+      q: t('howToUse.faq10Q'),
+      a: t('howToUse.faq10A'),
     },
   ];
 
@@ -431,52 +434,52 @@ const HowToUseScreen = ({ navigation }) => {
   const checkpoints = [
     {
       id: 'cp-1',
-      title: '🎯 Scanning 101',
-      desc: 'Learn the 5-step scanning process',
+      title: t('howToUse.cp1Title'),
+      desc: t('howToUse.cp1Desc'),
       tips: [
-        'Understand the importance of lighting',
-        'Master camera positioning (90° angle)',
-        'Learn to read confidence levels',
+        t('howToUse.cp1Tip1'),
+        t('howToUse.cp1Tip2'),
+        t('howToUse.cp1Tip3'),
       ],
     },
     {
       id: 'cp-2',
-      title: '📊 Reading Results',
-      desc: 'Interpret ripeness percentages and recommendations',
+      title: t('howToUse.cp2Title'),
+      desc: t('howToUse.cp2Desc'),
       tips: [
-        'What each ripeness level means',
-        'How to use confidence scores',
-        'When to harvest vs. wait',
+        t('howToUse.cp2Tip1'),
+        t('howToUse.cp2Tip2'),
+        t('howToUse.cp2Tip3'),
       ],
     },
     {
       id: 'cp-3',
-      title: '📈 Tracking Progress',
-      desc: 'Use History tab to monitor gourd development',
+      title: t('howToUse.cp3Title'),
+      desc: t('howToUse.cp3Desc'),
       tips: [
-        'How to compare scans over time',
-        'Understanding ripeness trends',
-        'Export and share scan data',
+        t('howToUse.cp3Tip1'),
+        t('howToUse.cp3Tip2'),
+        t('howToUse.cp3Tip3'),
       ],
     },
     {
       id: 'cp-4',
-      title: '🌸 Pollination Management',
-      desc: 'Master the Pollination tab for yield predictions',
+      title: t('howToUse.cp4Title'),
+      desc: t('howToUse.cp4Desc'),
       tips: [
-        'How to log pollination events',
-        'Linking gourds to plants',
-        'Predicting harvest dates',
+        t('howToUse.cp4Tip1'),
+        t('howToUse.cp4Tip2'),
+        t('howToUse.cp4Tip3'),
       ],
     },
     {
       id: 'cp-5',
-      title: '⚙️ Pro Features',
-      desc: 'Advanced features in Settings and Profile',
+      title: t('howToUse.cp5Title'),
+      desc: t('howToUse.cp5Desc'),
       tips: [
-        'Export scan history',
-        'Customize notifications',
-        'Manage multiple accounts',
+        t('howToUse.cp5Tip1'),
+        t('howToUse.cp5Tip2'),
+        t('howToUse.cp5Tip3'),
       ],
     },
   ];
@@ -488,7 +491,7 @@ const HowToUseScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Learn How to Use</Text>
+        <Text style={styles.headerTitle}>{t('howToUse.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -497,7 +500,7 @@ const HowToUseScreen = ({ navigation }) => {
         <Ionicons name="search" size={18} color={theme.colors.text.secondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search tips, FAQs, features..."
+          placeholder={t('howToUse.searchPlaceholder')}
           placeholderTextColor={theme.colors.text.secondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -521,7 +524,7 @@ const HowToUseScreen = ({ navigation }) => {
             color={selectedTab === 'guide' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabLabel, selectedTab === 'guide' && styles.tabLabelActive]}>
-            Guide
+            {t('howToUse.tabs.guide')}
           </Text>
         </TouchableOpacity>
 
@@ -535,7 +538,7 @@ const HowToUseScreen = ({ navigation }) => {
             color={selectedTab === 'faqs' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabLabel, selectedTab === 'faqs' && styles.tabLabelActive]}>
-            FAQs
+            {t('howToUse.tabs.faqs')}
           </Text>
         </TouchableOpacity>
 
@@ -549,7 +552,7 @@ const HowToUseScreen = ({ navigation }) => {
             color={selectedTab === 'checkpoints' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabLabel, selectedTab === 'checkpoints' && styles.tabLabelActive]}>
-            Lessons
+            {t('howToUse.tabs.lessons')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -560,13 +563,13 @@ const HowToUseScreen = ({ navigation }) => {
           <>
             <View style={styles.welcomeCard}>
               <Ionicons name="information-circle" size={48} color={theme.colors.primary} />
-              <Text style={styles.welcomeTitle}>Master Gourd Scanning</Text>
+              <Text style={styles.welcomeTitle}>{t('howToUse.masterTitle')}</Text>
               <Text style={styles.welcomeText}>
-                Follow this 5-step process to get accurate ripeness readings every time.
+                {t('howToUse.masterDesc')}
               </Text>
             </View>
 
-            <Text style={styles.sectionTitle}>Step-by-Step Scanning Guide</Text>
+            <Text style={styles.sectionTitle}>{t('howToUse.stepGuideTitle')}</Text>
             {steps
               .filter(
                 (s) =>
@@ -599,7 +602,7 @@ const HowToUseScreen = ({ navigation }) => {
                 </View>
               ))}
 
-            <Text style={styles.sectionTitle}>Key Features</Text>
+            <Text style={styles.sectionTitle}>{t('howToUse.keyFeatures')}</Text>
             {features
               .filter(
                 (f) =>
@@ -621,15 +624,15 @@ const HowToUseScreen = ({ navigation }) => {
             <View style={styles.tipsSection}>
               <View style={styles.tipsSectionHeader}>
                 <Ionicons name="bulb" size={24} color={theme.colors.warning} />
-                <Text style={styles.tipsTitle}>Pro Tips</Text>
+                <Text style={styles.tipsTitle}>{t('howToUse.proTips')}</Text>
               </View>
               {[
-                'Clean your camera lens before scanning.',
-                'Scan every 2-3 days to track ripeness accurately.',
-                'Use History tab to compare past scans.',
-                'Avoid scanning wet gourds.',
-                'Scan during daytime with natural lighting.',
-                'Keep the camera steady using both hands.',
+                t('howToUse.tip1'),
+                t('howToUse.tip2'),
+                t('howToUse.tip3'),
+                t('howToUse.tip4'),
+                t('howToUse.tip5'),
+                t('howToUse.tip6'),
               ]
                 .filter((tip) => tip.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map((tip, i) => (
@@ -647,9 +650,9 @@ const HowToUseScreen = ({ navigation }) => {
           <>
             <View style={styles.welcomeCard}>
               <Ionicons name="help-circle" size={48} color={theme.colors.primary} />
-              <Text style={styles.welcomeTitle}>Frequently Asked Questions</Text>
+              <Text style={styles.welcomeTitle}>{t('howToUse.faqTitle')}</Text>
               <Text style={styles.welcomeText}>
-                Find answers to common questions about the app.
+                {t('howToUse.faqDesc')}
               </Text>
             </View>
 
@@ -676,9 +679,9 @@ const HowToUseScreen = ({ navigation }) => {
           <>
             <View style={styles.welcomeCard}>
               <Ionicons name="trophy" size={48} color={theme.colors.primary} />
-              <Text style={styles.welcomeTitle}>Learning Checkpoints</Text>
+              <Text style={styles.welcomeTitle}>{t('howToUse.learningCheckpoints')}</Text>
               <Text style={styles.welcomeText}>
-                Master these key topics to become an expert.
+                {t('howToUse.learningCheckpointsDesc')}
               </Text>
             </View>
 
@@ -693,7 +696,7 @@ const HowToUseScreen = ({ navigation }) => {
               />
             </View>
             <Text style={styles.progressText}>
-              {completedCheckpoints.length} of {checkpoints.length} completed
+              {t('howToUse.progressText', { completed: completedCheckpoints.length, total: checkpoints.length })}
             </Text>
 
             {checkpoints
@@ -739,7 +742,7 @@ const HowToUseScreen = ({ navigation }) => {
                   </View>
 
                   <View style={styles.checkpointTipsContainer}>
-                    <Text style={styles.checkpointTipsTitle}>Key Topics:</Text>
+                    <Text style={styles.checkpointTipsTitle}>{t('howToUse.keyTopics')}</Text>
                     {checkpoint.tips.map((tip, i) => (
                       <View key={i} style={styles.checkpointTip}>
                         <Text style={styles.checkpointTipBullet}>•</Text>
@@ -758,8 +761,8 @@ const HowToUseScreen = ({ navigation }) => {
             <Text style={styles.takoPromoEmoji}>🪴</Text>
           </View>
           <View style={styles.takoPromoText}>
-            <Text style={styles.takoPromoTitle}>Have questions? Ask Tako!</Text>
-            <Text style={styles.takoPromoSub}>Your AI learning assistant is ready to help</Text>
+            <Text style={styles.takoPromoTitle}>{t('howToUse.askTako')}</Text>
+            <Text style={styles.takoPromoSub}>{t('howToUse.askTakoDesc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
@@ -770,7 +773,7 @@ const HowToUseScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Camera')}
           >
             <Ionicons name="camera" size={20} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.getStartedText}>Ready? Start Scanning Now</Text>
+            <Text style={styles.getStartedText}>{t('howToUse.readyToScan')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

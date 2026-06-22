@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { NewsCard, NewsModal } from '../../components';
 import { getAllNews, markNewsAsRead } from '../../services/newsService';
+import { useTranslation } from 'react-i18next';
 
 export const NewsScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [newsItems, setNewsItems] = useState([]);
   const [selectedNews, setSelectedNews] = useState(null);
@@ -67,7 +69,7 @@ export const NewsScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading updates…</Text>
+        <Text style={styles.loadingText}>{t('news.loading')}</Text>
       </SafeAreaView>
     );
   }
@@ -83,7 +85,7 @@ export const NewsScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>News & Updates</Text>
+        <Text style={styles.headerTitle}>{t('news.title')}</Text>
         <View style={styles.backButton} />
       </View>
       <FlatList
@@ -104,9 +106,9 @@ export const NewsScreen = ({ navigation }) => {
         ]}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No news yet</Text>
+            <Text style={styles.emptyTitle}>{t('news.noNewsYet')}</Text>
             <Text style={styles.emptyMessage}>
-              Check back later for product announcements and feature updates.
+              {t('news.noNewsMessage')}
             </Text>
           </View>
         )}

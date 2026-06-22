@@ -30,6 +30,7 @@ import { scanService } from '../../services/scanService';
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
 import { LeafQualityMetrics } from '../../components/ScanComponents/LeafQualityMetrics';
 import CircularProgress from '../../components/ScanComponents/CircularProgress';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -60,7 +61,7 @@ const FinalVerdictCard = ({ geminiPrediction }) => {
 
     return (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}>
-            <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>Gemini AI</Text>
+            <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>{t('scanResults.leaf.geminiAI')}</Text>
             {geminiPrediction ? (
                 <CircularProgress value={geminiConfidence} color="#9C27B0" size={70}>
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
@@ -92,7 +93,7 @@ const CollapsibleHealthSection = ({ geminiPrediction }) => {
             >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name="medkit-outline" size={18} color={theme.colors.primary} />
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#333' }}>Health Details</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#333' }}>{t('scanResults.leaf.healthDetails')}</Text>
                 </View>
                 <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
             </TouchableOpacity>
@@ -115,6 +116,7 @@ const CollapsibleHealthSection = ({ geminiPrediction }) => {
  * Main Leaf Results Screen Component
  */
 export const LeafResultsScreen = ({ route, navigation }) => {
+    const { t } = useTranslation();
     const { scan } = route.params;
 
     // Local state
@@ -187,7 +189,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
             navigation.goBack();
         } catch (error) {
             setIsDeleting(false);
-            Alert.alert("Error", "Failed to delete scan");
+            Alert.alert(t('common.error'), t('scanResults.leaf.saveFailedMessage'));
         }
     };
 
@@ -203,7 +205,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
             setCurrentScan(prev => ({ ...prev, name: newName }));
             setModalVisible(false);
         } catch (error) {
-            Alert.alert("Error", "Failed to update name");
+            Alert.alert(t('common.error'), t('scanResults.leaf.saveFailedMessage'));
         } finally {
             setIsRenaming(false);
         }
@@ -238,7 +240,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <CustomHeader
                 variant="results"
-                title={currentScan?.name || "Leaf Scan"}
+                title={currentScan?.name || t('scanResults.leaf.title')}
                 onBackPress={handleBack}
                 rightComponent={() => (
                     <TouchableOpacity onPress={handleOptionsPress} style={{ padding: 4 }}>
@@ -268,9 +270,9 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             {isNotLeaf ? (
                                 <View style={styles.notLeafResult}>
                                     <Ionicons name="close-circle" size={64} color="#F44336" />
-                                    <Text style={styles.notLeafText}>Not a Gourd Leaf</Text>
+                                    <Text style={styles.notLeafText}>{t('scanResults.leaf.notAGourdLeaf')}</Text>
                                     <Text style={styles.notLeafSubtext}>
-                                        The image wasn't identified as a gourd leaf.
+                                        {t('scanResults.leaf.notAGourdLeafMessage')}
                                     </Text>
                                 </View>
                             ) : (
@@ -303,7 +305,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             {/* Scan type badge */}
                             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
                                 <Ionicons name="leaf-outline" size={11} color="#2E7D32" />
-                                <Text style={{ fontSize: 11, color: '#2E7D32', fontWeight: '600', marginLeft: 3 }}>Leaf</Text>
+                                <Text style={{ fontSize: 11, color: '#2E7D32', fontWeight: '600', marginLeft: 3 }}>{t('scanResults.leaf.badge')}</Text>
                             </View>
                             {/* Validation status badge */}
                             {currentScan?.validationStatus && (
@@ -321,10 +323,10 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                         fontSize: 11, fontWeight: '600', marginLeft: 3,
                                         color: currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575',
                                     }}>
-                                        {currentScan.validationStatus === 'tflite_only' ? 'TFLite Only'
-                                            : currentScan.validationStatus === 'validated' ? 'Validated'
-                                            : currentScan.validationStatus === 'manual_override' ? 'Manual Override'
-                                            : 'Conflict'}
+                                        {currentScan.validationStatus === 'tflite_only' ? t('scanResults.leaf.identifiedTMMessage')
+                                            : currentScan.validationStatus === 'validated' ? t('scanResults.leaf.identifiedTMMessage')
+                                            : currentScan.validationStatus === 'manual_override' ? t('scanResults.leaf.identifiedTMMessage')
+                                            : t('scanResults.leaf.identifiedTMMessage')}
                                     </Text>
                                 </View>
                             )}
@@ -341,7 +343,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                         {geminiPrediction && !isNotLeaf && (
                             <>
                                 <View style={styles.card}>
-                                    <Text style={styles.sectionTitle}>AI Observations</Text>
+                                    <Text style={styles.sectionTitle}>{t('scanResults.leaf.aiObservations')}</Text>
                                     <Text style={styles.reasoningText}>{geminiPrediction.reasoning}</Text>
 
                                     {geminiPrediction.keyFeatures?.length > 0 && (
@@ -366,7 +368,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             <View style={styles.tmOnlyNotice}>
                                 <Ionicons name="information-circle" size={24} color="#4CAF50" />
                                 <Text style={styles.tmOnlyText}>
-                                    Identified using TM model. AI health analysis was not available.
+                                    {t('scanResults.leaf.identifiedTMMessage')}
                                 </Text>
                             </View>
                         )}
@@ -404,7 +406,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             }}
                         >
                             <Ionicons name="pencil-outline" size={20} color="#333" />
-                            <Text style={styles.optionText}>Rename</Text>
+                            <Text style={styles.optionText}>{t('scanResults.leaf.rename')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.optionItem}
@@ -414,7 +416,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                             }}
                         >
                             <Ionicons name="trash-outline" size={20} color="#F44336" />
-                            <Text style={[styles.optionText, { color: '#F44336' }]}>Delete</Text>
+                            <Text style={[styles.optionText, { color: '#F44336' }]}>{t('scanResults.leaf.delete')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -431,12 +433,12 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                     <View style={styles.modalOverlay}>
                         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                             <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Rename Scan</Text>
+                                <Text style={styles.modalTitle}>{t('scanResults.leaf.renameTitle')}</Text>
                                 <TextInput
                                     style={styles.modalInput}
                                     value={newName}
                                     onChangeText={setNewName}
-                                    placeholder="Enter name"
+                                    placeholder={t('scanResults.leaf.enterName')}
                                     autoFocus
                                     selectTextOnFocus
                                 />
@@ -445,14 +447,14 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                         style={[styles.modalButton, styles.cancelButton]}
                                         onPress={() => setModalVisible(false)}
                                     >
-                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.modalButton, styles.renameSaveButton, isRenaming && styles.buttonDisabled]}
                                         onPress={handleRename}
                                         disabled={isRenaming}
                                     >
-                                        <Text style={styles.saveButtonText}>Save</Text>
+                                        <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -470,16 +472,16 @@ export const LeafResultsScreen = ({ route, navigation }) => {
             >
                 <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setDeleteModalVisible(false)}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Delete Scan</Text>
+                        <Text style={styles.modalTitle}>{t('scanResults.leaf.deleteTitle')}</Text>
                         <Text style={styles.modalText}>
-                            Are you sure you want to delete this scan? This action cannot be undone.
+                            {t('scanResults.leaf.deleteConfirm')}
                         </Text>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.cancelButton]}
                                 onPress={() => setDeleteModalVisible(false)}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.deleteConfirmButton, isDeleting && styles.buttonDisabled]}
@@ -489,7 +491,7 @@ export const LeafResultsScreen = ({ route, navigation }) => {
                                 {isDeleting ? (
                                     <ActivityIndicator size="small" color="#FFF" />
                                 ) : (
-                                    <Text style={styles.saveButtonText}>Delete</Text>
+                                    <Text style={styles.saveButtonText}>{t('scanResults.leaf.delete')}</Text>
                                 )}
                             </TouchableOpacity>
                         </View>

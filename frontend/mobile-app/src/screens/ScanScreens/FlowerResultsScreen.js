@@ -30,6 +30,7 @@ import { modelService } from '../../services/modelService';
 import { geminiService } from '../../services/geminiService';
 import { scanService } from '../../services/scanService';
 import CircularProgress from '../../components/ScanComponents/CircularProgress';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -74,17 +75,18 @@ const MetricBar = ({ label, value, color }) => (
  * Harvest Timeline Component (collapsible, collapsed by default)
  */
 const HarvestTimeline = ({ data, backendData }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   if (!data && !backendData) return null;
 
   const stages = ['bud', 'blooming', 'peak_bloom', 'pollinated', 'wilting', 'fruiting'];
   const stageLabels = {
-    bud: 'Bud',
-    blooming: 'Blooming',
-    peak_bloom: 'Peak',
-    pollinated: 'Pollinated',
-    wilting: 'Wilting',
-    fruiting: 'Fruiting',
+    bud: t('scanResults.flower.stage_bud'),
+    blooming: t('scanResults.flower.stage_blooming'),
+    peak_bloom: t('scanResults.flower.stage_peak_bloom'),
+    pollinated: t('scanResults.flower.stage_pollinated'),
+    wilting: t('scanResults.flower.stage_wilting'),
+    fruiting: t('scanResults.flower.stage_fruiting'),
   };
 
   const currentStage = backendData?.currentStage || data?.currentStage;
@@ -96,7 +98,7 @@ const HarvestTimeline = ({ data, backendData }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Growth Timeline</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.growthTimeline')}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
       </TouchableOpacity>
 
@@ -152,14 +154,14 @@ const HarvestTimeline = ({ data, backendData }) => {
 
             {backendData?.rationale && (
               <View style={styles.rationaleContainer}>
-                <Text style={styles.rationaleTitle}>Rationale:</Text>
+                <Text style={styles.rationaleTitle}>{t('scanResults.flower.rationale')}</Text>
                 <Text style={styles.rationaleText}>{backendData.rationale}</Text>
               </View>
             )}
 
             {backendData?.recommendations?.length > 0 && (
               <View style={styles.backendRecsContainer}>
-                <Text style={styles.rationaleTitle}>AI Recommendations:</Text>
+                <Text style={styles.rationaleTitle}>{t('scanResults.flower.aiRecommendations')}</Text>
                 {backendData.recommendations.map((rec, i) => (
                   <Text key={i} style={styles.backendRecItem}>• {rec}</Text>
                 ))}
@@ -235,15 +237,16 @@ const AnimatedMetricBar = ({ label, value }) => {
 };
 
 const QualityMetricsChart = ({ metrics }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   if (!metrics) return null;
 
   const metricsList = [
-    { label: 'Petal Quality', value: metrics.petalQuality },
-    { label: 'Color Score', value: metrics.colorScore },
-    { label: 'Development', value: metrics.developmentScore },
-    { label: 'Health Score', value: metrics.healthScore },
-    { label: 'Pollination', value: metrics.pollinationPotential },
+    { label: t('scanResults.flower.petalQuality'), value: metrics.petalQuality },
+    { label: t('scanResults.flower.colorScore'), value: metrics.colorScore },
+    { label: t('scanResults.flower.development'), value: metrics.developmentScore },
+    { label: t('scanResults.flower.healthScore'), value: metrics.healthScore },
+    { label: t('scanResults.flower.pollination'), value: metrics.pollinationPotential },
   ];
 
   return (
@@ -252,7 +255,7 @@ const QualityMetricsChart = ({ metrics }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Quality Metrics</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.qualityMetrics')}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
       </TouchableOpacity>
       {expanded && (
@@ -274,6 +277,7 @@ const QualityMetricsChart = ({ metrics }) => {
  * Flower Quality Card Component with Animated Donut
  */
 const FlowerQualityCard = ({ quality }) => {
+  const { t } = useTranslation();
   if (!quality) return null;
 
   const animatedScore = useRef(new Animated.Value(0)).current;
@@ -305,7 +309,7 @@ const FlowerQualityCard = ({ quality }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Flower Quality</Text>
+      <Text style={styles.sectionTitle}>{t('scanResults.flower.flowerQuality')}</Text>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {/* Donut Chart Simulation (Left) */}
@@ -344,25 +348,25 @@ const FlowerQualityCard = ({ quality }) => {
             {/* Inner White Circle to make it a Donut */}
             <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 24, fontWeight: '700', color: '#333' }}>{score}</Text>
-              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>Score</Text>
+              <Text style={{ fontSize: 8, color: '#888', textTransform: 'uppercase' }}>{t('scanResults.flower.score')}</Text>
             </View>
           </View>
 
           <Text style={{ fontSize: 14, fontWeight: '600', color: scoreColor, textAlign: 'center' }}>
             {quality.petalCondition?.toUpperCase() || 'UNKNOWN'}
           </Text>
-          <Text style={{ fontSize: 10, color: '#666' }}>Overall Condition</Text>
+          <Text style={{ fontSize: 10, color: '#666' }}>{t('scanResults.flower.overallCondition')}</Text>
         </View>
 
         <View style={{ marginLeft: 24, flex: 1 }}>
           <View style={{ backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8, marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Size Assessment</Text>
+            <Text style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>{t('scanResults.flower.sizeAssessment')}</Text>
             <Text style={{ fontSize: 15, fontWeight: '500', color: '#333' }}>{quality.sizeAssessment}</Text>
           </View>
 
           {quality.healthIndicators?.length > 0 && (
             <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8 }}>
-              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>Health Indicators</Text>
+              <Text style={{ fontSize: 11, color: '#4CAF50', marginBottom: 4 }}>{t('scanResults.flower.healthIndicators')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {quality.healthIndicators.map((ind, i) => (
                   <Text key={i} style={{ fontSize: 12, fontWeight: '500', color: '#2E7D32' }}>• {ind}</Text>
@@ -377,6 +381,7 @@ const FlowerQualityCard = ({ quality }) => {
 };
 
 const ObservationsCard = ({ observations }) => {
+  const { t } = useTranslation();
   if (!observations) return null;
   const [expanded, setExpanded] = useState(false); // Collapsed by default
 
@@ -386,7 +391,7 @@ const ObservationsCard = ({ observations }) => {
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
         onPress={() => setExpanded(!expanded)}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Observations</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.observations')}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
       </TouchableOpacity>
 
@@ -396,7 +401,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#4CAF50', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="thumbs-up" size={18} color="#4CAF50" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Strengths</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.strengths')}</Text>
               </View>
               {observations.strengths.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -408,7 +413,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#FF9800', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="warning" size={18} color="#FF9800" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Concerns</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.concerns')}</Text>
               </View>
               {observations.concerns.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -420,7 +425,7 @@ const ObservationsCard = ({ observations }) => {
             <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#2196F3', marginHorizontal: 0, marginBottom: 0 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Ionicons name="bulb" size={18} color="#2196F3" />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>Recommendations</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginLeft: 8 }}>{t('scanResults.flower.recommendations')}</Text>
               </View>
               {observations.recommendations.map((item, i) => (
                 <Text key={i} style={{ fontSize: 14, color: '#444', marginBottom: 4, lineHeight: 20 }}>• {item}</Text>
@@ -444,7 +449,7 @@ const FinalVerdictCard = ({ geminiPrediction }) => {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}>
-      <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>Gemini AI</Text>
+      <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>{t('scanResults.flower.geminiAI')}</Text>
       {geminiPrediction ? (
         <CircularProgress value={geminiConfidence} color="#9C27B0" size={70}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
@@ -465,6 +470,7 @@ const FinalVerdictCard = ({ geminiPrediction }) => {
  * Main Results Screen Component
  */
 export const FlowerResultsScreen = ({ route, navigation }) => {
+  const { t } = useTranslation();
   // Mode: View (loading existing scan)
   const { scan } = route.params;
 
@@ -568,7 +574,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
       navigation.goBack();
     } catch (error) {
       setIsDeleting(false);
-      Alert.alert("Error", "Failed to delete scan");
+      Alert.alert(t('common.error'), t('scanResults.flower.saveFailedMessage'));
     }
   };
 
@@ -584,7 +590,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
       setCurrentScan(prev => ({ ...prev, name: newName }));
       setModalVisible(false);
     } catch (error) {
-      Alert.alert("Error", "Failed to update name");
+      Alert.alert(t('common.error'), t('scanResults.flower.saveFailedMessage'));
     } finally {
       setIsRenaming(false);
     }
@@ -628,7 +634,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
       {/* Header using CustomHeader for consistency */}
       <CustomHeader
         variant="results"
-        title={currentScan?.name || "Scan Result"}
+        title={currentScan?.name || t('scanResults.flower.title')}
         onBackPress={handleBack}
         rightComponent={() => (
           <TouchableOpacity onPress={handleOptionsPress} style={{ padding: 4 }}>
@@ -658,9 +664,9 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               {isNotFlower ? (
                 <View style={styles.notFlowerResult}>
                   <Ionicons name="close-circle" size={64} color="#F44336" />
-                  <Text style={styles.notFlowerText}>Not a Gourd Flower</Text>
+                  <Text style={styles.notFlowerText}>{t('scanResults.flower.notAGourdFlower')}</Text>
                   <Text style={styles.notFlowerSubtext}>
-                    The image doesn't appear to be a gourd flower. Try capturing a clearer image of the flower.
+                    {t('scanResults.flower.notAGourdFlowerMessage')}
                   </Text>
                 </View>
               ) : (
@@ -696,7 +702,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               {/* Scan type badge */}
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
                 <Ionicons name="flower-outline" size={11} color="#1565C0" />
-                <Text style={{ fontSize: 11, color: '#1565C0', fontWeight: '600', marginLeft: 3 }}>Flower</Text>
+                <Text style={{ fontSize: 11, color: '#1565C0', fontWeight: '600', marginLeft: 3 }}>{t('scanResults.flower.badge')}</Text>
               </View>
               {/* Validation status badge */}
               {currentScan?.validationStatus && (
@@ -714,10 +720,10 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
                     fontSize: 11, fontWeight: '600', marginLeft: 3,
                     color: currentScan.validationStatus === 'validated' ? '#2E7D32' : currentScan.validationStatus === 'conflict' ? '#E65100' : '#757575',
                   }}>
-                    {currentScan.validationStatus === 'tflite_only' ? 'TFLite Only'
-                      : currentScan.validationStatus === 'validated' ? 'Validated'
-                      : currentScan.validationStatus === 'manual_override' ? 'Manual Override'
-                      : 'Conflict'}
+                    {currentScan.validationStatus === 'tflite_only' ? t('scanResults.flower.tfliteOnly')
+                      : currentScan.validationStatus === 'validated' ? t('scanResults.flower.validated')
+                      : currentScan.validationStatus === 'manual_override' ? t('scanResults.flower.validated')
+                      : t('scanResults.flower.validated')}
                   </Text>
                 </View>
               )}
@@ -757,7 +763,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
                       style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: reasoningExpanded ? 12 : 0 }}
                       onPress={() => setReasoningExpanded(!reasoningExpanded)}
                     >
-                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>AI Reasoning</Text>
+                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.flower.aiReasoning')}</Text>
                       <Ionicons name={reasoningExpanded ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                     </TouchableOpacity>
 
@@ -785,7 +791,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               <View style={styles.tmOnlyNotice}>
                 <Ionicons name="information-circle" size={24} color="#FF9800" />
                 <Text style={styles.tmOnlyText}>
-                  Quick scan completed using TM model only. Gemini AI analysis was unavailable.
+                  {t('scanResults.flower.quickScanCompleted')}
                 </Text>
               </View>
             )}
@@ -825,7 +831,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               }}
             >
               <Ionicons name="pencil-outline" size={20} color="#333" />
-              <Text style={styles.optionText}>Rename</Text>
+              <Text style={styles.optionText}>{t('scanResults.flower.rename')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.optionItem}
@@ -835,7 +841,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
               }}
             >
               <Ionicons name="trash-outline" size={20} color="#F44336" />
-              <Text style={[styles.optionText, { color: '#F44336' }]}>Delete</Text>
+              <Text style={[styles.optionText, { color: '#F44336' }]}>{t('scanResults.flower.delete')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -852,12 +858,12 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Rename Scan</Text>
+                <Text style={styles.modalTitle}>{t('scanResults.flower.renameTitle')}</Text>
                 <TextInput
                   style={styles.modalInput}
                   value={newName}
                   onChangeText={setNewName}
-                  placeholder="Enter name"
+                  placeholder={t('scanResults.flower.enterName')}
                   autoFocus
                   selectTextOnFocus
                 />
@@ -866,14 +872,14 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
                     style={[styles.modalButton, styles.cancelButton]}
                     onPress={() => setModalVisible(false)}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.renameSaveButton, isRenaming && styles.buttonDisabled]}
                     onPress={handleRename}
                     disabled={isRenaming}
                   >
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -891,16 +897,16 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
       >
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setDeleteModalVisible(false)}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Delete Scan</Text>
+            <Text style={styles.modalTitle}>{t('scanResults.flower.deleteTitle')}</Text>
             <Text style={styles.modalText}>
-              Are you sure you want to delete this scan? This action cannot be undone.
+              {t('scanResults.flower.deleteConfirm')}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setDeleteModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.deleteConfirmButton, isDeleting && styles.buttonDisabled]}
@@ -910,7 +916,7 @@ export const FlowerResultsScreen = ({ route, navigation }) => {
                 {isDeleting ? (
                   <ActivityIndicator size="small" color="#FFF" />
                 ) : (
-                  <Text style={styles.saveButtonText}>Delete</Text>
+                  <Text style={styles.saveButtonText}>{t('scanResults.flower.delete')}</Text>
                 )}
               </TouchableOpacity>
             </View>

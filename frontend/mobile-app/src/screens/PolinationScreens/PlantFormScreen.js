@@ -13,8 +13,10 @@ import { plantService } from '../../services';
 import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlantForm } from '../../components';
+import { useTranslation } from 'react-i18next';
 
 export const PlantFormScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { isGuest } = useAuth();
   const { plant, mode = 'create', title } = route.params || {};
   const [isLoading, setIsLoading] = useState(false);
@@ -39,9 +41,9 @@ export const PlantFormScreen = ({ navigation, route }) => {
           }
 
           Alert.alert(
-            'Saved Locally!',
-            'Plant added to your device. Sign in to sync it to your account.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
+            t('pollination.plantSavedLocallyTitle'),
+            t('pollination.plantSavedLocallyMessage'),
+            [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
           );
         } else {
           const { image, ...plantData } = formData;
@@ -56,9 +58,9 @@ export const PlantFormScreen = ({ navigation, route }) => {
           }
 
           Alert.alert(
-            'Updated!',
-            'Plant updated successfully.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
+            t('pollination.plantUpdatedLocallyTitle'),
+            t('pollination.plantUpdatedLocallyMessage'),
+            [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
           );
         }
       } else if (mode === 'create') {
@@ -89,11 +91,11 @@ export const PlantFormScreen = ({ navigation, route }) => {
         }
         
         Alert.alert(
-          'Success',
+          t('pollination.plantAddedSuccessfully'),
           successMessage,
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => navigation.goBack()
             }
           ]
@@ -114,11 +116,11 @@ export const PlantFormScreen = ({ navigation, route }) => {
         }
         
         Alert.alert(
-          'Success',
-          'Plant updated successfully!',
+          t('pollination.plantUpdatedSuccessfully'),
+          t('pollination.plantUpdatedLocallyMessage'),
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => navigation.goBack()
             }
           ]
@@ -134,7 +136,7 @@ export const PlantFormScreen = ({ navigation, route }) => {
         errorMessage = error.response.data.errors.map(e => e.message).join('\n');
       }
       
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +156,7 @@ export const PlantFormScreen = ({ navigation, route }) => {
           initialData={plant}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
-          title={title || (mode === 'create' ? 'Add New Plant' : 'Edit Plant')}
+          title={title || (mode === 'create' ? t('pollination.addNewPlant') : t('pollination.editPlant'))}
           isLoading={isLoading}
         />
         

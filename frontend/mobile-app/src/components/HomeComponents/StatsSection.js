@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, FlatList, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { StatCard } from './StatCard';
 
@@ -15,6 +16,7 @@ export const StatsSection = ({
   onStatsPress,
   recentScans = [] 
 }) => {
+  const { t } = useTranslation();
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -33,31 +35,31 @@ export const StatsSection = ({
       id: 'total',
       icon: 'qrcode-scan',
       value: totalScans || 0,
-      label: 'Total Scans',
+      label: t('home.totalScans'),
       color: theme.colors.info,
       gradientColors: [theme.colors.info, '#2874a6'],
       details: recentScansData,
-      detailsTitle: 'Recent Scans'
+      detailsTitle: t('home.recentScans')
     },
     {
       id: 'ready',
       icon: 'check-circle',
       value: readyGourds || 0,
-      label: 'Ready for Harvest',
+      label: t('home.readyForHarvest'),
       color: theme.colors.primary,
       gradientColors: [theme.colors.primary, '#4a8a3f'],
       details: [],
-      detailsTitle: 'Ready Gourds'
+      detailsTitle: t('home.readyGourds')
     },
     {
       id: 'pollinations',
       icon: 'flower-outline',
       value: pollinationsCount || 0,
-      label: 'Active Pollinations',
+      label: t('home.activePollinations'),
       color: theme.colors.secondary,
       gradientColors: [theme.colors.secondary, '#c9c940'],
       details: [],
-      detailsTitle: 'Active Pollinations'
+      detailsTitle: t('home.activePollinations')
     },
   ];
 

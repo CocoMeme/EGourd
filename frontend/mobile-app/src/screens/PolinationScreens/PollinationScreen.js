@@ -18,8 +18,10 @@ import { guestStorageService } from '../../services/guestStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlantCard, PlantFilter } from '../../components';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
+import { useTranslation } from 'react-i18next';
 
 export const PollinationScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const { isGuest } = useAuth();
   const [plants, setPlants] = useState([]);
   const [filteredPlants, setFilteredPlants] = useState([]);
@@ -52,17 +54,17 @@ export const PollinationScreen = ({ navigation }) => {
       console.error('Error fetching plants:', error);
       
       // Provide specific error messages
-      let errorMessage = 'Failed to fetch plants. Please try again.';
+      let errorMessage = t('errors.fetchPlantsFailed');
       
       if (error.response?.status === 401 || error.response?.status === 403) {
-        errorMessage = 'Session expired. Please log in again.';
+        errorMessage = t('errors.sessionExpired');
       } else if (error.message === 'Network Error' || error.code === 'ECONNABORTED') {
-        errorMessage = 'Network error. Please check your connection and try again.';
+        errorMessage = t('errors.fetchPlantsFailed');
       } else if (error.response?.status >= 500) {
-        errorMessage = 'Server error. Please try again later.';
+        errorMessage = t('errors.fetchPlantsFailed');
       }
       
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -89,7 +91,7 @@ export const PollinationScreen = ({ navigation }) => {
 
   // Format plant display name
   const formatPlantName = (plant) => {
-    return plant.plantName || plant.variety?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || plant.gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Plant';
+    return plant.plantName || plant.variety?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || plant.gourdType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || t('pollination.unknownPlant');
   };
 
   // Handle plant actions
@@ -101,18 +103,18 @@ export const PollinationScreen = ({ navigation }) => {
     navigation.navigate('PlantForm', { 
       plant, 
       mode: 'edit',
-      title: 'Edit Plant' 
+      title: t('pollination.editPlant') 
     });
   };
 
   const handleDeletePlant = async (plant) => {
     Alert.alert(
-      'Delete Plant',
-      `Are you sure you want to delete "${formatPlantName(plant)}"? This action cannot be undone.`,
+      t('pollination.deletePlant'),
+      t('pollination.deletePlantConfirm', { name: formatPlantName(plant) }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('pollination.deletePlant'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -123,10 +125,10 @@ export const PollinationScreen = ({ navigation }) => {
               }
               setPlants(prev => prev.filter(p => p._id !== plant._id));
               setFilteredPlants(prev => prev.filter(p => p._id !== plant._id));
-              Alert.alert('Success', 'Plant deleted successfully.');
+              Alert.alert(t('common.success'), t('pollination.plantDeleted'));
             } catch (error) {
               console.error('Error deleting plant:', error);
-              Alert.alert('Error', 'Failed to delete plant. Please try again.');
+              Alert.alert(t('common.error'), t('pollination.deletePlantFailed'));
             }
           }
         }
@@ -153,12 +155,12 @@ export const PollinationScreen = ({ navigation }) => {
     try {
       navigation.navigate('PlantForm', { 
         mode: 'create',
-        title: 'Add New Plant' 
+        title: t('pollination.addNewPlant') 
       });
       console.log('✅ Navigation call completed');
     } catch (error) {
       console.error('❌ Navigation error:', error);
-      Alert.alert('Error', 'Failed to open plant form. Please try again.');
+      Alert.alert(t('common.error'), t('errors.genericError'));
     }
   };
 
@@ -166,13 +168,13 @@ export const PollinationScreen = ({ navigation }) => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="leaf-outline" size={64} color={theme.colors.text.secondary} />
-      <Text style={styles.emptyStateTitle}>No Plants Yet</Text>
+      <Text style={styles.emptyStateTitle}>{t('pollination.noPlantsYet')}</Text>
       <Text style={styles.emptyStateText}>
-        Start your pollination journey by adding your first plant!
+        {t('pollination.noPlantsMessage')}
       </Text>
       <TouchableOpacity style={styles.emptyStateButton} onPress={handleAddPlant}>
         <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.emptyStateButtonText}>Add First Plant</Text>
+        <Text style={styles.emptyStateButtonText}>{t('pollination.addFirstPlant')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -249,7 +251,7 @@ export const PollinationScreen = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading your plants...</Text>
+        <Text style={styles.loadingText}>{t('pollination.loadingPlants')}</Text>
       </View>
     );
   }
@@ -258,8 +260,8 @@ export const PollinationScreen = ({ navigation }) => {
     <View style={styles.container}>
       <CustomHeader
         variant="management"
-        title="Pollination"
-        subtitle={`${filteredPlants.length} ${filteredPlants.length === 1 ? 'plant' : 'plants'}`}
+        title={t('pollination.title')}
+        subtitle={`${filteredPlants.length} ${filteredPlants.length === 1 ? t('common.plant') : t('common.plants')}`}
         rightComponent={headerRight}
       />
 
@@ -293,14 +295,14 @@ export const PollinationScreen = ({ navigation }) => {
             plants.length > 0 ? (
               <View style={styles.listHeader}>
                 <Text style={styles.resultCount}>
-                  Showing {filteredPlants.length} of {plants.length} plants
+                  {t('pollination.showingResults', { count: filteredPlants.length, total: plants.length })}
                 </Text>
                 {(filters.status || filters.name || filters.sort !== 'newest') && (
                   <TouchableOpacity 
                     onPress={() => setFilters({ status: '', name: '', sort: 'newest' })}
                     style={styles.clearFilters}
                   >
-                    <Text style={styles.clearFiltersText}>Clear all filters</Text>
+                    <Text style={styles.clearFiltersText}>{t('pollination.clearAllFilters')}</Text>
                   </TouchableOpacity>
                 )}
               </View>

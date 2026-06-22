@@ -11,12 +11,14 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { authService } from '../../services';
 import { ProfileItem, ProfileSection } from './shared';
 import { GuestBanner } from '../../components';
 
 export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
+    const { t } = useTranslation();
     const [verificationModalVisible, setVerificationModalVisible] = useState(false);
     const [verificationPin, setVerificationPin] = useState('');
     const [sendingPin, setSendingPin] = useState(false);
@@ -28,17 +30,17 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
     const friendlyPinError = (result, fallback) => {
         switch (result?.code) {
             case 'USER_NOT_FOUND':
-                return 'No account found for this email. Please check the address or register first.';
+                return t('profile.profileTab.noEmailFound');
             case 'ALREADY_VERIFIED':
-                return 'This email is already verified.';
+                return t('profile.profileTab.alreadyVerifiedMessage');
             case 'EMAIL_SERVICE_DOWN':
-                return 'We could not reach the email service just now. Please try again in a moment.';
+                return t('errors.serverError');
             case 'RATE_LIMIT':
-                return result?.message || 'Please wait a moment before requesting a new PIN.';
+                return result?.message || t('errors.tryAgain');
             case 'EMAIL_REQUIRED':
-                return 'Email is required to send a verification PIN.';
+                return t('profile.profileTab.noEmailFound');
             case 'NETWORK_ERROR':
-                return 'Network error. Please check your connection and try again.';
+                return t('errors.networkError');
             default:
                 return result?.message || fallback;
         }
@@ -46,12 +48,12 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
 
     const handleVerifyEmail = async () => {
         if (!user?.email) {
-            Alert.alert('Error', 'No email found');
+            Alert.alert(t('common.error'), t('profile.profileTab.noEmailFound'));
             return;
         }
 
         if (isVerified) {
-            Alert.alert('Already Verified', 'Your email is already verified');
+            Alert.alert(t('profile.profileTab.alreadyVerified'), t('profile.profileTab.alreadyVerifiedMessage'));
             return;
         }
 
@@ -62,17 +64,17 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
 
         if (result.success) {
             setVerificationModalVisible(true);
-            Alert.alert('Success', 'Verification PIN sent to your email. Please check your inbox.');
+            Alert.alert(t('common.success'), t('profile.profileTab.pinSent'));
         } else {
-            const message = friendlyPinError(result, 'Failed to send verification PIN');
+            const message = friendlyPinError(result, t('profile.profileTab.failedToSend'));
             setLastSendError({ message, code: result.code });
-            Alert.alert('Failed to Send', message);
+            Alert.alert(t('profile.profileTab.failedToSend'), message);
         }
     };
 
     const handleVerifyPin = async () => {
         if (!verificationPin || verificationPin.length !== 6) {
-            Alert.alert('Error', 'Please enter a valid 6-digit PIN');
+            Alert.alert(t('common.error'), t('profile.profileTab.invalidPin'));
             return;
         }
 
@@ -84,10 +86,10 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
             setVerificationModalVisible(false);
             setVerificationPin('');
             setLastSendError(null);
-            Alert.alert('Success', 'Email verified successfully!');
+            Alert.alert(t('common.success'), t('profile.profileTab.verifiedSuccess'));
             if (loadUserData) await loadUserData();
         } else {
-            Alert.alert('Error', result.message || 'Failed to verify email');
+            Alert.alert(t('common.error'), result.message || t('profile.profileTab.verificationFailed'));
         }
     };
 
@@ -98,42 +100,42 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
         setSendingPin(false);
 
         if (result.success) {
-            Alert.alert('Success', 'New verification PIN sent to your email');
+            Alert.alert(t('common.success'), t('profile.profileTab.newPinSent'));
             setVerificationPin('');
         } else {
-            const message = friendlyPinError(result, 'Failed to resend verification PIN');
+            const message = friendlyPinError(result, t('profile.profileTab.failedToSend'));
             setLastSendError({ message, code: result.code });
-            Alert.alert('Failed to Send', message);
+            Alert.alert(t('profile.profileTab.failedToSend'), message);
         }
     };
 
     const profileDetails = [
-        { id: 'firstName', icon: 'person-outline', title: 'First Name', value: user?.firstName || '-' },
-        { id: 'lastName', icon: 'person-outline', title: 'Last Name', value: user?.lastName || '-' },
-        { id: 'email', icon: 'mail-outline', title: 'Email', value: user?.email || '-' },
+        { id: 'firstName', icon: 'person-outline', title: t('profile.profileTab.firstName'), value: user?.firstName || '-' },
+        { id: 'lastName', icon: 'person-outline', title: t('profile.profileTab.lastName'), value: user?.lastName || '-' },
+        { id: 'email', icon: 'mail-outline', title: t('profile.profileTab.email'), value: user?.email || '-' },
     ];
 
     const quickActions = [
         {
             id: 'history',
             icon: 'time-outline',
-            label: 'Scan History',
-            description: 'Review past scans and notes',
+            label: t('profile.profileTab.scanHistory'),
+            description: t('profile.profileTab.scanHistoryDesc'),
             action: () => navigation.navigate('History'),
         },
         {
             id: 'news',
             icon: 'newspaper-outline',
-            label: 'News & Updates',
-            description: 'Stay up to date with releases',
+            label: t('profile.profileTab.newsUpdates'),
+            description: t('profile.profileTab.scanHistoryDesc'),
             action: () => navigation.navigate('News'),
         },
         {
             id: 'support',
             icon: 'help-circle-outline',
-            label: 'Support',
-            description: 'Need a hand? Get help here',
-            action: () => Alert.alert('Support', 'Support center coming soon.'),
+            label: t('profile.profileTab.support'),
+            description: t('profile.profileTab.support'),
+            action: () => Alert.alert(t('profile.profileTab.support'), t('home.help')),
         },
     ];
 
@@ -146,12 +148,12 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
             >
                 {isGuest ? (
                     <GuestBanner
-                        message="Sign in to access your full profile, sync data across devices, and verify your email."
+                        message={t('profile.profileTab.signInPrompt')}
                         icon="person-circle-outline"
                         style={{ marginHorizontal: theme.profile.card.margin, marginTop: theme.spacing.md }}
                     />
                 ) : (
-                    <ProfileSection title="Account Status" style={styles.statusCard}>
+                    <ProfileSection title={t('profile.profileTab.accountStatus')} style={styles.statusCard}>
                         <View style={styles.statusRow}>
                             <View style={styles.statusIconWrap}>
                                 <Ionicons
@@ -161,21 +163,21 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                                 />
                             </View>
                             <View style={styles.statusTextGroup}>
-                                <Text style={styles.statusTitle}>Verification</Text>
+                                <Text style={styles.statusTitle}>{t('profile.profileTab.verification')}</Text>
                                 <Text style={styles.statusDescription}>
-                                    {isVerified ? 'Your email is verified and secure.' : 'Verify your email to unlock all features.'}
+                                    {isVerified ? t('profile.profileTab.verified') : t('profile.profileTab.notVerified')}
                                 </Text>
                             </View>
                             {!isVerified && (
                                 <TouchableOpacity style={styles.statusButton} onPress={handleVerifyEmail}>
-                                    <Text style={styles.statusButtonText}>Verify now</Text>
+                                    <Text style={styles.statusButtonText}>{t('profile.profileTab.verifyNow')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
                     </ProfileSection>
                 )}
 
-                <ProfileSection title="Profile Information">
+                <ProfileSection title={t('profile.profileTab.profileInfo')}>
                     {profileDetails.map((item) => (
                         <ProfileItem
                             key={item.id}
@@ -187,19 +189,19 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                     {!isGuest && (
                         <ProfileItem
                             icon="shield-checkmark-outline"
-                            title="Account Security"
-                            value={isVerified ? 'Verified' : ''}
-                            badge={isVerified ? 'Verified' : 'Needs action'}
+                            title={t('profile.profileTab.accountSecurity')}
+                            value={isVerified ? t('profile.profileTab.verified') : ''}
+                            badge={isVerified ? t('profile.profileTab.verified') : t('profile.profileTab.verifyNow')}
                             badgeColor={isVerified ? theme.colors.success : theme.colors.warning}
                             onPress={!isVerified ? handleVerifyEmail : undefined}
                             isLast
-                            description={isVerified ? 'Everything looks good.' : 'Tap to verify your email.'}
+                            description={isVerified ? t('profile.profileTab.securityGood') : t('profile.profileTab.securityVerify')}
                         />
                     )}
                 </ProfileSection>
 
                 <View style={styles.quickActionsContainer}>
-                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                    <Text style={styles.sectionTitle}>{t('profile.profileTab.quickActions')}</Text>
                     <View style={styles.quickActionsRow}>
                         {quickActions.map((action) => (
                             <TouchableOpacity
@@ -231,7 +233,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Verify Your Email</Text>
+                            <Text style={styles.modalTitle}>{t('profile.profileTab.verifyEmailTitle')}</Text>
                             <TouchableOpacity onPress={() => {
                                 setVerificationModalVisible(false);
                                 setLastSendError(null);
@@ -240,7 +242,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.modalDescription}>
-                            Enter the 6-digit PIN sent to your email address
+                            {t('profile.profileTab.verifyEmailDesc')}
                         </Text>
                         {lastSendError && (
                             <View style={styles.modalErrorBox}>
@@ -254,7 +256,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                             onChangeText={setVerificationPin}
                             keyboardType="number-pad"
                             maxLength={6}
-                            placeholder="000000"
+                            placeholder={t('profile.profileTab.pinPlaceholder')}
                             placeholderTextColor={theme.colors.text.secondary}
                         />
                         <TouchableOpacity
@@ -265,7 +267,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                             {verifyingPin ? (
                                 <ActivityIndicator color="#FFFFFF" />
                             ) : (
-                                <Text style={styles.verifyButtonText}>Verify Email</Text>
+                                <Text style={styles.verifyButtonText}>{t('profile.profileTab.verifyButton')}</Text>
                             )}
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -274,7 +276,7 @@ export const ProfileTab = ({ user, navigation, loadUserData, isGuest }) => {
                             disabled={sendingPin}
                         >
                             <Text style={styles.resendButtonText}>
-                                {sendingPin ? 'Sending...' : 'Resend PIN'}
+                                {sendingPin ? t('profile.profileTab.sending') : t('profile.profileTab.resendPin')}
                             </Text>
                         </TouchableOpacity>
                     </View>

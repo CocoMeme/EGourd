@@ -22,6 +22,7 @@ import { theme } from '../../styles';
 import { authService, supportService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { ProfileItem, ProfileSection } from './shared';
 import { buildConfig } from '../../config/build';
 import {
@@ -31,13 +32,16 @@ import {
     getApiUrl,
 } from '../../config/api';
 
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [cacheSize, setCacheSize] = useState(0);
     const { logout } = useAuth();
     const { isDeveloperMode, setDeveloperMode } = useDeveloperMode();
+    const { language, setLanguage } = useLanguage();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | downloading | ready | up-to-date | error
     const [user, setUser] = useState(null);
@@ -54,13 +58,14 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
     const [supportModalVisible, setSupportModalVisible] = useState(false);
     const [supportSubject, setSupportSubject] = useState('');
     const [supportMessage, setSupportMessage] = useState('');
-    const [supportCategory, setSupportCategory] = useState('Question');
+    const [supportCategory, setSupportCategory] = useState('question');
     const [supportLoading, setSupportLoading] = useState(false);
 
-    const SUPPORT_CATEGORIES = ['Bug Report', 'Question', 'Feature Request', 'Other'];
+    const SUPPORT_CATEGORY_IDS = ['bugReport', 'question', 'featureRequest', 'other'];
+    const getCategoryLabel = (id) => t(`settings.supportCategories.${id}`);
     const PRESET_URLS = [
-        { label: 'GourdVision', url: 'https://gourdvision.onrender.com/api', badge: 'Current' },
-        { label: 'eGourd', url: 'https://egourd.onrender.com/api', badge: 'Legacy' },
+        { label: t('settings.presetUrls.gourdvision'), url: 'https://gourdvision.onrender.com/api', badge: t('settings.presetUrls.current') },
+        { label: t('settings.presetUrls.egourd'), url: 'https://egourd.onrender.com/api', badge: t('settings.presetUrls.legacy') },
     ];
     const insets = useSafeAreaInsets();
 
@@ -118,13 +123,13 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
         setHasApiUrlOverride(!!url);
         setApiUrlModalVisible(false);
         Alert.alert(
-            'API URL Updated',
+            t('settings.apiUrlUpdated'),
             url
-                ? 'The new API URL is saved and active. Restart the app to ensure all connections use it.'
-                : 'API URL reset to the default.',
+                ? t('settings.apiUrlSaved')
+                : t('settings.apiUrlReset'),
             [
-                { text: 'Later', style: 'cancel' },
-                { text: 'Restart Now', onPress: () => Updates.reloadAsync() },
+                { text: t('settings.later'), style: 'cancel' },
+                { text: t('settings.restartNow'), onPress: () => Updates.reloadAsync() },
             ]
         );
     };
@@ -175,29 +180,29 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
             setUpdateStatus('ready');
 
             Alert.alert(
-                'Update Ready',
-                'A new update has been downloaded. Restart the app to apply it.',
+                t('settings.updateReady'),
+                t('settings.updateReadyMessage'),
                 [
-                    { text: 'Later', style: 'cancel', onPress: () => setUpdateStatus('idle') },
-                    { text: 'Restart Now', onPress: () => Updates.reloadAsync() },
+                    { text: t('settings.later'), style: 'cancel', onPress: () => setUpdateStatus('idle') },
+                    { text: t('settings.restartNow'), onPress: () => Updates.reloadAsync() },
                 ]
             );
         } catch (error) {
             console.error('Update check failed:', error);
             setUpdateStatus('error');
-            Alert.alert('Update Error', error.message || 'Could not check for updates.');
+            Alert.alert(t('settings.updateError'), error.message || t('settings.updateErrorMessage'));
             setTimeout(() => setUpdateStatus('idle'), 3000);
         }
     };
 
     const getUpdateButtonLabel = () => {
         switch (updateStatus) {
-            case 'checking': return 'Checking...';
-            case 'downloading': return 'Downloading...';
-            case 'ready': return 'Restart to Apply';
-            case 'up-to-date': return 'Up to Date ✓';
-            case 'error': return 'Check Failed';
-            default: return 'Check for Updates';
+            case 'checking': return t('splash.checking');
+            case 'downloading': return t('splash.downloading');
+            case 'ready': return t('settings.restartNow');
+            case 'up-to-date': return t('splash.upToDate');
+            case 'error': return t('errors.tryAgain');
+            default: return t('common.checkForUpdates');
         }
     };
 
@@ -234,11 +239,11 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
     const handleClearCache = () => {
         Alert.alert(
-            'Clear Cache',
-            'This will delete all temporary files and images. You won\'t lose any account data. Continue?',
+            t('settings.clearCacheTitle'),
+            t('settings.clearCacheMessage'),
             [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Clear', style: 'destructive', onPress: performClearCache }
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('settings.clear'), style: 'destructive', onPress: performClearCache }
             ]
         );
     };
@@ -249,10 +254,10 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
             const cacheDir = FileSystem.cacheDirectory;
             await FileSystem.deleteAsync(cacheDir, { idempotent: true });
             await calculateStorageUsage();
-            Alert.alert('Success', 'Cache cleared successfully');
+            Alert.alert(t('common.success'), t('settings.cacheCleared'));
         } catch (error) {
             console.error('Clear cache error:', error);
-            Alert.alert('Error', 'Failed to clear cache');
+            Alert.alert(t('common.error'), t('settings.cacheClearFailed'));
         } finally {
             setLoading(false);
         }
@@ -260,11 +265,11 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
     const handleLogout = () => {
         Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
+            t('settings.logoutTitle'),
+            t('settings.logoutMessage'),
             [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Logout', style: 'destructive', onPress: performLogout },
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('settings.logout'), style: 'destructive', onPress: performLogout },
             ],
             { cancelable: false }
         );
@@ -279,7 +284,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
             }
         } catch (error) {
             console.error('Error logging out:', error);
-            Alert.alert('Error', 'Failed to logout. Please try again.');
+            Alert.alert(t('common.error'), t('settings.logoutFailed'));
         } finally {
             setLogoutLoading(false);
         }
@@ -289,8 +294,8 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
         {
             id: 'geminiEmbedding',
             icon: 'share-social-outline',
-            title: 'Contribute to AI',
-            description: 'Help improve our model by securely sharing your validated scans',
+            title: t('settings.contributeToAI'),
+            description: t('settings.contributeDescription'),
             toggleValue: geminiEmbeddingEnabled,
             onToggle: async (value) => {
                 setGeminiEmbeddingEnabled(value);
@@ -301,60 +306,60 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                 } catch (error) {
                     console.error('Failed to update embedding preference', error);
                     setGeminiEmbeddingEnabled(!value);
-                    Alert.alert('Error', 'Failed to update preference.');
+                    Alert.alert(t('common.error'), t('settings.contributeFailed'));
                 }
             },
         },
         {
             id: 'developerMode',
             icon: 'flask-outline',
-            title: 'Developer Mode',
-            description: 'Test quantized TM models in Camera tab',
+            title: t('settings.developerMode'),
+            description: t('settings.developerModeDescription'),
             badge: 'Experimental',
             badgeColor: '#FF9800',
             toggleValue: isDeveloperMode,
             onToggle: async (value) => {
                 await setDeveloperMode(value);
                 Alert.alert(
-                    'Developer Mode ' + (value ? 'Enabled' : 'Disabled'),
+                    t('settings.developerModeEnabled', { status: value ? 'Enabled' : 'Disabled' }),
                     value
-                        ? 'Camera tab now shows model selection screen for testing quantized and unquantized Teachable Machine models.'
-                        : 'Camera tab restored to normal scan mode.',
-                    [{ text: 'OK' }]
+                        ? t('settings.developerModeOn')
+                        : t('settings.developerModeOff'),
+                    [{ text: t('common.ok') }]
                 );
             },
         },
         {
             id: 'notifications',
             icon: 'notifications-outline',
-            title: 'Notifications',
-            description: 'Manage push alerts and reminders',
+            title: t('settings.notifications'),
+            description: t('settings.notificationsDescription'),
             badge: 'Soon',
             badgeColor: theme.colors.warning,
-            action: () => Alert.alert('Notifications', 'Notification preferences are coming soon.'),
+            action: () => Alert.alert(t('settings.notifications'), t('settings.notificationsSoon')),
         },
         {
             id: 'language',
             icon: 'language-outline',
-            title: 'Language',
-            value: 'English',
-            description: 'Primary language for the interface',
-            action: () => Alert.alert('Language', 'Additional languages will be available soon.'),
+            title: t('settings.language'),
+            value: language === 'tl' ? t('settings.tagalog') : t('settings.english'),
+            description: t('settings.languageDescription'),
+            action: () => setLanguage(language === 'en' ? 'tl' : 'en'),
         },
         {
             id: 'appearance',
             icon: 'contrast-outline',
-            title: 'Appearance',
-            value: 'Light',
-            description: 'Switch between light and dark themes',
-            action: () => Alert.alert('Appearance', 'Theme selection is coming soon.'),
+            title: t('settings.appearance'),
+            value: t('settings.light'),
+            description: t('settings.appearanceDescription'),
+            action: () => Alert.alert(t('settings.appearance'), t('settings.appearanceSoon')),
         },
     ];
 
     const handleOpenSupport = () => {
         setSupportSubject('');
         setSupportMessage('');
-        setSupportCategory('Question');
+        setSupportCategory('question');
         setSupportModalVisible(true);
     };
 
@@ -364,19 +369,17 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
     const handleSubmitSupport = async () => {
         if (!supportSubject.trim()) {
-            Alert.alert('Error', 'Please enter a subject');
+            Alert.alert(t('common.error'), t('settings.enterSubject'));
             return;
         }
         if (!supportMessage.trim()) {
-            Alert.alert('Error', 'Please enter a message');
+            Alert.alert(t('common.error'), t('settings.enterMessage'));
             return;
         }
 
         try {
             setSupportLoading(true);
             const user = await authService.getCurrentUser();
-            // If user is guest/not logged in, we might want to ask for email, but for now we'll send as anonymous or guest
-            // The backend handles auth, so if they are guest (which is a valid auth state in this app), it works.
 
             await supportService.submitSupportRequest(
                 supportSubject,
@@ -386,13 +389,13 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
 
             setSupportModalVisible(false);
             Alert.alert(
-                'Request Sent',
-                'Thank you for your feedback! We have received your support request and will get back to you shortly.',
-                [{ text: 'OK' }]
+                t('settings.requestSent'),
+                t('settings.requestSentMessage'),
+                [{ text: t('common.ok') }]
             );
         } catch (error) {
             console.error('Support submission error:', error);
-            Alert.alert('Error', 'Failed to send support request. Please try again later.');
+            Alert.alert(t('common.error'), t('settings.supportFailed'));
         } finally {
             setSupportLoading(false);
         }
@@ -403,43 +406,43 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
         {
             id: 'version',
             icon: 'information-circle-outline',
-            title: 'App Version',
-            value: Constants.nativeAppVersion ? `v${Constants.nativeAppVersion}` : 'Development',
+            title: t('settings.appVersion'),
+            value: Constants.nativeAppVersion ? `v${Constants.nativeAppVersion}` : t('settings.development'),
             description: `Built ${buildConfig.buildDate}`,
         },
         {
             id: 'codeVersion',
             icon: 'git-commit-outline',
-            title: 'Code Version',
+            title: t('settings.codeVersion'),
             value: getUpdateId(),
             description: updateDate ? `Published ${updateDate}` : 'Embedded build (no OTA update)',
         },
         {
             id: 'support',
             icon: 'help-circle-outline',
-            title: 'Help & Support',
-            description: 'Find answers and contact our team',
+            title: t('settings.helpSupport'),
+            description: t('settings.helpDescription'),
             action: handleOpenSupport,
         },
         {
             id: 'model',
             icon: 'cube-outline',
-            title: 'Model Version',
+            title: t('settings.modelVersion'),
             value: 'v2.12.07',
         },
         {
             id: 'privacy',
             icon: 'document-text-outline',
-            title: 'Privacy Policy',
-            description: 'Understand how we handle your data',
-            action: () => Alert.alert('Privacy Policy', 'We will direct you to the privacy policy soon.'),
+            title: t('settings.privacyPolicy'),
+            description: t('settings.privacyDescription'),
+            action: () => Alert.alert(t('settings.privacyPolicy'), t('settings.privacySoon')),
         },
         {
             id: 'terms',
             icon: 'shield-checkmark-outline',
-            title: 'Terms of Service',
-            description: 'Review our latest agreement',
-            action: () => Alert.alert('Terms of Service', 'Terms of service will be accessible here soon.'),
+            title: t('settings.termsOfService'),
+            description: t('settings.termsDescription'),
+            action: () => Alert.alert(t('settings.termsOfService'), t('settings.termsSoon')),
         },
     ];
 
@@ -451,12 +454,12 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                 showsVerticalScrollIndicator={false}
             >
                 {/* API Server */}
-                <ProfileSection title="API Server">
+                <ProfileSection title={t('settings.apiServer')}>
                     <ProfileItem
                         icon="server-outline"
-                        title="Backend URL"
+                        title={t('settings.backendUrl')}
                         description={getActiveApiUrl()}
-                        value={hasApiUrlOverride ? 'Custom' : 'Default'}
+                        value={hasApiUrlOverride ? t('settings.custom') : t('settings.default')}
                         valueStyle={hasApiUrlOverride ? { color: '#FF9800', fontFamily: theme.fonts.bold } : undefined}
                         onPress={handleOpenApiUrlModal}
                         isLast={true}
@@ -466,12 +469,12 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         onPress={handleOpenApiUrlModal}
                     >
                         <Text style={styles.actionButtonText}>
-                            {hasApiUrlOverride ? 'Edit / Reset URL' : 'Set Custom URL'}
+                            {hasApiUrlOverride ? t('settings.editResetUrl') : t('settings.setCustomUrl')}
                         </Text>
                     </TouchableOpacity>
                 </ProfileSection>
 
-                <ProfileSection title="Preferences">
+                <ProfileSection title={t('settings.preferences')}>
                     {preferenceItems.map((item, index) => (
                         <ProfileItem
                             key={item.id}
@@ -489,12 +492,12 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                     ))}
                 </ProfileSection>
 
-                <ProfileSection title="Storage & Data">
+                <ProfileSection title={t('settings.storage')}>
                     <ProfileItem
                         icon="images-outline"
-                        title="Cache & Temporary Files"
-                        description="Images from camera, temporary downloads"
-                        value={loading ? "Calculating..." : formatSize(cacheSize)}
+                        title={t('settings.cacheTitle')}
+                        description={t('settings.cacheDescription')}
+                        value={loading ? t('settings.calculating') : formatSize(cacheSize)}
                         valueStyle={styles.boldValue}
                         isLast={true}
                     />
@@ -503,11 +506,11 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         onPress={handleClearCache}
                         disabled={loading}
                     >
-                        <Text style={styles.actionButtonText}>Clear Cache</Text>
+                        <Text style={styles.actionButtonText}>{t('settings.clearCache')}</Text>
                     </TouchableOpacity>
                 </ProfileSection>
 
-                <ProfileSection title="About">
+                <ProfileSection title={t('settings.about')}>
                     {aboutItems.map((item, index) => (
                         <ProfileItem
                             key={item.id}
@@ -554,14 +557,14 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                             onPress={() => logout()}
                         >
                             <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text style={styles.signInText}>SIGN IN</Text>
+                            <Text style={styles.signInText}>{t('settings.signIn')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.createAccountButton}
                             onPress={() => logout()}
                         >
                             <Ionicons name="person-add-outline" size={18} color={theme.colors.primary} style={{ marginRight: 8 }} />
-                            <Text style={styles.createAccountText}>CREATE ACCOUNT</Text>
+                            <Text style={styles.createAccountText}>{t('settings.createAccount')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -570,7 +573,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         onPress={handleLogout}
                         disabled={logoutLoading}
                     >
-                        <Text style={styles.logoutText}>{logoutLoading ? 'Logging out...' : 'LOGOUT'}</Text>
+                        <Text style={styles.logoutText}>{logoutLoading ? t('settings.loggingOut') : t('settings.logout')}</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
@@ -590,47 +593,47 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         >
                             <View style={styles.modalContent}>
                                 <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>Contact Support</Text>
+                                    <Text style={styles.modalTitle}>{t('settings.contactSupport')}</Text>
                                     <TouchableOpacity onPress={handleCloseSupport} style={styles.closeButton}>
                                         <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
                                     </TouchableOpacity>
                                 </View>
 
                                 <ScrollView showsVerticalScrollIndicator={false}>
-                                    <Text style={styles.inputLabel}>Category</Text>
+                                    <Text style={styles.inputLabel}>{t('settings.category')}</Text>
                                     <View style={styles.categoryContainer}>
-                                        {SUPPORT_CATEGORIES.map((cat) => (
+                                        {SUPPORT_CATEGORY_IDS.map((catId) => (
                                             <TouchableOpacity
-                                                key={cat}
+                                                key={catId}
                                                 style={[
                                                     styles.categoryChip,
-                                                    supportCategory === cat && styles.categoryChipSelected
+                                                    supportCategory === catId && styles.categoryChipSelected
                                                 ]}
-                                                onPress={() => setSupportCategory(cat)}
+                                                onPress={() => setSupportCategory(catId)}
                                             >
                                                 <Text style={[
                                                     styles.categoryChipText,
-                                                    supportCategory === cat && styles.categoryChipTextSelected
+                                                    supportCategory === catId && styles.categoryChipTextSelected
                                                 ]}>
-                                                    {cat}
+                                                    {getCategoryLabel(catId)}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
 
-                                    <Text style={styles.inputLabel}>Subject</Text>
+                                    <Text style={styles.inputLabel}>{t('settings.subject')}</Text>
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="What is this about?"
+                                        placeholder={t('settings.subjectPlaceholder')}
                                         placeholderTextColor={theme.colors.text.hint}
                                         value={supportSubject}
                                         onChangeText={setSupportSubject}
                                     />
 
-                                    <Text style={styles.inputLabel}>Message</Text>
+                                    <Text style={styles.inputLabel}>{t('settings.message')}</Text>
                                     <TextInput
                                         style={[styles.input, styles.textArea]}
-                                        placeholder="Describe your issue or question..."
+                                        placeholder={t('settings.messagePlaceholder')}
                                         placeholderTextColor={theme.colors.text.hint}
                                         multiline
                                         numberOfLines={5}
@@ -647,7 +650,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                         {supportLoading ? (
                                             <ActivityIndicator size="small" color="#FFFFFF" />
                                         ) : (
-                                            <Text style={styles.submitButtonText}>Send Message</Text>
+                                            <Text style={styles.submitButtonText}>{t('settings.sendMessage')}</Text>
                                         )}
                                     </TouchableOpacity>
                                 </ScrollView>
@@ -672,13 +675,13 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                         >
                             <View style={styles.modalContent}>
                                 <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>API Server URL</Text>
+                                    <Text style={styles.modalTitle}>{t('settings.apiUrlModalTitle')}</Text>
                                     <TouchableOpacity onPress={() => setApiUrlModalVisible(false)} style={styles.closeButton}>
                                         <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
                                     </TouchableOpacity>
                                 </View>
 
-                                <Text style={styles.inputLabel}>Backend URL</Text>
+                                <Text style={styles.inputLabel}>{t('settings.backendUrl')}</Text>
                                 <View style={styles.presetContainer}>
                                     {PRESET_URLS.map((preset) => (
                                         <TouchableOpacity
@@ -715,7 +718,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                 </View>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="https://gourdvision.onrender.com/api"
+                                    placeholder={t('settings.backendUrlPlaceholder')}
                                     placeholderTextColor={theme.colors.text.hint}
                                     value={apiUrlInput}
                                     onChangeText={(text) => {
@@ -736,13 +739,13 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                             color={apiUrlTestResult === 'ok' ? '#4CAF50' : '#F44336'}
                                         />
                                         <Text style={{ fontSize: 13, color: apiUrlTestResult === 'ok' ? '#4CAF50' : '#F44336' }}>
-                                            {apiUrlTestResult === 'ok' ? 'Server reachable' : 'Could not reach server'}
+                                             {apiUrlTestResult === 'ok' ? t('settings.serverReachable') : t('settings.couldNotReach')}
                                         </Text>
                                     </View>
                                 )}
 
                                 <Text style={[styles.inputLabel, { marginTop: 16, fontSize: 12, color: theme.colors.text.hint }]}>
-                                    Current active: {getActiveApiUrl()}
+                                    {t('settings.currentActive', { url: getActiveApiUrl() })}
                                 </Text>
 
                                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
@@ -754,7 +757,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                         {apiUrlTesting ? (
                                             <ActivityIndicator size="small" color={theme.colors.primary} />
                                         ) : (
-                                            <Text style={styles.actionButtonText}>Test</Text>
+                                            <Text style={styles.actionButtonText}>{t('settings.test')}</Text>
                                         )}
                                     </TouchableOpacity>
 
@@ -763,7 +766,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                             style={[styles.actionButton, { flex: 1, marginTop: 0, borderColor: 'rgba(244,67,54,0.3)', backgroundColor: 'rgba(244,67,54,0.06)' }]}
                                             onPress={handleResetApiUrl}
                                         >
-                                            <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>Reset to Default</Text>
+                                            <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>{t('settings.resetToDefault')}</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -772,7 +775,7 @@ export const SettingsTab = ({ navigation, onAuthChange, isGuest }) => {
                                     style={[styles.submitButton, { marginTop: 16, marginBottom: insets.bottom || 20 }]}
                                     onPress={handleSaveApiUrl}
                                 >
-                                    <Text style={styles.submitButtonText}>Save &amp; Restart</Text>
+                                    <Text style={styles.submitButtonText}>{t('settings.saveAndRestart')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </KeyboardAvoidingView>

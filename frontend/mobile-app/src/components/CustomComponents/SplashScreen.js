@@ -8,10 +8,12 @@ import {
   Text,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = ({ onFinish, updateStatus = 'idle' }) => {
+  const { t } = useTranslation();
   const [showSecondLogo, setShowSecondLogo] = useState(false);
   
   // Internal state for update text display, to handle the sequence visually
@@ -112,10 +114,10 @@ const SplashScreen = ({ onFinish, updateStatus = 'idle' }) => {
 
   const getStatusText = () => {
       switch (displayedStatus) {
-          case 'checking': return 'Checking for updates...';
-          case 'downloading': return 'Updating EGourd...';
-          case 'complete': return 'Download complete';
-          case 'idle': return 'Starting up...';
+          case 'checking': return t('splash.checking');
+          case 'downloading': return t('splash.downloading');
+          case 'complete': return t('splash.complete');
+          case 'idle': return t('splash.starting');
           default: return '';
       }
   };

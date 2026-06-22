@@ -28,6 +28,7 @@ import { guestStorageService } from '../../services/guestStorageService';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
 import { PredictionFeedbackModal } from '../../components/ScanComponents/PredictionFeedbackModal';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 import { LeafHealthCard } from '../../components/ScanComponents/LeafHealthCard';
@@ -181,7 +182,7 @@ const FinalVerdictCard = ({ geminiPrediction, isGeminiLoading }) => {
 
     return (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}>
-            <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>Gemini AI</Text>
+            <Text style={{ fontSize: 10, color: '#888', fontWeight: '600', marginBottom: 6, textTransform: 'uppercase' }}>{t('scanResults.leaf.geminiAI')}</Text>
             {geminiPrediction ? (
                 <CircularProgress value={geminiConfidence} color="#9C27B0" size={70}>
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#9C27B0' }}>{geminiConfidence}%</Text>
@@ -208,7 +209,7 @@ const CollapsibleHealthSection = ({ healthData, confidence }) => {
                 style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: expanded ? 16 : 0 }}
                 onPress={() => setExpanded(!expanded)}
             >
-                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Leaf Health Details</Text>
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('scanResults.leaf.healthDetails')}</Text>
                 <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
             </TouchableOpacity>
             {expanded && (
@@ -225,6 +226,7 @@ const CollapsibleHealthSection = ({ healthData, confidence }) => {
  * Main Leaf Prediction Screen Component
  */
 export const LeafPredictionScreen = ({ route, navigation }) => {
+    const { t } = useTranslation();
     const { isGuest } = useAuth();
     const { imageUri, isLoading: initialLoading, width: imgWidth, height: imgHeight } = route.params ?? {};
     const isMounted = useRef(true);
@@ -240,7 +242,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     const [isAnalyzing, setIsAnalyzing] = useState(initialLoading || false);
     const [isTmComplete, setIsTmComplete] = useState(false);
     const [isGeminiLoading, setIsGeminiLoading] = useState(false);
-    const [loadingStage, setLoadingStage] = useState('Initializing...');
+    const [loadingStage, setLoadingStage] = useState(t('scanResults.leaf.analyzing'));
     const [analysisError, setAnalysisError] = useState(null);
 
     // Results state
@@ -367,7 +369,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             setGeminiError(null);
 
             // Step 1: TM Model Prediction
-            setLoadingStage('Analyzing leaf with TM model...');
+            setLoadingStage(t('scanResults.leaf.analyzing'));
             console.log('🌿 Running TM leaf prediction...');
 
             const tmResult = await modelService.quickPredict(imageUri, imgWidth, imgHeight);
@@ -407,7 +409,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             // Step 2: Gemini AI Analysis
             if (geminiService.isAvailable() && tmPred) {
                 setIsGeminiLoading(true);
-                setLoadingStage('Analyzing leaf health with AI...');
+                setLoadingStage(t('scanResults.leaf.aiInsights'));
                 console.log('🤖 Running Gemini leaf analysis...');
 
                 try {
@@ -422,13 +424,13 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                     setPrediction(prev => mergeGeminiLeafResult(prev, geminiResult));
                 } catch (geminiError) {
                     console.error('❌ Gemini leaf analysis failed:', geminiError);
-                    if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');
+                    if (isMounted.current) setGeminiError(geminiError.message || t('scanResults.leaf.analysisFailed'));
                 } finally {
                     if (isMounted.current) setIsGeminiLoading(false);
                 }
             }
 
-            setLoadingStage('Complete!');
+            setLoadingStage(t('scanResults.leaf.analyzing'));
 
         } catch (error) {
             console.error('❌ Leaf analysis failed:', error);
@@ -444,7 +446,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
     const runGeminiAnalysis = async (tmPred) => {
         setIsGeminiLoading(true);
         setGeminiError(null);
-        setLoadingStage('Analyzing leaf health with AI...');
+        setLoadingStage(t('scanResults.leaf.aiInsights'));
         console.log('🤖 Running Gemini leaf analysis...');
 
         try {
@@ -459,7 +461,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             setPrediction(prev => mergeGeminiLeafResult(prev, geminiResult));
         } catch (geminiError) {
             console.error('❌ Gemini leaf analysis failed:', geminiError);
-            if (isMounted.current) setGeminiError(geminiError.message || 'AI analysis failed');
+            if (isMounted.current) setGeminiError(geminiError.message || t('scanResults.leaf.analysisFailed'));
         } finally {
             if (isMounted.current) setIsGeminiLoading(false);
         }
@@ -500,9 +502,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 await guestStorageService.saveLocalScan(scanData, imageUri);
                 if (!isMounted.current) return;
                 Alert.alert(
-                    'Saved Locally! 🎉',
-                    'Leaf scan saved on your device. Sign in to sync it to your account.',
-                    [{ text: 'OK', onPress: () => handleBack() }]
+                    t('scanResults.leaf.savedLocallyTitle'),
+                    t('scanResults.leaf.savedLocallyMessage'),
+                    [{ text: t('common.ok'), onPress: () => handleBack() }]
                 );
             } else {
                 const savedScan = await scanService.saveScan(scanData, imageUri);
@@ -514,15 +516,15 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                     setShowFeedbackModal(true);
                 } else {
                     Alert.alert(
-                        'Success! 🎉',
-                        'Leaf scan saved to your history!',
-                        [{ text: 'OK', onPress: () => handleBack() }]
+                        t('scanResults.leaf.successTitle'),
+                        t('scanResults.leaf.successMessage'),
+                        [{ text: t('common.ok'), onPress: () => handleBack() }]
                     );
                 }
             }
         } catch (error) {
             console.error('Save error:', error);
-            Alert.alert('Save Failed', 'Failed to save scan. Please try again.');
+            Alert.alert(t('scanResults.leaf.saveFailed'), t('scanResults.leaf.saveFailedMessage'));
         } finally {
             setIsSaving(false);
         }
@@ -535,11 +537,11 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 body: JSON.stringify(feedbackData)
             });
             setShowFeedbackModal(false);
-            Alert.alert('Success! 🎉', 'Scan and feedback saved to your history!', [{ text: 'OK', onPress: () => handleBack() }]);
+            Alert.alert(t('scanResults.leaf.feedbackSaved'), t('scanResults.leaf.successMessage'), [{ text: t('common.ok'), onPress: () => handleBack() }]);
         } catch (e) {
             console.error('Failed to save feedback:', e);
             setShowFeedbackModal(false);
-            Alert.alert('Feedback Failed', 'Scan was saved but feedback could not be submitted. Please try again later.', [{ text: 'OK', onPress: () => handleBack() }]);
+            Alert.alert(t('scanResults.leaf.feedbackFailed'), t('scanResults.leaf.feedbackFailed'), [{ text: t('common.ok'), onPress: () => handleBack() }]);
         }
     };
 
@@ -559,12 +561,12 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
             {/* Header */}
             <CustomHeader
                 variant="results"
-                title="Leaf Analysis"
+                title={t('scanResults.leaf.title')}
                 onBackPress={handleBack}
                 rightComponent={() => (
                     <View style={styles.leafBadge}>
                         <Ionicons name="leaf" size={14} color="#4CAF50" />
-                        <Text style={styles.leafBadgeText}>LEAF</Text>
+                        <Text style={styles.leafBadgeText}>{t('scanResults.leaf.badge')}</Text>
                     </View>
                 )}
             />
@@ -596,11 +598,11 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                 {analysisError && !isAnalyzing && (
                     <View style={styles.errorCard}>
                         <Ionicons name="alert-circle" size={48} color="#F44336" />
-                        <Text style={styles.errorTitle}>Analysis Failed</Text>
+                        <Text style={styles.errorTitle}>{t('scanResults.leaf.analysisFailed')}</Text>
                         <Text style={styles.errorText}>{analysisError}</Text>
                         <TouchableOpacity style={styles.retryButton} onPress={runAnalysis}>
                             <Ionicons name="refresh" size={20} color="#FFF" />
-                            <Text style={styles.retryText}>Try Again</Text>
+                            <Text style={styles.retryText}>{t('scanResults.leaf.tryAgain')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -612,7 +614,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                             <View style={styles.loadingContent}>
                                 <ActivityIndicator size="large" color={theme.colors.primary} />
                                 <Text style={styles.loadingStageText}>{loadingStage}</Text>
-                                <Text style={styles.loadingSubtext}>Analyzing your leaf...</Text>
+                                <Text style={styles.loadingSubtext}>{t('scanResults.leaf.analyzing')}</Text>
                             </View>
                         </View>
                     </View>
@@ -626,9 +628,9 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                             {isNotLeaf ? (
                                 <View style={styles.notFlowerResult}>
                                     <Ionicons name="close-circle" size={64} color="#F44336" />
-                                    <Text style={styles.notFlowerText}>Not a Gourd Leaf</Text>
+                                    <Text style={styles.notFlowerText}>{t('scanResults.leaf.notAGourdLeaf')}</Text>
                                     <Text style={styles.notFlowerSubtext}>
-                                        The image doesn't appear to be a gourd leaf. Try capturing a clearer image of the leaf.
+                                        {t('scanResults.leaf.notAGourdLeafMessage')}
                                     </Text>
                                 </View>
                             ) : (
@@ -672,7 +674,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                         {geminiPrediction && !isNotLeaf && (
                             <>
                                 <View style={styles.card}>
-                                    <Text style={styles.sectionTitle}>AI Observations</Text>
+                                    <Text style={styles.sectionTitle}>{t('scanResults.leaf.aiObservations')}</Text>
                                     <Text style={styles.reasoningText}>{geminiPrediction.geminiData?.reasoning}</Text>
 
                                     {geminiPrediction.geminiData?.keyFeatures?.length > 0 && (
@@ -697,7 +699,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
 
                         {/* Skeleton — only on the AI Insights card while loading */}
                         {isGeminiLoading && !isNotLeaf && (
-                            <SkeletonCard title="AI Insights" lines={4} />
+                            <SkeletonCard title={t('scanResults.leaf.aiInsights')} lines={4} />
                         )}
 
                         {/* Gemini Error Notice */}
@@ -706,7 +708,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                                 <View style={styles.geminiErrorContent}>
                                     <Ionicons name="warning" size={20} color="#E65100" />
                                     <Text style={styles.geminiErrorText}>
-                                        AI analysis failed: {geminiError}
+                                        {t('scanResults.leaf.analysisFailed')}: {geminiError}
                                     </Text>
                                 </View>
                             </View>
@@ -717,7 +719,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                             <View style={styles.tmOnlyNotice}>
                                 <Ionicons name="information-circle" size={20} color="#4CAF50" />
                                 <Text style={styles.tmOnlyText}>
-                                    Leaf identified using TM model only.
+                                    {t('scanResults.leaf.identifiedTMMessage')}
                                 </Text>
                             </View>
                         )}
@@ -732,7 +734,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                         disabled={isSaving}
                     >
                         <Ionicons name="camera" size={20} color="#FFF" />
-                        <Text style={styles.actionButtonText}>Scan Again</Text>
+                        <Text style={styles.actionButtonText}>{t('scanResults.leaf.scanAgain')}</Text>
                     </TouchableOpacity>
 
                       <TouchableOpacity
@@ -745,7 +747,7 @@ export const LeafPredictionScreen = ({ route, navigation }) => {
                         ) : (
                             <>
                                 <Ionicons name="save-outline" size={20} color="#FFF" />
-                                <Text style={styles.actionButtonText}>Save Result</Text>
+                                <Text style={styles.actionButtonText}>{t('scanResults.leaf.saveResult')}</Text>
                             </>
                         )}
                     </TouchableOpacity>

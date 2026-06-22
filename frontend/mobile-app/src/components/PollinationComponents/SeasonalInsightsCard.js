@@ -16,6 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
 
@@ -32,6 +33,7 @@ const GOURD_COLORS = {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const SeasonalInsightsCard = ({ onViewDetails }) => {
+  const { t } = useTranslation();
   const [seasonalData, setSeasonalData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,7 +54,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
       }
     } catch (err) {
       console.error('Error fetching seasonal data:', err);
-      setError('Unable to load seasonal data');
+      setError(t('seasonalInsights.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +78,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
       <View style={styles.card}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading seasonal insights...</Text>
+          <Text style={styles.loadingText}>{t('seasonalInsights.loading')}</Text>
         </View>
       </View>
     );
@@ -89,7 +91,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
           <Ionicons name="cloud-offline-outline" size={24} color="#999" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={fetchSeasonalData} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -108,7 +110,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
       >
         <View style={styles.headerLeft}>
           <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
-          <Text style={styles.title}>Gourd Season Insights</Text>
+          <Text style={styles.title}>{t('seasonalInsights.title')}</Text>
         </View>
         <Ionicons 
           name={expanded ? "chevron-up" : "chevron-down"} 
@@ -159,15 +161,15 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
             <View style={[styles.peakBadge, { backgroundColor: `${GOURD_COLORS[selectedGourd]}15` }]}>
               <Ionicons name="trending-up" size={16} color={GOURD_COLORS[selectedGourd]} />
               <Text style={[styles.peakText, { color: GOURD_COLORS[selectedGourd] }]}>
-                Peak Season: {selectedData.peakMonths.join(', ')}
+                {t('seasonalInsights.peakSeason', { months: selectedData.peakMonths.join(', ') })}
               </Text>
             </View>
           )}
 
           {/* Monthly Chart */}
           <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>Successful Pollinations by Month</Text>
-            <Text style={styles.chartSubMessage}>This is the pollination that has been successfully harvested</Text>
+            <Text style={styles.chartTitle}>{t('seasonalInsights.chartTitle')}</Text>
+            <Text style={styles.chartSubMessage}>{t('seasonalInsights.chartSubMessage')}</Text>
             
             <View style={styles.chart}>
               {MONTHS.map((month, index) => {
@@ -212,8 +214,8 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
             <Ionicons name="bulb-outline" size={16} color="#F39C12" />
             <Text style={styles.tipsText}>
               {selectedData?.peakMonths?.length > 0 
-                ? `Best time to grow ${selectedData.label}: ${selectedData.peakMonths[0]} - ${selectedData.peakMonths[selectedData.peakMonths.length - 1]}`
-                : `No seasonal data yet for ${selectedData?.label}. Start tracking your pollinations!`
+                ? t('seasonalInsights.tipWithData', { label: selectedData.label, startMonth: selectedData.peakMonths[0], endMonth: selectedData.peakMonths[selectedData.peakMonths.length - 1] })
+                : t('seasonalInsights.tipNoData', { label: selectedData?.label || '' })
               }
             </Text>
           </View>
@@ -231,7 +233,7 @@ export const SeasonalInsightsCard = ({ onViewDetails }) => {
               </View>
             ))}
           </View>
-          <Text style={styles.tapToExpand}>Tap to see seasonal chart</Text>
+          <Text style={styles.tapToExpand}>{t('seasonalInsights.tapToExpand')}</Text>
         </View>
       )}
     </View>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const WelcomeHeader = ({ 
@@ -14,12 +15,13 @@ export const WelcomeHeader = ({
   isRefreshing = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return t('welcomeHeader.goodMorning');
+    if (hour < 18) return t('welcomeHeader.goodAfternoon');
+    return t('welcomeHeader.goodEvening');
   };
 
   // Get first letter of first name or fallback to 'U'
@@ -61,7 +63,7 @@ export const WelcomeHeader = ({
             </View>
             <View style={styles.nameSection}>
               <Text style={styles.greeting}>{getGreeting()},</Text>
-              <Text style={styles.userName}>{user?.username || user?.firstName || userName || 'User'}!</Text>
+              <Text style={styles.userName}>{user?.username || user?.firstName || userName || t('welcomeHeader.defaultUser')}!</Text>
             </View>
           </View>
 
@@ -98,7 +100,7 @@ export const WelcomeHeader = ({
             style={styles.mainLogo}
             resizeMode="contain"
           />
-          <Text style={styles.tagline}>Ready to scan your gourds?</Text>
+          <Text style={styles.tagline}>{t('welcomeHeader.readyToScan')}</Text>
         </View>
     </LinearGradient>
   );

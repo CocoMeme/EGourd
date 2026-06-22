@@ -15,8 +15,10 @@ import { Picker } from '@react-native-picker/picker';
 import { theme } from '../../styles';
 import { pollinationService } from '../../services';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export const PredictFlowersScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { plant } = route.params || {}; // Optional plant from pollination record
   
   const [isLoading, setIsLoading] = useState(false);
@@ -116,7 +118,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please fill in all required fields correctly');
+      Alert.alert(t('predictionForms.validationError'), t('predictionForms.validationErrorMessage'));
       return;
     }
 
@@ -166,7 +168,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
         errorMessage = error.response.data.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -193,20 +195,20 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Ionicons name="analytics-outline" size={48} color={theme.colors.primary} />
-          <Text style={styles.title}>Flower Production Predictor</Text>
+          <Text style={styles.title}>{t('predictionForms.flowerTitle')}</Text>
           <Text style={styles.subtitle}>
-            Enter plant data to predict how many male and female flowers will be produced
+            {t('predictionForms.flowerTitleDesc')}
           </Text>
         </View>
 
         {/* Plant Selection Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="leaf-outline" size={20} color={theme.colors.primary} /> Plant Information
+            <Ionicons name="leaf-outline" size={20} color={theme.colors.primary} /> {t('predictionForms.plantInfo')}
           </Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Select Plant (Optional)</Text>
+            <Text style={styles.label}>{t('common.selectPlant')}</Text>
             {loadingPlants ? (
               <ActivityIndicator color={theme.colors.primary} />
             ) : (
@@ -216,7 +218,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                   onValueChange={handlePlantSelection}
                   style={styles.picker}
                 >
-                  <Picker.Item label="Manual Entry" value="" />
+                  <Picker.Item label={t('predictionForms.manualEntry')} value="" />
                   {userPlants.map(plant => (
                     <Picker.Item
                       key={plant._id}
@@ -230,7 +232,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Plant Type *</Text>
+            <Text style={styles.label}>{t('predictionForms.plantType')} *</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.plantType}
@@ -238,17 +240,17 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 style={styles.picker}
                 enabled={!formData.selectedPlantId}
               >
-                <Picker.Item label="Bitter Gourd" value="bitter_gourd" />
-                <Picker.Item label="Bottle Gourd" value="bottle_gourd" />
-                <Picker.Item label="Sponge Gourd" value="sponge_gourd" />
-                <Picker.Item label="Cucumber" value="cucumber" />
-                <Picker.Item label="Squash" value="kalabasa" />
+                <Picker.Item label={t('predictionForms.plantTypeBitterGourd')} value="bitter_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeBottleGourd')} value="bottle_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeSpongeGourd')} value="sponge_gourd" />
+                <Picker.Item label={t('predictionForms.plantTypeCucumber')} value="cucumber" />
+                <Picker.Item label={t('predictionForms.plantTypeSquash')} value="kalabasa" />
               </Picker>
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Plant Age (days) *</Text>
+            <Text style={styles.label}>{t('predictionForms.plantAge')} *</Text>
             <TextInput
               style={[styles.input, errors.plantAge && styles.inputError]}
               value={formData.plantAge}
@@ -264,11 +266,11 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
         {/* Environmental Factors Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="sunny-outline" size={20} color={theme.colors.primary} /> Environmental Conditions
+            <Ionicons name="sunny-outline" size={20} color={theme.colors.primary} /> {t('predictionForms.environConditions')}
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Temperature (°C) *</Text>
+            <Text style={styles.label}>{t('predictionForms.temperature')} *</Text>
             <TextInput
               style={[styles.input, errors.temperature && styles.inputError]}
               value={formData.temperature}
@@ -281,7 +283,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Humidity (%) *</Text>
+            <Text style={styles.label}>{t('predictionForms.humidity')} *</Text>
             <TextInput
               style={[styles.input, errors.humidity && styles.inputError]}
               value={formData.humidity}
@@ -294,7 +296,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Daily Sunlight (hours) *</Text>
+            <Text style={styles.label}>{t('predictionForms.dailySunlight')} *</Text>
             <TextInput
               style={[styles.input, errors.sunlightHours && styles.inputError]}
               value={formData.sunlightHours}
@@ -307,7 +309,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Soil pH (Optional)</Text>
+            <Text style={styles.label}>{t('predictionForms.soilPh')}</Text>
             <TextInput
               style={styles.input}
               value={formData.soilPH}
@@ -320,31 +322,31 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Soil Type</Text>
+            <Text style={styles.label}>{t('predictionForms.soilType')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.soilType}
                 onValueChange={(value) => updateField('soilType', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Loamy" value="loamy" />
-                <Picker.Item label="Clay" value="clay" />
-                <Picker.Item label="Sandy" value="sandy" />
-                <Picker.Item label="Silty" value="silty" />
+                <Picker.Item label={t('predictionForms.soilLoamy')} value="loamy" />
+                <Picker.Item label={t('predictionForms.soilClay')} value="clay" />
+                <Picker.Item label={t('predictionForms.soilSandy')} value="sandy" />
+                <Picker.Item label={t('predictionForms.soilSilty')} value="silty" />
               </Picker>
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Season</Text>
+            <Text style={styles.label}>{t('predictionForms.season')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.season}
                 onValueChange={(value) => updateField('season', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Wet Season (June - November)" value="wet" />
-                <Picker.Item label="Dry Season (December - May)" value="dry" />
+                <Picker.Item label={t('seasonalInsights.wetSeason')} value="wet" />
+                <Picker.Item label={t('seasonalInsights.drySeason')} value="dry" />
               </Picker>
             </View>
           </View>
@@ -353,11 +355,11 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
         {/* Plant Care Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="water-outline" size={20} color={theme.colors.primary} /> Plant Care
+            <Ionicons name="water-outline" size={20} color={theme.colors.primary} /> {t('predictionForms.plantCare')}
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Watering Frequency (times/week) *</Text>
+            <Text style={styles.label}>{t('predictionForms.wateringFreq')} *</Text>
             <TextInput
               style={[styles.input, errors.wateringFrequency && styles.inputError]}
               value={formData.wateringFrequency}
@@ -370,23 +372,23 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fertilizer Type *</Text>
+            <Text style={styles.label}>{t('predictionForms.fertilizerType')} *</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.fertilizerType}
                 onValueChange={(value) => updateField('fertilizerType', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Organic" value="organic" />
-                <Picker.Item label="Chemical" value="chemical" />
-                <Picker.Item label="Mixed" value="mixed" />
-                <Picker.Item label="None" value="none" />
+                <Picker.Item label={t('predictionForms.fertilizerOrganic')} value="organic" />
+                <Picker.Item label={t('predictionForms.fertilizerChemical')} value="chemical" />
+                <Picker.Item label={t('predictionForms.fertilizerMixed')} value="mixed" />
+                <Picker.Item label={t('predictionForms.fertilizerNone')} value="none" />
               </Picker>
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fertilizer Frequency (times/month)</Text>
+            <Text style={styles.label}>{t('predictionForms.fertilizerFreq')}</Text>
             <TextInput
               style={styles.input}
               value={formData.fertilizerFrequency}
@@ -397,17 +399,17 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pest Control</Text>
+            <Text style={styles.label}>{t('predictionForms.pestControl')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.pestControl}
                 onValueChange={(value) => updateField('pestControl', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Regular" value="regular" />
-                <Picker.Item label="Occasional" value="occasional" />
-                <Picker.Item label="As Needed" value="as-needed" />
-                <Picker.Item label="None" value="none" />
+                <Picker.Item label={t('predictionForms.pestControlRegular')} value="regular" />
+                <Picker.Item label={t('predictionForms.pestControlOccasional')} value="occasional" />
+                <Picker.Item label={t('predictionForms.pestControlAsNeeded')} value="as-needed" />
+                <Picker.Item label={t('predictionForms.pestControlNone')} value="none" />
               </Picker>
             </View>
           </View>
@@ -416,11 +418,11 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
         {/* Growth Metrics Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="stats-chart-outline" size={20} color={theme.colors.primary} /> Growth Metrics
+            <Ionicons name="stats-chart-outline" size={20} color={theme.colors.primary} /> {t('predictionForms.growthMetrics')}
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Plant Height (cm, optional)</Text>
+            <Text style={styles.label}>{t('predictionForms.plantHeight')}</Text>
             <TextInput
               style={styles.input}
               value={formData.height}
@@ -431,7 +433,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Leaf Count (optional)</Text>
+            <Text style={styles.label}>{t('predictionForms.leafCount')}</Text>
             <TextInput
               style={styles.input}
               value={formData.leafCount}
@@ -442,7 +444,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Stem Thickness (mm, optional)</Text>
+            <Text style={styles.label}>{t('predictionForms.stemThickness')}</Text>
             <TextInput
               style={styles.input}
               value={formData.stemThickness}
@@ -453,7 +455,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Overall Health Rating *</Text>
+            <Text style={styles.label}>{t('predictionForms.healthRating')} *</Text>
             <View style={styles.ratingContainer}>
               {[1, 2, 3, 4, 5].map((rating) => (
                 <TouchableOpacity
@@ -473,14 +475,14 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.hint}>1 = Poor, 5 = Excellent</Text>
+            <Text style={styles.hint}>{t('predictionForms.healthRatingDesc')}</Text>
           </View>
         </View>
 
         {/* Notes Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="document-text-outline" size={20} color={theme.colors.primary} /> Notes (Optional)
+            <Ionicons name="document-text-outline" size={20} color={theme.colors.primary} /> {t('predictionForms.notes')}
           </Text>
 
           <View style={styles.inputGroup}>
@@ -488,7 +490,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
               style={[styles.input, styles.notesInput]}
               value={formData.notes}
               onChangeText={(value) => updateField('notes', value)}
-              placeholder="Any additional observations or comments..."
+              placeholder={t('predictionForms.notesPlaceholder')}
               multiline
               numberOfLines={4}
               maxLength={500}
@@ -508,7 +510,7 @@ export const PredictFlowersScreen = ({ navigation, route }) => {
           ) : (
             <>
               <Ionicons name="analytics" size={20} color="#fff" style={styles.buttonIcon} />
-              <Text style={styles.submitButtonText}>Generate Prediction</Text>
+              <Text style={styles.submitButtonText}>{t('predictionForms.generatePrediction')}</Text>
             </>
           )}
         </TouchableOpacity>

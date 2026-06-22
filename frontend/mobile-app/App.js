@@ -9,6 +9,7 @@ import { SplashScreen } from './src/components';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { DeveloperModeProvider, useDeveloperMode } from './src/contexts/DeveloperModeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { LanguageProvider } from './src/i18n/LanguageContext';
 import { useAppResources } from './src/hooks/useAppResources';
 
 // Inner component that uses the DeveloperMode context
@@ -58,9 +59,11 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <AuthProvider>
-            <DeveloperModeProvider>
-              <AppContent />
-            </DeveloperModeProvider>
+            <LanguageProvider>
+              <DeveloperModeProvider>
+                <AppContent />
+              </DeveloperModeProvider>
+            </LanguageProvider>
           </AuthProvider>
         </SafeAreaProvider>
       </ErrorBoundary>

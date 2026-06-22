@@ -96,41 +96,39 @@ class GeminiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
-      try {
-        // Call Backend API
-        const response = await fetch(`${getActiveApiUrl()}/scans/analyze`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            image: base64Image,
-            tmPrediction: tmPrediction,
-            userId: userId || undefined,
-          })
-        });
+      // Call Backend API
+      const response = await fetch(`${getActiveApiUrl()}/scans/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          image: base64Image,
+          tmPrediction: tmPrediction,
+          userId: userId || undefined,
+        })
+      });
 
-        if (!response.ok) {
-          throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);
-        }
+      clearTimeout(timeoutId);
 
-        const geminiResult = await response.json();
-
-        console.log('📄 Gemini backend response received');
-
-        // Validate response structure
-        if (!geminiResult.variety || !geminiResult.gender || geminiResult.confidence === undefined) {
-          console.error('Invalid Gemini response:', geminiResult);
-          throw new Error('Invalid response structure from Gemini Service');
-        }
-
-        // Format prediction for app usage
-        return this.formatPrediction(geminiResult, Date.now() - startTime);
-      } finally {
-        clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);
       }
+
+      const geminiResult = await response.json();
+
+      console.log('📄 Gemini backend response received');
+
+      // Validate response structure
+      if (!geminiResult.variety || !geminiResult.gender || geminiResult.confidence === undefined) {
+        console.error('Invalid Gemini response:', geminiResult);
+        throw new Error('Invalid response structure from Gemini Service');
+      }
+
+      // Format prediction for app usage
+      return this.formatPrediction(geminiResult, Date.now() - startTime);
 
     } catch (error) {
       console.error('❌ Gemini analysis error:', error);
@@ -176,41 +174,39 @@ class GeminiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 26000);
 
-      try {
-        // Call Backend API
-        const response = await fetch(`${getActiveApiUrl()}/scans/analyze-leaf`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            image: base64Image,
-            tmPrediction: tmPrediction,
-            userId: userId || undefined,
-          })
-        });
+      // Call Backend API
+      const response = await fetch(`${getActiveApiUrl()}/scans/analyze-leaf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          image: base64Image,
+          tmPrediction: tmPrediction,
+          userId: userId || undefined,
+        })
+      });
 
-        if (!response.ok) {
-          throw new Error(`Backend leaf analysis failed: ${response.status} ${response.statusText}`);
-        }
+      clearTimeout(timeoutId);
 
-        const geminiResult = await response.json();
-
-        console.log('📄 Gemini leaf response received');
-
-        // Validate response structure
-        if (!geminiResult.variety || geminiResult.confidence === undefined) {
-          console.error('Invalid leaf response:', geminiResult);
-          throw new Error('Invalid response structure from Gemini Service');
-        }
-
-        // Format prediction for app usage
-        return this.formatLeafPrediction(geminiResult, Date.now() - startTime);
-      } finally {
-        clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`Backend leaf analysis failed: ${response.status} ${response.statusText}`);
       }
+
+      const geminiResult = await response.json();
+
+      console.log('📄 Gemini leaf response received');
+
+      // Validate response structure
+      if (!geminiResult.variety || geminiResult.confidence === undefined) {
+        console.error('Invalid leaf response:', geminiResult);
+        throw new Error('Invalid response structure from Gemini Service');
+      }
+
+      // Format prediction for app usage
+      return this.formatLeafPrediction(geminiResult, Date.now() - startTime);
 
     } catch (error) {
       console.error('❌ Gemini leaf analysis error:', error);
@@ -236,11 +232,11 @@ class GeminiService {
 
     // Variety display mapping
     const varietyMap = {
-      'ampalaya': 'Bitter Gourd',
-      'patola': 'Sponge Gourd',
-      'upo': 'Bottle Gourd',
-      'kalabasa': 'Squash',
-      'pipino': 'Cucumber'
+      'ampalaya': 'Ampalaya',
+      'patola': 'Patola',
+      'upo': 'Upo',
+      'kalabasa': 'Kalabasa',
+      'pipino': 'Pipino'
     };
     const varietyDisplay = varietyMap[variety] || (isNotLeaf ? 'Not a Leaf' : variety);
 
@@ -292,15 +288,15 @@ class GeminiService {
 
     // Format variety name for display
     const varietyDisplayMap = {
-      'bitter_gourd': 'Bitter Gourd',
-      'bottle_gourd': 'Bottle Gourd',
-      'sponge_gourd': 'Sponge Gourd',
+      'bitter_gourd': 'Ampalaya',
+      'bottle_gourd': 'Upo',
+      'sponge_gourd': 'Patola',
       'cucumber': 'Cucumber',
-      'kalabasa': 'Squash',
+      'kalabasa': 'Kalabasa',
       // Legacy support
-      'ampalaya_bilog': 'Bitter Gourd',
-      'upo_smooth': 'Bottle Gourd',
-      'patola': 'Sponge Gourd',
+      'ampalaya_bilog': 'Ampalaya',
+      'upo_smooth': 'Upo',
+      'patola': 'Patola',
     };
     const varietyDisplay = varietyDisplayMap[variety] || null;
 
@@ -435,9 +431,9 @@ class GeminiService {
     } else {
       // DISAGREEMENT LOGIC:
 
-      // 0. SPECIES CHECK: Trust TM if it says Bottle Gourd and Gemini says Bitter Gourd
-      // This handles the legacy color-hallucination case (white Upo misidentified as yellow Ampalaya)
-      if (tflitePrediction.variety === 'Bottle Gourd' && geminiPrediction.variety === 'Bitter Gourd') {
+      // 0. SPECIES CHECK: Trust TM if it says Upo (White) and Gemini says Ampalaya (Yellow)
+      // This handles cases where Gemini hallucinates color
+      if (tflitePrediction.variety === 'Upo (Smooth)' && geminiPrediction.variety === 'Ampalaya Bilog') {
         if (tflitePrediction.rawScore > 0.8) recommendation = 'tflite';
       }
 

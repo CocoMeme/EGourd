@@ -14,9 +14,11 @@ import { authService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../styles';
 import { ProfileTab, HistoryTab, SettingsTab, AnalysisTab } from '../../components/Profile';
+import { useTranslation } from 'react-i18next';
 
 export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
   const { isGuest } = useAuth();
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -86,12 +88,12 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>
-              {isGuest ? 'Guest User' : (user ? `${user.firstName} ${user.lastName}` : 'Loading...')}
+              {isGuest ? t('auth.profile.guestUser') : (user ? `${user.firstName} ${user.lastName}` : t('common.loading'))}
             </Text>
             {isGuest ? (
               <View style={styles.emailContainer}>
                 <Ionicons name="person-outline" size={14} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.userEmail}>Browsing as guest</Text>
+                <Text style={styles.userEmail}>{t('auth.profile.browsingAsGuest')}</Text>
               </View>
             ) : (
               <View style={styles.emailContainer}>
@@ -115,7 +117,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
             color={activeTab === 'profile' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'profile' && styles.activeTabText]}>
-            Profile
+            {t('profile.tabs.profile')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -128,7 +130,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
             color={activeTab === 'history' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
-            History
+            {t('profile.tabs.history')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -141,7 +143,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
             color={activeTab === 'analysis' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'analysis' && styles.activeTabText]}>
-            Analysis
+            {t('profile.tabs.analysis')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -154,7 +156,7 @@ export const ProfileScreen = ({ navigation, route, onAuthChange }) => {
             color={activeTab === 'settings' ? theme.colors.primary : theme.colors.text.secondary}
           />
           <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
-            Settings
+            {t('profile.tabs.settings')}
           </Text>
         </TouchableOpacity>
       </View>

@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { forumService } from '../../services';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const CommunityScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isGuest, logout } = useAuth();
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState([]);
@@ -17,11 +19,11 @@ const CommunityScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
 
   const categories = [
-    { id: 'all', label: 'All Posts', icon: 'apps-outline' },
-    { id: 'tips', label: 'Tips & Tricks', icon: 'bulb-outline' },
-    { id: 'questions', label: 'Q&A', icon: 'help-circle-outline' },
-    { id: 'showcase', label: 'Showcase', icon: 'image-outline' },
-    { id: 'discussion', label: 'Discussion', icon: 'chatbubbles-outline' },
+    { id: 'all', label: t('forum.categories.allPosts'), icon: 'apps-outline' },
+    { id: 'tips', label: t('forum.categories.tips'), icon: 'bulb-outline' },
+    { id: 'questions', label: t('forum.categories.qa'), icon: 'help-circle-outline' },
+    { id: 'showcase', label: t('forum.categories.showcase'), icon: 'image-outline' },
+    { id: 'discussion', label: t('forum.categories.discussion'), icon: 'chatbubbles-outline' },
   ];
 
   // Fetch posts from backend
@@ -47,11 +49,11 @@ const CommunityScreen = ({ navigation }) => {
         console.log('Fetched posts:', response.data?.slice(0, 2)); // Log first 2 posts
         setPosts(response.data || []);
       } else {
-        setError(response.message || 'Failed to load posts');
+        setError(response.message || t('forum.failedToLoad'));
       }
     } catch (err) {
       console.error('Error fetching posts:', err);
-      setError('Unable to connect to server');
+      setError(t('forum.failedToLoad'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,11 +88,11 @@ const CommunityScreen = ({ navigation }) => {
   const requireAccount = (action) => {
     if (isGuest) {
       Alert.alert(
-        'Account Required',
-        'Sign in or create an account to interact with the community.',
+        t('forum.accountRequired'),
+        t('forum.accountRequiredMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => logout() },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('forum.signIn'), onPress: () => logout() },
         ]
       );
       return true;
@@ -128,28 +130,28 @@ const CommunityScreen = ({ navigation }) => {
   const handleReportPost = (postId) => {
     if (requireAccount()) return;
     Alert.alert(
-      'Report Post',
-      'Report this post for inappropriate content? Our moderators will review it.',
+      t('forum.reportPost'),
+      t('forum.reportPostMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Report',
+          text: t('forum.report'),
           style: 'destructive',
           onPress: async () => {
             try {
               const response = await forumService.reportPost(postId);
               if (response.success) {
                 Alert.alert(
-                  'Thank You',
-                  'Your report has been submitted. Our team will review this post shortly.',
+                  t('forum.thankYou'),
+                  t('forum.reportSubmitted'),
                   [{ text: 'OK' }]
                 );
               } else {
-                Alert.alert('Error', response.message || 'Failed to report post');
+                Alert.alert(t('errors.generic'), response.message || t('forum.reportFailed'));
               }
             } catch (error) {
               console.error('Error reporting post:', error);
-              Alert.alert('Error', 'Failed to submit report. Please try again.');
+              Alert.alert(t('errors.generic'), t('forum.reportFailed'));
             }
           },
         },
@@ -168,7 +170,7 @@ const CommunityScreen = ({ navigation }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Just now';
+    if (!dateString) return t('forum.justNow');
     
     const date = new Date(dateString);
     const now = new Date();
@@ -179,18 +181,18 @@ const CommunityScreen = ({ navigation }) => {
 
     // If less than 1 hour, show relative time
     if (diffInMinutes < 60) {
-      if (diffInMinutes < 1) return 'Just now';
-      return `${diffInMinutes}m ago`;
+      if (diffInMinutes < 1) return t('forum.justNow');
+      return t('forum.minutesAgo', { count: diffInMinutes });
     }
 
     // If less than 24 hours, show hours
     if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
+      return t('forum.hoursAgo', { count: diffInHours });
     }
 
     // If less than 7 days, show days
     if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
+      return t('forum.daysAgo', { count: diffInDays });
     }
 
     // Otherwise show full date
@@ -230,7 +232,7 @@ const CommunityScreen = ({ navigation }) => {
       return (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading posts...</Text>
+          <Text style={styles.loadingText}>{t('forum.loading')}</Text>
         </View>
       );
     }
@@ -241,7 +243,7 @@ const CommunityScreen = ({ navigation }) => {
           <Ionicons name="alert-circle-outline" size={48} color={theme.colors.error} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchPosts}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('forum.retry')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -260,7 +262,7 @@ const CommunityScreen = ({ navigation }) => {
           <Ionicons name="search" size={18} color={theme.colors.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search posts..."
+            placeholder={t('forum.searchPlaceholder')}
             placeholderTextColor={theme.colors.text.secondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -301,10 +303,10 @@ const CommunityScreen = ({ navigation }) => {
         {/* Forum Posts */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Posts</Text>
+            <Text style={styles.sectionTitle}>{t('forum.recentPosts')}</Text>
             {posts.length > 10 && (
               <TouchableOpacity>
-                <Text style={styles.sectionAction}>See All</Text>
+                <Text style={styles.sectionAction}>{t('forum.seeAll')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -312,12 +314,12 @@ const CommunityScreen = ({ navigation }) => {
           {posts.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="document-text-outline" size={64} color={theme.colors.text.secondary} />
-              <Text style={styles.emptyStateTitle}>No posts yet</Text>
+              <Text style={styles.emptyStateTitle}>{t('forum.noPostsYet')}</Text>
               <Text style={styles.emptyStateText}>
-                Be the first to share with the community!
+                {t('forum.beFirst')}
               </Text>
               <TouchableOpacity style={styles.createFirstButton} onPress={handleCreatePost}>
-                <Text style={styles.createFirstButtonText}>Create Post</Text>
+                <Text style={styles.createFirstButtonText}>{t('forum.createPost')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -335,7 +337,7 @@ const CommunityScreen = ({ navigation }) => {
                 {post.isPinned && (
                   <View style={styles.pinnedBadge}>
                     <Ionicons name="pin" size={14} color="#fff" />
-                    <Text style={styles.pinnedBadgeText}>Pinned</Text>
+                    <Text style={styles.pinnedBadgeText}>{t('forum.pinned')}</Text>
                   </View>
                 )}
 
@@ -354,7 +356,7 @@ const CommunityScreen = ({ navigation }) => {
                     )}
                     <View style={styles.authorDetails}>
                       <View style={styles.authorNameRow}>
-                        <Text style={styles.authorName}>{post.author?.username || 'Anonymous'}</Text>
+                        <Text style={styles.authorName}>{post.author?.username || t('forum.anonymous')}</Text>
                       </View>
                       <Text style={styles.postTimestamp}>{formatDate(post.createdAt)}</Text>
                     </View>
@@ -452,12 +454,12 @@ const CommunityScreen = ({ navigation }) => {
         <View style={styles.guidelinesCard}>
           <Ionicons name="information-circle" size={24} color={theme.colors.info} />
           <View style={styles.guidelinesContent}>
-            <Text style={styles.guidelinesTitle}>Community Guidelines</Text>
+            <Text style={styles.guidelinesTitle}>{t('forum.communityGuidelines')}</Text>
             <Text style={styles.guidelinesText}>
-              Be respectful, share knowledge, and help fellow growers. Keep discussions relevant and constructive.
+              {t('forum.guidelinesText')}
             </Text>
             <TouchableOpacity>
-              <Text style={styles.guidelinesLink}>Read full guidelines →</Text>
+              <Text style={styles.guidelinesLink}>{t('forum.readFullGuidelines')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -476,7 +478,7 @@ const CommunityScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Community Forum</Text>
+        <Text style={styles.headerTitle}>{t('forum.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 

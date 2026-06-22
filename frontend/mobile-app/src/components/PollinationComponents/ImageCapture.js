@@ -12,6 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { Button } from '../CustomComponents/Button';
 
@@ -19,9 +20,11 @@ export const ImageCapture = ({
   onImageCaptured, 
   visible, 
   onClose,
-  title = 'Add Photo',
+  title,
   imageType = 'general'
 }) => {
+  const { t } = useTranslation();
+  const captureTitle = title || t('common.addPhoto');
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState('back');
   const [showCamera, setShowCamera] = useState(false);
@@ -46,9 +49,9 @@ export const ImageCapture = ({
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
       Alert.alert(
-        'Camera Permission Required',
-        'Please grant camera permission to capture photos.',
-        [{ text: 'OK' }]
+        t('imageCapture.cameraPermissionTitle'),
+        t('imageCapture.cameraPermissionMessage'),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -59,9 +62,9 @@ export const ImageCapture = ({
     const hasPermission = await requestGalleryPermission();
     if (!hasPermission) {
       Alert.alert(
-        'Gallery Permission Required',
-        'Please grant gallery access to select photos.',
-        [{ text: 'OK' }]
+        t('imageCapture.galleryPermissionTitle'),
+        t('imageCapture.galleryPermissionMessage'),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -109,7 +112,7 @@ export const ImageCapture = ({
       }
     } catch (error) {
       console.error('❌ Gallery pick error:', error);
-      Alert.alert('Error', 'Failed to pick image from gallery. Please try again.');
+      Alert.alert(t('common.error'), t('imageCapture.galleryError'));
     } finally {
       setIsProcessing(false);
     }
@@ -135,7 +138,7 @@ export const ImageCapture = ({
       setShowCamera(false);
     } catch (error) {
       console.error('❌ Camera capture error:', error);
-      Alert.alert('Error', 'Failed to capture photo.');
+      Alert.alert(t('common.error'), t('imageCapture.captureError'));
     } finally {
       setIsProcessing(false);
     }
@@ -182,7 +185,7 @@ export const ImageCapture = ({
                   <Ionicons name="close" size={30} color="#FFFFFF" />
                 </TouchableOpacity>
                 
-                <Text style={styles.cameraTitle}>{title}</Text>
+                <Text style={styles.cameraTitle}>{captureTitle}</Text>
                 
                 <TouchableOpacity 
                   style={styles.cameraButton}
@@ -220,7 +223,7 @@ export const ImageCapture = ({
             // Image Preview
             <View style={styles.previewContainer}>
               <View style={styles.previewHeader}>
-                <Text style={styles.previewTitle}>Photo Preview</Text>
+                <Text style={styles.previewTitle}>{t('imageCapture.photoPreview')}</Text>
                 <TouchableOpacity onPress={handleClose}>
                   <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
                 </TouchableOpacity>
@@ -230,13 +233,13 @@ export const ImageCapture = ({
               
               <View style={styles.previewActions}>
                 <Button
-                  title="Retake"
+                  title={t('imageCapture.retake')}
                   variant="outline"
                   onPress={handleImageRetake}
                   style={styles.previewButton}
                 />
                 <Button
-                  title="Use Photo"
+                  title={t('imageCapture.usePhoto')}
                   onPress={handleImageConfirm}
                   style={styles.previewButton}
                 />
@@ -246,14 +249,14 @@ export const ImageCapture = ({
             // Image Source Selection
             <View style={styles.optionsContainer}>
               <View style={styles.optionsHeader}>
-                <Text style={styles.optionsTitle}>{title}</Text>
+                <Text style={styles.optionsTitle}>{captureTitle}</Text>
                 <TouchableOpacity onPress={handleClose}>
                   <Ionicons name="close" size={24} color={theme.colors.text.secondary} />
                 </TouchableOpacity>
               </View>
               
               <Text style={styles.optionsSubtitle}>
-                Choose how you'd like to add a photo
+                {t('imageCapture.chooseHow')}
               </Text>
 
               <View style={styles.optionsList}>
@@ -266,9 +269,9 @@ export const ImageCapture = ({
                     <Ionicons name="camera" size={32} color={theme.colors.primary} />
                   </View>
                   <View style={styles.optionText}>
-                    <Text style={styles.optionTitle}>Take Photo</Text>
+                    <Text style={styles.optionTitle}>{t('imageCapture.takePhoto')}</Text>
                     <Text style={styles.optionDescription}>
-                      Capture a new photo with your camera
+                      {t('imageCapture.takePhotoDescription')}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={24} color={theme.colors.text.secondary} />
@@ -283,9 +286,9 @@ export const ImageCapture = ({
                     <Ionicons name="images" size={32} color={theme.colors.primary} />
                   </View>
                   <View style={styles.optionText}>
-                    <Text style={styles.optionTitle}>Choose from Gallery</Text>
+                    <Text style={styles.optionTitle}>{t('imageCapture.chooseFromGallery')}</Text>
                     <Text style={styles.optionDescription}>
-                      Select an existing photo from your gallery
+                      {t('imageCapture.chooseFromGalleryDescription')}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={24} color={theme.colors.text.secondary} />
@@ -295,12 +298,12 @@ export const ImageCapture = ({
               {isProcessing && (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={theme.colors.primary} />
-                  <Text style={styles.loadingText}>Processing...</Text>
+                  <Text style={styles.loadingText}>{t('imageCapture.processing')}</Text>
                 </View>
               )}
 
               <Button
-                title="Cancel"
+                title={t('common.cancel')}
                 variant="outline"
                 onPress={handleClose}
                 style={styles.cancelButton}

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const StatCard = ({ 
@@ -15,6 +16,7 @@ export const StatCard = ({
   detailsTitle = '',
   isExpanded = false 
 }) => {
+  const { t } = useTranslation();
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -93,7 +95,7 @@ export const StatCard = ({
                   color={theme.colors.text.tertiary} 
                 />
                 <Text style={styles.emptyText}>
-                  Tap to view all {label.toLowerCase()}
+                  {t('home.tapToViewAll', { label: label?.toLowerCase() || '' })}
                 </Text>
               </View>
             </View>

@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Markdown from 'react-native-markdown-display';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 const { width, height } = Dimensions.get('window');
@@ -24,6 +25,7 @@ export const NewsModal = ({
   onClose,
   onMarkAsRead 
 }) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -340,7 +342,7 @@ export const NewsModal = ({
             {/* Description */}
             {news.description && (
               <View style={styles.descriptionContainer}>
-                <Text style={styles.sectionLabel}>DESCRIPTION</Text>
+                <Text style={styles.sectionLabel}>{t('news.description')}</Text>
                 <Text style={styles.description}>
                   {news.description}
                 </Text>
@@ -350,23 +352,23 @@ export const NewsModal = ({
             {/* Body with Markdown */}
             {news.body ? (
               <View style={styles.bodyContainer}>
-                <Text style={styles.sectionLabel}>FULL ARTICLE</Text>
+                <Text style={styles.sectionLabel}>{t('news.fullArticle')}</Text>
                 <Markdown style={markdownStyles}>
                   {news.body}
                 </Markdown>
                 {/* Debug: Show if markdown rendered */}
                 <Text style={styles.debugText}>
-                  (Markdown content: {news.body.length} chars)
+                  {t('news.markdownContent', { chars: news.body.length })}
                 </Text>
               </View>
             ) : (
-              <Text style={styles.noContent}>No content available</Text>
+              <Text style={styles.noContent}>{t('news.noContent')}</Text>
             )}
 
             {/* Metadata Section */}
             {news.metadata?.improvements && news.metadata.improvements.length > 0 && (
               <View style={styles.metadataSection}>
-                <Text style={styles.metadataTitle}>Key Improvements</Text>
+                <Text style={styles.metadataTitle}>{t('news.keyImprovements')}</Text>
                 {news.metadata.improvements.map((improvement, index) => (
                   <View key={index} style={styles.improvementItem}>
                     <Ionicons 
@@ -383,7 +385,7 @@ export const NewsModal = ({
             {/* Technical Details */}
             {news.metadata?.technicalDetails && (
               <View style={styles.metadataSection}>
-                <Text style={styles.metadataTitle}>Technical Details</Text>
+                <Text style={styles.metadataTitle}>{t('news.technicalDetails')}</Text>
                 <Text style={styles.technicalText}>
                   {news.metadata.technicalDetails}
                 </Text>

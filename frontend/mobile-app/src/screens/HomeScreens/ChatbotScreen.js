@@ -16,8 +16,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../styles';
 import chatbotService from '../../services/chatbotService';
+import { useTranslation } from 'react-i18next';
 
 export const ChatbotScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ export const ChatbotScreen = ({ navigation }) => {
     setMessages([
       {
         id: '1',
-        text: 'Hello! I\'m your AI assistant for gourd farming. Ask me anything about cultivation, pollination, pests, or harvesting!',
+        text: t('chatbot.welcomeMessage'),
         role: 'assistant',
         timestamp: new Date().toISOString(),
       },
@@ -78,7 +80,7 @@ export const ChatbotScreen = ({ navigation }) => {
     // Add AI response
     const aiMessage = {
       id: (Date.now() + 1).toString(),
-      text: result.success ? result.reply : result.message || 'Sorry, I encountered an error.',
+      text: result.success ? result.reply : result.message || t('chatbot.errorMessage'),
       role: 'assistant',
       timestamp: new Date().toISOString(),
     };
@@ -146,8 +148,8 @@ export const ChatbotScreen = ({ navigation }) => {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>AI Assistant</Text>
-          <Text style={styles.headerSubtitle}>Gourd Farming Expert</Text>
+          <Text style={styles.headerTitle}>{t('chatbot.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('chatbot.subtitle')}</Text>
         </View>
         <View style={styles.headerRight} />
       </View>
@@ -166,7 +168,7 @@ export const ChatbotScreen = ({ navigation }) => {
       {/* Suggestions */}
       {showSuggestions && suggestions.length > 0 && messages.length <= 1 && (
         <View style={styles.suggestionsContainer}>
-          <Text style={styles.suggestionsTitle}>Quick suggestions:</Text>
+          <Text style={styles.suggestionsTitle}>{t('chatbot.quickSuggestions')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -189,7 +191,7 @@ export const ChatbotScreen = ({ navigation }) => {
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Thinking...</Text>
+          <Text style={styles.loadingText}>{t('chatbot.thinking')}</Text>
         </View>
       )}
 
@@ -201,7 +203,7 @@ export const ChatbotScreen = ({ navigation }) => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Ask me about gourd farming..."
+            placeholder={t('chatbot.placeholder')}
             placeholderTextColor={theme.colors.text.secondary}
             value={inputText}
             onChangeText={setInputText}

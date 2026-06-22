@@ -5,24 +5,28 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const GuestBanner = ({ 
-  message = 'Sign in to sync your data across devices.',
-  actionLabel = 'Sign In',
+  message,
+  actionLabel,
   onAction,
   icon = 'information-circle-outline',
   style,
 }) => {
+  const { t } = useTranslation();
+  const resolvedMessage = message || t('guestBanner.message');
+  const resolvedActionLabel = actionLabel || t('guestBanner.signIn');
   return (
     <View style={[styles.container, style]}>
       <View style={styles.content}>
         <Ionicons name={icon} size={20} color={theme.colors.primary} style={styles.icon} />
-        <Text style={styles.message}>{message}</Text>
+        <Text style={styles.message}>{resolvedMessage}</Text>
       </View>
       {onAction && (
         <TouchableOpacity style={styles.actionButton} onPress={onAction}>
-          <Text style={styles.actionText}>{actionLabel}</Text>
+          <Text style={styles.actionText}>{resolvedActionLabel}</Text>
           <Ionicons name="arrow-forward" size={14} color={theme.colors.primary} />
         </TouchableOpacity>
       )}

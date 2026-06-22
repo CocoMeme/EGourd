@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const CustomAlert = ({
@@ -20,6 +21,7 @@ export const CustomAlert = ({
   buttons = [],
   autoCloseDuration = 7000, // milliseconds (7 seconds default)
 }) => {
+  const { t } = useTranslation();
   const [fadeAnim] = React.useState(new Animated.Value(0));
   const [scaleAnim] = React.useState(new Animated.Value(0.8));
   const [timerAnim] = React.useState(new Animated.Value(1));
@@ -211,7 +213,7 @@ export const CustomAlert = ({
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
                 >
-                  <Text style={styles.buttonText}>OK</Text>
+                  <Text style={styles.buttonText}>{t('common.ok')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ) : (

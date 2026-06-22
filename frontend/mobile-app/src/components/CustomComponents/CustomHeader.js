@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const CustomHeader = ({ 
@@ -28,6 +29,8 @@ export const CustomHeader = ({
   variant = 'default', // 'default', 'scanner', 'results', 'management'
   backgroundColor,
 }) => {
+  const { t } = useTranslation();
+  
   // Get first letter of first name or fallback to 'U'
   const getInitials = () => {
     if (user?.firstName) {
@@ -41,7 +44,7 @@ export const CustomHeader = ({
     if (user?.firstName) {
       return user.firstName;
     }
-    return 'User';
+    return t('customHeader.user');
   };
 
   // Results variant - Clean minimal header for scan results
@@ -185,7 +188,7 @@ export const CustomHeader = ({
             </View>
           )}
           <View style={styles.nameContainer}>
-            <Text style={styles.greeting}>Good day,</Text>
+            <Text style={styles.greeting}>{t('customHeader.goodDay')}</Text>
             <Text style={styles.userName}>{getDisplayName()}</Text>
           </View>
         </View>

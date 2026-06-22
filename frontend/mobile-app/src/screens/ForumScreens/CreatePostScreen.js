@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { theme } from '../../styles';
 import { forumService } from '../../services';
+import { useTranslation } from 'react-i18next';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DRAWER_HEIGHT = SCREEN_HEIGHT * 0.95;
@@ -28,6 +29,7 @@ const DRAWER_HEIGHT = SCREEN_HEIGHT * 0.95;
 const CreatePostScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { onPostCreated } = route.params || {};
+  const { t } = useTranslation();
   
   const translateY = useRef(new Animated.Value(0)).current;
   const lastGestureDy = useRef(0);
@@ -73,31 +75,31 @@ const CreatePostScreen = ({ navigation, route }) => {
   ).current;
 
   const categories = [
-    { id: 'tips', label: 'Tips & Tricks', icon: 'bulb-outline', color: theme.colors.success },
-    { id: 'questions', label: 'Q&A', icon: 'help-circle-outline', color: theme.colors.info },
-    { id: 'showcase', label: 'Showcase', icon: 'image-outline', color: theme.colors.warning },
-    { id: 'discussion', label: 'Discussion', icon: 'chatbubbles-outline', color: theme.colors.primary },
+    { id: 'tips', label: t('forum.categories.tips'), icon: 'bulb-outline', color: theme.colors.success },
+    { id: 'questions', label: t('forum.categories.qa'), icon: 'help-circle-outline', color: theme.colors.info },
+    { id: 'showcase', label: t('forum.categories.showcase'), icon: 'image-outline', color: theme.colors.warning },
+    { id: 'discussion', label: t('forum.categories.discussion'), icon: 'chatbubbles-outline', color: theme.colors.primary },
   ];
 
   const handleSubmit = async () => {
     // Validation
     if (!title.trim()) {
-      Alert.alert('Missing Title', 'Please enter a title for your post.');
+      Alert.alert(t('forum.missingTitle'), t('forum.missingTitleMessage'));
       return;
     }
 
     if (!content.trim()) {
-      Alert.alert('Missing Content', 'Please write something in your post.');
+      Alert.alert(t('forum.missingContent'), t('forum.missingContentMessage'));
       return;
     }
 
     if (title.length < 5) {
-      Alert.alert('Title Too Short', 'Title must be at least 5 characters long.');
+      Alert.alert(t('forum.titleTooShort'), t('forum.titleTooShortMessage'));
       return;
     }
 
     if (content.length < 10) {
-      Alert.alert('Content Too Short', 'Content must be at least 10 characters long.');
+      Alert.alert(t('forum.contentTooShort'), t('forum.contentTooShortMessage'));
       return;
     }
 
@@ -127,8 +129,8 @@ const CreatePostScreen = ({ navigation, route }) => {
 
       if (response.success) {
         Alert.alert(
-          'Success!',
-          'Your post has been created successfully.',
+          t('forum.postSuccess'),
+          t('forum.postSuccessMessage'),
           [
             {
               text: 'OK',
@@ -142,11 +144,11 @@ const CreatePostScreen = ({ navigation, route }) => {
           ]
         );
       } else {
-        Alert.alert('Error', response.message || 'Failed to create post. Please try again.');
+        Alert.alert(t('forum.postFailed'), response.message || t('forum.postFailed'));
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      Alert.alert(t('forum.postFailed'), t('forum.postFailed'));
     } finally {
       setLoading(false);
     }
@@ -155,14 +157,14 @@ const CreatePostScreen = ({ navigation, route }) => {
   const handlePickImage = async () => {
     try {
       if (images.length >= 5) {
-        Alert.alert('Maximum Images', 'You can only upload up to 5 images per post.');
+        Alert.alert(t('forum.maxImages'), t('forum.maxImagesMessage'));
         return;
       }
 
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant permission to access your photos.');
+        Alert.alert(t('forum.permissionRequired'), t('forum.permissionRequiredMessage'));
         return;
       }
 
@@ -188,7 +190,7 @@ const CreatePostScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert(t('errors.generic'), t('forum.failedToPickImage'));
       setUploadingImage(false);
     }
   };
@@ -237,7 +239,7 @@ const CreatePostScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
             <Ionicons name="close" size={28} color={theme.colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Post</Text>
+          <Text style={styles.headerTitle}>{t('forum.createPostTitle')}</Text>
           <TouchableOpacity
             onPress={handleSubmit}
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -246,7 +248,7 @@ const CreatePostScreen = ({ navigation, route }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>Post</Text>
+              <Text style={styles.submitButtonText}>{t('forum.post')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -260,8 +262,8 @@ const CreatePostScreen = ({ navigation, route }) => {
         >
           {/* Category Selection - Dropdown */}
           <View style={styles.section}>
-            <Text style={styles.label}>Category *</Text>
-            <Text style={styles.hint}>Choose the best category for your post</Text>
+            <Text style={styles.label}>{t('forum.category')} *</Text>
+            <Text style={styles.hint}>{t('forum.categoryDesc')}</Text>
             <View style={styles.categoryDropdownWrapper}>
               <TouchableOpacity 
                 style={styles.categoryDropdown}
@@ -275,7 +277,7 @@ const CreatePostScreen = ({ navigation, route }) => {
                     color={categories.find(c => c.id === selectedCategory)?.color || theme.colors.primary}
                   />
                   <Text style={styles.categoryDropdownText}>
-                    {categories.find(c => c.id === selectedCategory)?.label || 'Select Category'}
+                    {categories.find(c => c.id === selectedCategory)?.label || t('forum.category')}
                   </Text>
                 </View>
                 <Ionicons 
@@ -327,11 +329,11 @@ const CreatePostScreen = ({ navigation, route }) => {
 
           {/* Title Input */}
           <View style={styles.section}>
-            <Text style={styles.label}>Title *</Text>
-            <Text style={styles.hint}>Make it clear and descriptive</Text>
+            <Text style={styles.label}>{t('forum.title')} *</Text>
+            <Text style={styles.hint}>{t('forum.titleDesc')}</Text>
             <TextInput
               style={styles.titleInput}
-              placeholder="e.g., Best practices for hand pollination"
+              placeholder={t('forum.titlePlaceholder')}
               placeholderTextColor={theme.colors.text.secondary}
               value={title}
               onChangeText={setTitle}
@@ -343,11 +345,11 @@ const CreatePostScreen = ({ navigation, route }) => {
 
           {/* Content Input */}
           <View style={styles.section}>
-            <Text style={styles.label}>Content *</Text>
-            <Text style={styles.hint}>Share your knowledge, question, or experience</Text>
+            <Text style={styles.label}>{t('forum.content')} *</Text>
+            <Text style={styles.hint}>{t('forum.contentDesc')}</Text>
             <TextInput
               style={styles.contentInput}
-              placeholder="Write your post content here..."
+              placeholder={t('forum.contentPlaceholder')}
               placeholderTextColor={theme.colors.text.secondary}
               value={content}
               onChangeText={setContent}
@@ -360,8 +362,8 @@ const CreatePostScreen = ({ navigation, route }) => {
 
           {/* Image Upload */}
           <View style={styles.section}>
-            <Text style={styles.label}>Images (Optional)</Text>
-            <Text style={styles.hint}>Add up to 5 photos to your post</Text>
+            <Text style={styles.label}>{t('forum.images')} ({t('common.optional')})</Text>
+            <Text style={styles.hint}>{t('forum.imagesDesc')}</Text>
             
             {/* Image Gallery */}
             {images.length > 0 && (
@@ -393,7 +395,7 @@ const CreatePostScreen = ({ navigation, route }) => {
                   <>
                     <Ionicons name="image-outline" size={32} color={theme.colors.primary} />
                     <Text style={styles.imagePickerText}>
-                      {images.length === 0 ? 'Tap to add images' : `Add more (${images.length}/5)`}
+                      {images.length === 0 ? t('forum.tapToAddImages') : `${t('forum.addMore')} (${images.length}/5)`}
                     </Text>
                   </>
                 )}
@@ -403,11 +405,11 @@ const CreatePostScreen = ({ navigation, route }) => {
 
           {/* Tags Input */}
           <View style={styles.section}>
-            <Text style={styles.label}>Tags (Optional)</Text>
-            <Text style={styles.hint}>Add up to 5 tags, separated by commas</Text>
+            <Text style={styles.label}>{t('forum.tags')}</Text>
+            <Text style={styles.hint}>{t('forum.tagsDesc')}</Text>
             <TextInput
               style={styles.tagsInput}
-              placeholder="e.g., pollination, tips, harvest"
+              placeholder={t('forum.tagsPlaceholder')}
               placeholderTextColor={theme.colors.text.secondary}
               value={tags}
               onChangeText={setTags}
@@ -428,12 +430,9 @@ const CreatePostScreen = ({ navigation, route }) => {
           <View style={styles.guidelinesBox}>
             <Ionicons name="information-circle-outline" size={20} color={theme.colors.info} />
             <View style={styles.guidelinesContent}>
-              <Text style={styles.guidelinesTitle}>Posting Guidelines</Text>
+              <Text style={styles.guidelinesTitle}>{t('forum.guidelinesReminder')}</Text>
               <Text style={styles.guidelinesText}>
-                • Be respectful and constructive{'\n'}
-                • Keep content relevant to gourd growing{'\n'}
-                • Avoid spam or self-promotion{'\n'}
-                • Use appropriate category
+                {t('forum.guidelinesText')}
               </Text>
             </View>
           </View>

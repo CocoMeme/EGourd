@@ -22,14 +22,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const FULL_MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 const GOURD_COLORS = {
   bitter_gourd: '#27AE60',
@@ -122,6 +117,35 @@ const GOURD_TIPS = {
 };
 
 export const SeasonalInsightsScreen = ({ navigation }) => {
+  const { t } = useTranslation();
+  const MONTHS = [
+    t('seasonalInsights.months_short.jan'),
+    t('seasonalInsights.months_short.feb'),
+    t('seasonalInsights.months_short.mar'),
+    t('seasonalInsights.months_short.apr'),
+    t('seasonalInsights.months_short.may'),
+    t('seasonalInsights.months_short.jun'),
+    t('seasonalInsights.months_short.jul'),
+    t('seasonalInsights.months_short.aug'),
+    t('seasonalInsights.months_short.sep'),
+    t('seasonalInsights.months_short.oct'),
+    t('seasonalInsights.months_short.nov'),
+    t('seasonalInsights.months_short.dec'),
+  ];
+  const FULL_MONTHS = [
+    t('seasonalInsights.months_full.january'),
+    t('seasonalInsights.months_full.february'),
+    t('seasonalInsights.months_full.march'),
+    t('seasonalInsights.months_full.april'),
+    t('seasonalInsights.months_full.may'),
+    t('seasonalInsights.months_full.june'),
+    t('seasonalInsights.months_full.july'),
+    t('seasonalInsights.months_full.august'),
+    t('seasonalInsights.months_full.september'),
+    t('seasonalInsights.months_full.october'),
+    t('seasonalInsights.months_full.november'),
+    t('seasonalInsights.months_full.december'),
+  ];
   const [seasonalData, setSeasonalData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -150,7 +174,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
       }
     } catch (err) {
       console.error('Error fetching seasonal data:', err);
-      setError('Unable to load seasonal data');
+      setError(t('seasonalInsights.unableToLoad'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -187,7 +211,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
       bestMonth: maxVal > 0 ? FULL_MONTHS[bestMonthIdx] : null,
       wetTotal,
       dryTotal,
-      preferredSeason: wetTotal > dryTotal ? 'Wet Season' : dryTotal > wetTotal ? 'Dry Season' : 'Both Seasons',
+      preferredSeason: wetTotal > dryTotal ? t('seasonalInsights.wetSeason') : dryTotal > wetTotal ? t('seasonalInsights.drySeason') : t('seasonalInsights.bothSeasons'),
       avgPerMonth: avgPerMonth.toFixed(1),
       activeMonths,
       hasData: total > 0,
@@ -213,7 +237,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         <Header navigation={navigation} />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading seasonal insights...</Text>
+          <Text style={styles.loadingText}>{t('seasonalInsights.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -227,7 +251,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
           <Ionicons name="cloud-offline-outline" size={48} color="#ccc" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={fetchData} style={styles.retryButton}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={styles.retryButtonText}>{t('seasonalInsights.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -257,10 +281,10 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
             />
             <View>
               <Text style={styles.seasonBannerTitle}>
-                {currentSeason === 'wet' ? 'Wet Season' : 'Dry Season'}
+                {currentSeason === 'wet' ? t('seasonalInsights.wetSeason') : t('seasonalInsights.drySeason')}
               </Text>
               <Text style={styles.seasonBannerSubtitle}>
-                {FULL_MONTHS[currentMonth]} — {currentSeason === 'wet' ? 'Jun to Nov' : 'Dec to May'}
+                {FULL_MONTHS[currentMonth]} — {currentSeason === 'wet' ? t('seasonalInsights.junToNov') : t('seasonalInsights.decToMay')}
               </Text>
             </View>
           </View>
@@ -270,19 +294,19 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         {/* Overall Summary */}
         {overallSummary && overallSummary.grandTotal > 0 && (
           <View style={styles.summaryCard}>
-            <Text style={styles.sectionTitle}>Overall Performance</Text>
+            <Text style={styles.sectionTitle}>{t('seasonalInsights.overallPerformance')}</Text>
             <View style={styles.summaryRow}>
               <SummaryBox
                 icon="checkmark-circle"
                 color={theme.colors.success}
                 value={overallSummary.grandTotal}
-                label="Total Pollinations"
+                label={t('seasonalInsights.totalPollinations')}
               />
               <SummaryBox
                 icon="trophy"
                 color="#F39C12"
                 value={overallSummary.topGourd.label}
-                label="Most Successful"
+                label={t('seasonalInsights.mostSuccessful')}
                 isText
               />
             </View>
@@ -313,8 +337,8 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
 
         {/* Gourd Type Selector */}
         <View style={styles.selectorCard}>
-          <Text style={styles.sectionTitle}>Gourd Analysis</Text>
-          <Text style={styles.sectionSubtitle}>Select a gourd type to see detailed insights</Text>
+          <Text style={styles.sectionTitle}>{t('seasonalInsights.gourdAnalysis')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('seasonalInsights.gourdAnalysisDesc')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -347,14 +371,14 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
           <View style={styles.chartCard}>
             <View style={styles.chartHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.chartTitle}>Monthly Pollination Success</Text>
-                <Text style={styles.chartSubMessage}>This is the pollination that has been successfully harvested</Text>
+                <Text style={styles.chartTitle}>{t('seasonalInsights.monthlyPollinationSuccess')}</Text>
+                <Text style={styles.chartSubMessage}>{t('seasonalInsights.monthlyDesc')}</Text>
               </View>
               {selectedGourdData.peakMonths?.length > 0 && (
                 <View style={[styles.peakBadge, { backgroundColor: `${GOURD_COLORS[selectedGourd]}18` }]}>
                   <Ionicons name="trending-up" size={14} color={GOURD_COLORS[selectedGourd]} />
                   <Text style={[styles.peakBadgeText, { color: GOURD_COLORS[selectedGourd] }]}>
-                    Peak: {selectedGourdData.peakMonths.join(', ')}
+                    {t('seasonalInsights.peakMonthsLabel')} {selectedGourdData.peakMonths.join(', ')}
                   </Text>
                 </View>
               )}
@@ -398,15 +422,15 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
             <View style={styles.chartLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: GOURD_COLORS[selectedGourd] }]} />
-                <Text style={styles.legendText}>Peak months</Text>
+                <Text style={styles.legendText}>{t('seasonalInsights.peakMonths')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: `${GOURD_COLORS[selectedGourd]}80` }]} />
-                <Text style={styles.legendText}>Active months</Text>
+                <Text style={styles.legendText}>{t('seasonalInsights.activeMonths')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendBox, { backgroundColor: '#E0E0E0' }]} />
-                <Text style={styles.legendText}>No data</Text>
+                <Text style={styles.legendText}>{t('seasonalInsights.noData')}</Text>
               </View>
             </View>
           </View>
@@ -415,30 +439,30 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         {/* Season Comparison */}
         {analysis?.hasData && (
           <View style={styles.comparisonCard}>
-            <Text style={styles.sectionTitle}>Season Comparison</Text>
+            <Text style={styles.sectionTitle}>{t('seasonalInsights.seasonComparison')}</Text>
             <View style={styles.comparisonRow}>
               <View style={[styles.comparisonBox, styles.wetBox]}>
                 <Ionicons name="rainy-outline" size={24} color="#3498DB" />
                 <Text style={styles.comparisonValue}>{analysis.wetTotal}</Text>
-                <Text style={styles.comparisonLabel}>Wet Season</Text>
-                <Text style={styles.comparisonSub}>Jun – Nov</Text>
+                <Text style={styles.comparisonLabel}>{t('seasonalInsights.wetSeason')}</Text>
+                <Text style={styles.comparisonSub}>{t('seasonalInsights.junToNov')}</Text>
               </View>
               <View style={styles.comparisonVs}>
-                <Text style={styles.vsText}>vs</Text>
+                <Text style={styles.vsText}>{t('seasonalInsights.vs')}</Text>
               </View>
               <View style={[styles.comparisonBox, styles.dryBox]}>
                 <Ionicons name="sunny-outline" size={24} color="#F39C12" />
                 <Text style={styles.comparisonValue}>{analysis.dryTotal}</Text>
-                <Text style={styles.comparisonLabel}>Dry Season</Text>
-                <Text style={styles.comparisonSub}>Dec – May</Text>
+                <Text style={styles.comparisonLabel}>{t('seasonalInsights.drySeason')}</Text>
+                <Text style={styles.comparisonSub}>{t('seasonalInsights.decToMay')}</Text>
               </View>
             </View>
             <View style={styles.verdictBox}>
               <Ionicons name="analytics-outline" size={18} color={theme.colors.primary} />
               <Text style={styles.verdictText}>
                 {analysis.wetTotal === analysis.dryTotal
-                  ? `${selectedGourdData?.label} performs equally in both seasons.`
-                  : `${selectedGourdData?.label} performs better during the ${analysis.preferredSeason} with ${Math.abs(analysis.wetTotal - analysis.dryTotal)} more successful pollinations.`}
+                  ? t('seasonalInsights.verdictEqual', { label: selectedGourdData?.label })
+                  : t('seasonalInsights.verdictBetter', { label: selectedGourdData?.label, season: analysis.preferredSeason, count: Math.abs(analysis.wetTotal - analysis.dryTotal) })}
               </Text>
             </View>
           </View>
@@ -447,12 +471,12 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         {/* Key Stats */}
         {analysis && (
           <View style={styles.statsCard}>
-            <Text style={styles.sectionTitle}>Key Statistics</Text>
+            <Text style={styles.sectionTitle}>{t('seasonalInsights.keyStatistics')}</Text>
             <View style={styles.statsGrid}>
-              <StatItem icon="bar-chart" label="Total Pollinations" value={analysis.total} />
-              <StatItem icon="calendar" label="Best Month" value={analysis.bestMonth || 'N/A'} isText />
-              <StatItem icon="time" label="Active Months" value={`${analysis.activeMonths}/12`} isText />
-              <StatItem icon="pulse" label="Monthly Average" value={analysis.avgPerMonth} isText />
+              <StatItem icon="bar-chart" label={t('seasonalInsights.totalPollinations')} value={analysis.total} />
+              <StatItem icon="calendar" label={t('seasonalInsights.bestMonth')} value={analysis.bestMonth || 'N/A'} isText />
+              <StatItem icon="time" label={t('seasonalInsights.activeMonthsLabel')} value={`${analysis.activeMonths}/12`} isText />
+              <StatItem icon="pulse" label={t('seasonalInsights.monthlyAverage')} value={analysis.avgPerMonth} isText />
             </View>
           </View>
         )}
@@ -464,7 +488,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
               <Text style={styles.tipsIcon}>{GOURD_ICONS[selectedGourd]}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionTitle}>{tips.name}</Text>
-                <Text style={styles.tipsSubtitle}>Growing Guide & Tips</Text>
+                <Text style={styles.tipsSubtitle}>{t('seasonalInsights.growingGuide')}</Text>
               </View>
             </View>
 
@@ -482,7 +506,7 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
             <View style={styles.pollinationAdvice}>
               <View style={styles.pollinationAdviceHeader}>
                 <Ionicons name="flower-outline" size={18} color={theme.colors.primary} />
-                <Text style={styles.pollinationAdviceTitle}>Pollination</Text>
+                <Text style={styles.pollinationAdviceTitle}>{t('seasonalInsights.pollination')}</Text>
               </View>
               <Text style={styles.pollinationAdviceText}>{tips.pollination}</Text>
             </View>
@@ -505,9 +529,9 @@ export const SeasonalInsightsScreen = ({ navigation }) => {
         {!analysis?.hasData && selectedGourdData && (
           <View style={styles.noDataCard}>
             <Ionicons name="leaf-outline" size={48} color="#ccc" />
-            <Text style={styles.noDataTitle}>No Pollination Data Yet</Text>
+            <Text style={styles.noDataTitle}>{t('seasonalInsights.noPollinationData')}</Text>
             <Text style={styles.noDataText}>
-              Start tracking your {selectedGourdData.label} pollinations to see seasonal trends and insights here.
+              {t('seasonalInsights.noPollinationDataDesc', { label: selectedGourdData.label })}
             </Text>
           </View>
         )}
@@ -525,7 +549,7 @@ const Header = ({ navigation }) => (
     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
       <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
     </TouchableOpacity>
-    <Text style={styles.headerTitle}>Season Insights</Text>
+    <Text style={styles.headerTitle}>{t('seasonalInsights.title')}</Text>
     <View style={{ width: 40 }} />
   </View>
 );

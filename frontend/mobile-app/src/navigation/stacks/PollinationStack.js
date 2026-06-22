@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { createStackNavigator } from '@react-navigation/stack';
 import {
     PollinationScreen,
@@ -15,6 +16,7 @@ import {
 const Stack = createStackNavigator();
 
 export const PollinationStack = () => {
+    const { t } = useTranslation();
     return (
         <Stack.Navigator
             screenOptions={{
@@ -33,11 +35,11 @@ export const PollinationStack = () => {
             <Stack.Screen
                 name="PlantForm"
                 component={PlantFormScreen}
-                options={{
-                    title: 'Plant Form',
+                options={() => ({
+                    title: t('pollination.plantForm'),
                     headerShown: true,
                     presentation: 'modal'
-                }}
+                })}
             />
             <Stack.Screen
                 name="PlantDetail"

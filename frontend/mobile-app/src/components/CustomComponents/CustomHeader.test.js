@@ -19,6 +19,23 @@ jest.mock('../../styles', () => ({
   },
 }));
 
+// Mock react-i18next to prevent test breakage when translation values change
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key) => {
+      const translations = {
+        'customHeader.goodDay': 'Good day,',
+        'customHeader.user': 'User',
+        'customHeader.guest': 'Guest',
+        'customHeader.welcome': 'Welcome',
+        'customHeader.back': 'Back',
+      };
+      return translations[key] || key;
+    },
+    i18n: { language: 'en', changeLanguage: jest.fn() },
+  }),
+}));
+
 describe('CustomHeader', () => {
   it('renders correctly with title', () => {
     const { getByText } = render(<CustomHeader title="Test Title" />);

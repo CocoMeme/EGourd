@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Updates from 'expo-updates';
+import { withTranslation } from 'react-i18next';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -34,9 +35,9 @@ class ErrorBoundary extends React.Component {
         <SafeAreaView style={styles.container}>
           <ScrollView contentContainerStyle={styles.content}>
             <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
-            <Text style={styles.title}>Something went wrong</Text>
+            <Text style={styles.title}>{this.props.t('errors.somethingWentWrong')}</Text>
             <Text style={styles.subtitle}>
-              We encountered an unexpected error.
+              {this.props.t('errors.unexpectedError')}
             </Text>
             
             <View style={styles.errorBox}>
@@ -51,7 +52,7 @@ class ErrorBoundary extends React.Component {
             </View>
 
             <TouchableOpacity style={styles.button} onPress={this.handleRestart}>
-              <Text style={styles.buttonText}>Restart App</Text>
+              <Text style={styles.buttonText}>{this.props.t('errors.restartApp')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -118,4 +119,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ErrorBoundary;
+export default withTranslation()(ErrorBoundary);

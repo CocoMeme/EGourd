@@ -1,23 +1,25 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 /**
  * LeafQualityMetrics - Animated bar display for leaf health/quality
  */
 export const LeafQualityMetrics = ({ healthData, confidence }) => {
+    const { t } = useTranslation();
     if (!healthData) return null;
 
     const metrics = [
-        { label: 'Overall Health', value: healthData.healthScore || 0, color: '#4CAF50' },
-        { label: 'Variety Confidence', value: confidence || 0, color: '#2196F3' },
-        { label: 'Vibrancy', value: (healthData.chlorophyllLevel === 'healthy' ? 95 : healthData.chlorophyllLevel === 'yellowing' ? 60 : 30), color: '#8BC34A' },
-        { label: 'Structural Integrity', value: (100 - (healthData.visibleIssues?.length || 0) * 15), color: '#9C27B0' }
+        { label: t('scanResults.leaf.overallHealth'), value: healthData.healthScore || 0, color: '#4CAF50' },
+        { label: t('scanResults.leaf.varietyConfidence'), value: confidence || 0, color: '#2196F3' },
+        { label: t('scanResults.leaf.vibrancy'), value: (healthData.chlorophyllLevel === 'healthy' ? 95 : healthData.chlorophyllLevel === 'yellowing' ? 60 : 30), color: '#8BC34A' },
+        { label: t('scanResults.leaf.structuralIntegrity'), value: (100 - (healthData.visibleIssues?.length || 0) * 15), color: '#9C27B0' }
     ];
 
     return (
         <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Quality Metrics</Text>
+            <Text style={styles.sectionTitle}>{t('scanResults.leaf.qualityMetrics')}</Text>
             {metrics.map((metric, index) => (
                 <MetricBar key={index} label={metric.label} value={metric.value} color={metric.color} />
             ))}

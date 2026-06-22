@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const FeaturedScanCard = ({ onPress }) => {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity 
       style={styles.container} 
@@ -19,9 +21,9 @@ export const FeaturedScanCard = ({ onPress }) => {
       >
         <View style={styles.content}>
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Start Scanning</Text>
+            <Text style={styles.title}>{t('home.startScanning')}</Text>
             <Text style={styles.subtitle}>
-              Analyze your gourd's ripeness instantly
+              {t('home.analyzeRipeness')}
             </Text>
           </View>
           <View style={styles.iconContainer}>

@@ -14,11 +14,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../services';
 import { theme } from '../../styles';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 export const AdminDashboardScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -90,7 +92,7 @@ export const AdminDashboardScreen = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading Dashboard...</Text>
+        <Text style={styles.loadingText}>{t('admin.dashboard.loading')}</Text>
       </View>
     );
   }
@@ -110,8 +112,8 @@ export const AdminDashboardScreen = ({ navigation }) => {
       >
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>Admin Dashboard</Text>
-            <Text style={styles.headerSubtitle}>User Management System</Text>
+            <Text style={styles.headerTitle}>{t('admin.dashboard.title')}</Text>
+            <Text style={styles.headerSubtitle}>{t('admin.dashboard.subtitle')}</Text>
           </View>
           <TouchableOpacity
             style={styles.refreshButton}
@@ -130,31 +132,31 @@ export const AdminDashboardScreen = ({ navigation }) => {
       >
         {/* Overview Stats */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.overview')}</Text>
           <View style={styles.statsGrid}>
             <StatCard
-              title="Total Users"
+              title={t('admin.dashboard.totalUsers')}
               value={overview.totalUsers || 0}
               icon="people"
               color={theme.colors.primary}
               onPress={() => navigation.navigate('UserManagement')}
             />
             <StatCard
-              title="Active Users"
+              title={t('admin.dashboard.activeUsers')}
               value={overview.activeUsers || 0}
               icon="checkmark-circle"
               color="#4CAF50"
               onPress={() => navigation.navigate('UserManagement', { filter: 'active' })}
             />
             <StatCard
-              title="Inactive Users"
+              title={t('admin.dashboard.inactiveUsers')}
               value={overview.inactiveUsers || 0}
               icon="close-circle"
               color="#F44336"
               onPress={() => navigation.navigate('UserManagement', { filter: 'inactive' })}
             />
             <StatCard
-              title="Verified"
+              title={t('admin.dashboard.verified')}
               value={overview.verifiedUsers || 0}
               icon="shield-checkmark"
               color="#2196F3"
@@ -165,15 +167,15 @@ export const AdminDashboardScreen = ({ navigation }) => {
 
         {/* Recent Activity */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.recentActivity')}</Text>
           <View style={styles.activityGrid}>
             <View style={styles.activityCard}>
               <Text style={styles.activityValue}>{overview.newUsers7Days || 0}</Text>
-              <Text style={styles.activityLabel}>New Users (7 days)</Text>
+              <Text style={styles.activityLabel}>{t('admin.dashboard.newUsers7Days')}</Text>
             </View>
             <View style={styles.activityCard}>
               <Text style={styles.activityValue}>{overview.newUsers30Days || 0}</Text>
-              <Text style={styles.activityLabel}>New Users (30 days)</Text>
+              <Text style={styles.activityLabel}>{t('admin.dashboard.newUsers30Days')}</Text>
             </View>
           </View>
         </View>
@@ -181,31 +183,31 @@ export const AdminDashboardScreen = ({ navigation }) => {
         {/* Forum Stats */}
         {dashboardData?.forumStats && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Forum Statistics</Text>
+            <Text style={styles.sectionTitle}>{t('admin.dashboard.forumStatistics')}</Text>
             <View style={styles.statsGrid}>
               <StatCard
-                title="Pending Posts"
+                title={t('admin.dashboard.pendingPosts')}
                 value={dashboardData.forumStats.pendingPosts || 0}
                 icon="time"
                 color="#FF9800"
                 onPress={() => navigation.navigate('ForumManagement', { filter: 'pending' })}
               />
               <StatCard
-                title="Active Posts"
+                title={t('admin.dashboard.activePosts')}
                 value={dashboardData.forumStats.activePosts || 0}
                 icon="chatbubble-ellipses"
                 color="#4CAF50"
                 onPress={() => navigation.navigate('ForumManagement', { filter: 'active' })}
               />
               <StatCard
-                title="Flagged Posts"
+                title={t('admin.dashboard.flaggedPosts')}
                 value={dashboardData.forumStats.flaggedPosts || 0}
                 icon="flag"
                 color="#9C27B0"
                 onPress={() => navigation.navigate('ForumManagement', { filter: 'flagged' })}
               />
               <StatCard
-                title="Total Posts"
+                title={t('admin.dashboard.totalPosts')}
                 value={dashboardData.forumStats.totalPosts || 0}
                 icon="chatbubbles"
                 color={theme.colors.primary}
@@ -217,7 +219,7 @@ export const AdminDashboardScreen = ({ navigation }) => {
 
         {/* Users by Role */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Users by Role</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.usersByRole')}</Text>
           <View style={styles.roleContainer}>
             {Object.entries(usersByRole).map(([role, count]) => (
               <View key={role} style={styles.roleItem}>
@@ -233,7 +235,7 @@ export const AdminDashboardScreen = ({ navigation }) => {
 
         {/* Users by Provider */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Authentication Providers</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.authProviders')}</Text>
           <View style={styles.roleContainer}>
             {Object.entries(usersByProvider).map(([provider, count]) => (
               <View key={provider} style={styles.roleItem}>
@@ -253,28 +255,28 @@ export const AdminDashboardScreen = ({ navigation }) => {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.quickActions')}</Text>
           <View style={styles.quickActionsGrid}>
             <QuickAction
-              title="Manage Users"
+              title={t('admin.dashboard.manageUsers')}
               icon="people"
               color={theme.colors.primary}
               onPress={() => navigation.navigate('UserManagement')}
             />
             <QuickAction
-              title="Manage Forum"
+              title={t('admin.dashboard.manageForum')}
               icon="chatbubbles"
               color="#4CAF50"
               onPress={() => navigation.navigate('ForumManagement')}
             />
             <QuickAction
-              title="View Reports"
+              title={t('admin.dashboard.viewReports')}
               icon="stats-chart"
               color="#FF9800"
               onPress={() => {}}
             />
             <QuickAction
-              title="Settings"
+              title={t('admin.dashboard.settings')}
               icon="settings"
               color="#9C27B0"
               onPress={() => {}}

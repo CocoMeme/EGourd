@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Animated, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const RecentScanCard = ({ 
@@ -14,6 +15,7 @@ export const RecentScanCard = ({
   onDelete,
   style 
 }) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const translateX = useRef(new Animated.Value(0)).current;
   const swipeThreshold = -80;
@@ -88,9 +90,9 @@ export const RecentScanCard = ({
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays === 0) return t('home.today');
+    if (diffDays === 1) return t('home.yesterday');
+    if (diffDays < 7) return t('home.daysAgo', { count: diffDays });
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -111,7 +113,7 @@ export const RecentScanCard = ({
       <View style={styles.deleteContainer}>
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Ionicons name="trash" size={20} color="#fff" />
-          <Text style={styles.deleteText}>Delete</Text>
+          <Text style={styles.deleteText}>{t('common.delete')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -154,7 +156,7 @@ export const RecentScanCard = ({
           {/* Content */}
           <View style={styles.contentContainer}>
             <Text style={styles.nameText} numberOfLines={1}>
-              {name || result || 'Unnamed Scan'}
+              {name || result || t('home.unnamedScan')}
             </Text>
             
             <View style={styles.metaRow}>

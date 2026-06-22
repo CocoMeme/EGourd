@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles';
 import { modelService } from '../../services/modelService';
 import { CustomHeader } from '../../components/CustomComponents/CustomHeader';
+import { useTranslation } from 'react-i18next';
 
 const SCAN_INTERVAL = 200; // 200ms between predictions
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,16 +35,14 @@ const GOURD_TYPE_MAPPING = {
   'Squash': 'kalabasa',
 };
 
-// Reverse mapping for display
-const GOURD_TYPE_DISPLAY = {
-  bitter_gourd: 'Bitter Gourd',
-  sponge_gourd: 'Sponge Gourd',
-  bottle_gourd: 'Bottle Gourd',
-  cucumber: 'Cucumber',
-  kalabasa: 'Squash',
-};
-
 export const FlowerCounterCameraScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const GOURD_TYPE_DISPLAY = {
+    bitter_gourd: t('flowerCounter.gourdTypes.bitter_gourd'),
+    bottle_gourd: t('flowerCounter.gourdTypes.bottle_gourd'),
+    cucumber: t('flowerCounter.gourdTypes.cucumber'),
+    kalabasa: t('flowerCounter.gourdTypes.kalabasa'),
+  };
   const { onFlowerDetected, plantGourdType, plantName } = route.params || {};
   
   const [facing, setFacing] = useState('back');
@@ -78,9 +77,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
       } catch (error) {
         console.error('❌ TM model initialization failed:', error);
         Alert.alert(
-          'Model Error',
-          'Failed to load flower detection model. Please try again.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          t('camera.modelError'),
+          t('camera.modelError'),
+          [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
         );
       }
     };
@@ -261,7 +260,7 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
    */
   const handleAddToCount = () => {
     if (!currentPrediction?.isFlower || !isStable) {
-      Alert.alert('Not Ready', 'Please point the camera at a flower until detection is stable.');
+      Alert.alert(t('flowerCounter.notReady'), t('flowerCounter.notReadyMessage'));
       return;
     }
 
@@ -274,9 +273,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
       if (detectedGourdType && detectedGourdType !== plantGourdType) {
         const expectedName = GOURD_TYPE_DISPLAY[plantGourdType] || plantGourdType;
         Alert.alert(
-          'Wrong Flower Type',
-          `This flower appears to be a ${gourdType} flower, but your plant is a ${expectedName}.\n\nPlease only count flowers from this plant.`,
-          [{ text: 'Try Again' }]
+          t('pollination.wrongFlowerType'),
+          t('pollination.wrongFlowerTypeMessage', { detectedType: gourdType, plantType: expectedName }),
+          [{ text: t('flowerCounter.tryAgain') }]
         );
         return;
       }
@@ -312,9 +311,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={theme.colors.text.secondary} />
-          <Text style={styles.permissionText}>Camera permission required</Text>
+          <Text style={styles.permissionText}>{t('camera.cameraPermissionRequired')}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={styles.permissionButtonText}>{t('camera.grantPermission')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -338,9 +337,9 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
         onBackPress={() => navigation.goBack()}
         centerComponent={() => (
           <View style={styles.headerBadge}>
-            <Text style={styles.headerTitle}>🌸 Flower Counter</Text>
+            <Text style={styles.headerTitle}>{t('flowerCounter.title')}</Text>
             {expectedPlantName && (
-              <Text style={styles.headerSubtitle}>For: {expectedPlantName}</Text>
+              <Text style={styles.headerSubtitle}>{t('flowerCounter.forPlant', { name: expectedPlantName })}</Text>
             )}
           </View>
         )}
@@ -373,12 +372,12 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
         {!isModelReady ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.loadingText}>Loading detection model...</Text>
+            <Text style={styles.loadingText}>{t('flowerCounter.loadingModel')}</Text>
           </View>
         ) : !currentPrediction ? (
           <View style={styles.waitingContainer}>
             <Ionicons name="flower-outline" size={48} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.waitingText}>Point camera at a flower...</Text>
+            <Text style={styles.waitingText}>{t('flowerCounter.pointCamera')}</Text>
           </View>
         ) : (
           <View style={styles.detectionResult}>
@@ -405,7 +404,7 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
                   </Text>
                   {!isMatch && plantGourdType && (
                     <Text style={styles.mismatchText}>
-                      (Expected: {GOURD_TYPE_DISPLAY[plantGourdType]})
+                      ({t('flowerCounter.forPlant', { name: GOURD_TYPE_DISPLAY[plantGourdType] })})
                     </Text>
                   )}
                 </View>
@@ -425,20 +424,20 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
                     styles.genderText,
                     { color: currentPrediction.gender === 'male' ? '#2196F3' : '#E91E63' }
                   ]}>
-                    {currentPrediction.gender === 'male' ? '🌼 Male Flower' : '🌸 Female Flower'}
+                    {currentPrediction.gender === 'male' ? t('flowerCounter.maleFlower') : t('flowerCounter.femaleFlower')}
                   </Text>
                 </>
               ) : (
                 <>
                   <Ionicons name="help-circle" size={48} color="#9E9E9E" />
-                  <Text style={styles.notFlowerText}>Not a Flower</Text>
+                  <Text style={styles.notFlowerText}>{t('flowerCounter.notAFlower')}</Text>
                 </>
               )}
             </View>
 
             {/* Confidence */}
             <View style={styles.confidenceRow}>
-              <Text style={styles.confidenceLabel}>Confidence:</Text>
+              <Text style={styles.confidenceLabel}>{t('camera.confidence')}:</Text>
               <Text style={[
                 styles.confidenceValue,
                 { color: getConfidenceColor(currentPrediction.confidence) }
@@ -454,7 +453,7 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
                 { backgroundColor: isStable ? '#4CAF50' : '#FFA500' }
               ]} />
               <Text style={styles.stabilityText}>
-                {isStable ? 'Stable - Ready to add!' : 'Stabilizing...'}
+                {isStable ? t('flowerCounter.stable') : t('flowerCounter.stabilizing')}
               </Text>
             </View>
           </View>
@@ -479,12 +478,12 @@ export const FlowerCounterCameraScreen = ({ navigation, route }) => {
               styles.addButtonText,
               (!isStable || !currentPrediction?.isFlower) && styles.addButtonTextDisabled
             ]}>
-              Add to Count
+              {t('flowerCounter.addToCount')}
             </Text>
           </TouchableOpacity>
 
           <Text style={styles.hintText}>
-            Point at a flower until stable, then tap to add
+            {t('flowerCounter.hint')}
           </Text>
         </View>
       </View>

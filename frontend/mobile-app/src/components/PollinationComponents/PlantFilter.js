@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
 export const PlantFilter = ({ 
@@ -10,21 +11,22 @@ export const PlantFilter = ({
   isLoading = false,
   onRefresh 
 }) => {
+  const { t } = useTranslation();
   const statusOptions = [
-    { value: '', label: 'All Status', icon: 'apps' },
-    { value: 'planted', label: 'Planted', icon: 'leaf' },
-    { value: 'flowering', label: 'Flowering', icon: 'flower' },
-    { value: 'pollinated', label: 'Pollinated', icon: 'heart' },
-    { value: 'fruiting', label: 'Fruiting', icon: 'nutrition' },
-    { value: 'harvested', label: 'Harvested', icon: 'checkmark-circle' },
+    { value: '', label: t('plantService.statuses.all'), icon: 'apps' },
+    { value: 'planted', label: t('plantService.statuses.planted'), icon: 'leaf' },
+    { value: 'flowering', label: t('plantService.statuses.flowering'), icon: 'flower' },
+    { value: 'pollinated', label: t('plantService.statuses.pollinated'), icon: 'heart' },
+    { value: 'fruiting', label: t('plantService.statuses.fruiting'), icon: 'nutrition' },
+    { value: 'harvested', label: t('plantService.statuses.harvested'), icon: 'checkmark-circle' },
   ];
 
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'name', label: 'Plant Type' },
-    { value: 'status', label: 'Status' },
-    { value: 'pollination', label: 'Pollination Window' },
+    { value: 'newest', label: t('pollination.sortNewest') },
+    { value: 'oldest', label: t('pollination.sortOldest') },
+    { value: 'name', label: t('pollination.sortPlantType') },
+    { value: 'status', label: t('pollination.sortStatus') },
+    { value: 'pollination', label: t('pollination.sortPollinationWindow') },
   ];
 
   const handleStatusFilter = (status) => {
@@ -40,7 +42,7 @@ export const PlantFilter = ({
   };
 
   const formatPlantName = (name) => {
-    if (!name) return 'All Plants';
+    if (!name) return t('plantService.statuses.all');
     return name;
   };
 
@@ -48,7 +50,7 @@ export const PlantFilter = ({
     <View style={styles.container}>
       {/* Header with refresh */}
       <View style={styles.header}>
-        <Text style={styles.title}>Filter & Sort</Text>
+        <Text style={styles.title}>{t('pollination.filterAndSort')}</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={onRefresh}
@@ -64,7 +66,7 @@ export const PlantFilter = ({
 
       {/* Status Filter */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Status</Text>
+        <Text style={styles.sectionTitle}>{t('common.status')}</Text>
         <FlatList
           data={statusOptions}
           horizontal
@@ -102,15 +104,15 @@ export const PlantFilter = ({
 
       {/* Plant Type Filter */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plant Type</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.plantType')}</Text>
         <FlatList
           data={[
-            { value: '', label: 'All Plants' },
-            { value: 'Bitter Gourd', label: 'Bitter Gourd' },
-            { value: 'Sponge Gourd', label: 'Sponge Gourd' },
-            { value: 'Bottle Gourd', label: 'Bottle Gourd' },
-            { value: 'Squash', label: 'Squash' },
-            { value: 'Cucumber', label: 'Cucumber' },
+            { value: '', label: t('plantService.statuses.all') },
+            { value: 'Bitter Gourd', label: t('plantService.varieties.bitter_gourd') },
+            { value: 'Sponge Gourd', label: t('plantService.varieties.sponge_gourd') },
+            { value: 'Bottle Gourd', label: t('plantService.varieties.bottle_gourd') },
+            { value: 'Squash', label: t('plantService.varieties.kalabasa') },
+            { value: 'Cucumber', label: t('plantService.varieties.cucumber') },
           ]}
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -137,7 +139,7 @@ export const PlantFilter = ({
 
       {/* Sort Options */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Sort By</Text>
+        <Text style={styles.sectionTitle}>{t('pollination.sortBy')}</Text>
         <FlatList
           data={sortOptions}
           horizontal
@@ -166,12 +168,12 @@ export const PlantFilter = ({
       {/* Active Filters Summary */}
       {(filters.status || filters.name || filters.sort !== 'newest') && (
         <View style={styles.activeFilters}>
-          <Text style={styles.activeFiltersTitle}>Active Filters:</Text>
+          <Text style={styles.activeFiltersTitle}>{t('pollination.activeFilters')}:</Text>
           <View style={styles.activeFiltersList}>
             {filters.status && (
               <View style={styles.activeFilterItem}>
                 <Text style={styles.activeFilterText}>
-                  Status: {statusOptions.find(s => s.value === filters.status)?.label}
+                  {t('pollination.activeFilterStatus')}: {statusOptions.find(s => s.value === filters.status)?.label}
                 </Text>
                 <TouchableOpacity onPress={() => handleStatusFilter(filters.status)}>
                   <Ionicons name="close" size={14} color={theme.colors.text.secondary} />
@@ -181,7 +183,7 @@ export const PlantFilter = ({
             {filters.name && (
               <View style={styles.activeFilterItem}>
                 <Text style={styles.activeFilterText}>
-                  Plant: {formatPlantName(filters.name)}
+                  {t('pollination.activeFilterPlant')}: {formatPlantName(filters.name)}
                 </Text>
                 <TouchableOpacity onPress={() => handlePlantTypeFilter(filters.name)}>
                   <Ionicons name="close" size={14} color={theme.colors.text.secondary} />
@@ -191,7 +193,7 @@ export const PlantFilter = ({
             {filters.sort !== 'newest' && (
               <View style={styles.activeFilterItem}>
                 <Text style={styles.activeFilterText}>
-                  Sort: {sortOptions.find(s => s.value === filters.sort)?.label}
+                  {t('pollination.activeFilterSort')}: {sortOptions.find(s => s.value === filters.sort)?.label}
                 </Text>
                 <TouchableOpacity onPress={() => handleSortChange('newest')}>
                   <Ionicons name="close" size={14} color={theme.colors.text.secondary} />
@@ -203,7 +205,7 @@ export const PlantFilter = ({
               style={styles.clearAllButton}
               onPress={() => onFilterChange({ status: '', name: '', sort: 'newest' })}
             >
-              <Text style={styles.clearAllText}>Clear All</Text>
+              <Text style={styles.clearAllText}>{t('pollination.clearAll')}</Text>
             </TouchableOpacity>
           </View>
         </View>

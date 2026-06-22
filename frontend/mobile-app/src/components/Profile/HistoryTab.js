@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { scanService, guestStorageService } from '../../services';
 import { RecentScanCard, GuestBanner } from '../../components';
 
 export const HistoryTab = ({ navigation, route, isGuest }) => {
+    const { t } = useTranslation();
     const [scans, setScans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -26,18 +28,18 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
     const [selectedGender, setSelectedGender] = useState('all');
 
     const varieties = [
-        { id: 'all', label: 'All' },
-        { id: 'Bitter Gourd', label: 'Bitter Gourd' },
-        { id: 'Sponge Gourd', label: 'Sponge Gourd' },
-        { id: 'Bottle Gourd', label: 'Bottle Gourd' },
-        { id: 'Cucumber', label: 'Cucumber' },
-        { id: 'Squash', label: 'Squash' },
+        { id: 'all', label: t('profile.analysisTab.typeFilters.all') },
+        { id: 'Bitter Gourd', label: t('plantService.varieties.bitterGourd') },
+        { id: 'Sponge Gourd', label: t('plantService.varieties.spongeGourd') },
+        { id: 'Bottle Gourd', label: t('plantService.varieties.bottleGourd') },
+        { id: 'Cucumber', label: t('plantService.varieties.cucumber') },
+        { id: 'Squash', label: t('plantService.varieties.squash') },
     ];
 
     const genders = [
-        { id: 'all', label: 'All' },
-        { id: 'male', label: 'Male' },
-        { id: 'female', label: 'Female' },
+        { id: 'all', label: t('profile.analysisTab.typeFilters.all') },
+        { id: 'male', label: t('profile.historyTab.male') },
+        { id: 'female', label: t('profile.historyTab.female') },
     ];
 
     // If filter is passed via route params (from Home screen stats)
@@ -87,7 +89,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                 });
             } catch (error) {
                 console.error('Navigation error:', error);
-                Alert.alert('Error', 'Could not open scan details.');
+                Alert.alert(t('common.error'), t('profile.historyTab.couldNotOpen'));
             }
         } else {
             console.warn('Navigation prop is missing in HistoryTab');
@@ -122,7 +124,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
     const renderItem = ({ item }) => (
         <RecentScanCard
             imageUri={item.imageUrl}
-            result={`${item.prediction} Flower`}
+            result={`${item.prediction} ${t('camera.flower')}`}
             date={item.date}
             confidence={item.confidence}
             name={item.name}
@@ -135,12 +137,12 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
 
     const handleDelete = async (scanId) => {
         Alert.alert(
-            'Delete Scan',
-            'Are you sure you want to delete this scan?',
+            t('profile.historyTab.deleteScan'),
+            t('profile.historyTab.deleteConfirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('common.delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -153,7 +155,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                             setScans(prev => prev.filter(scan => (scan._id || scan.id) !== scanId));
                         } catch (error) {
                             console.error('Error deleting scan:', error);
-                            Alert.alert('Error', 'Failed to delete scan. Please try again.');
+                            Alert.alert(t('common.error'), t('profile.historyTab.deleteFailed'));
                         }
                     }
                 }
@@ -164,10 +166,9 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
             <Ionicons name="images-outline" size={64} color={theme.colors.text.secondary} />
-            <Text style={styles.emptyText}>No scans yet</Text>
+            <Text style={styles.emptyText}>{t('profile.historyTab.noScansYet')}</Text>
             <Text style={styles.emptySubtext}>
-                Your scan history will appear here.
-                Start by scanning a flower!
+                {t('profile.historyTab.noScansMessage')}
             </Text>
         </View>
     );
@@ -184,7 +185,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
         <View style={styles.container}>
             {isGuest && (
                 <GuestBanner
-                    message="Your scan history is stored locally on this device. Sign in to sync across devices."
+                    message={t('guestBanner.message')}
                     icon="phone-portrait-outline"
                     style={{ marginHorizontal: theme.spacing.md, marginTop: theme.spacing.md }}
                 />
@@ -194,7 +195,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                 <Ionicons name="search" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Search by name, variety..."
+                    placeholder={t('profile.historyTab.searchPlaceholder')}
                     placeholderTextColor={theme.colors.text.secondary}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -214,7 +215,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.filterRow}
                 >
-                    <Text style={styles.filterLabel}>Variety:</Text>
+                    <Text style={styles.filterLabel}>{t('profile.historyTab.variety')}</Text>
                     {varieties.map(variety => (
                         <TouchableOpacity
                             key={variety.id}
@@ -240,7 +241,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.filterRow}
                 >
-                    <Text style={styles.filterLabel}>Gender:</Text>
+                    <Text style={styles.filterLabel}>{t('profile.historyTab.gender')}</Text>
                     {genders.map(gender => (
                         <TouchableOpacity
                             key={gender.id}
@@ -265,7 +266,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
             {(searchQuery !== '' || selectedVariety !== 'all' || selectedGender !== 'all') && (
                 <View style={styles.resultsCount}>
                     <Text style={styles.resultsCountText}>
-                        {filteredScans.length} result{filteredScans.length !== 1 ? 's' : ''}
+                        {t('profile.historyTab.results', { count: filteredScans.length })}
                     </Text>
                     {(selectedVariety !== 'all' || selectedGender !== 'all' || searchQuery !== '') && (
                         <TouchableOpacity 
@@ -276,7 +277,7 @@ export const HistoryTab = ({ navigation, route, isGuest }) => {
                             }}
                             style={styles.clearAllButton}
                         >
-                            <Text style={styles.clearAllText}>Clear all</Text>
+                            <Text style={styles.clearAllText}>{t('profile.historyTab.clearAll')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>

@@ -7,15 +7,19 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 
-const FLOWER_VARIETIES = [
-  'Bitter Gourd', 'Sponge Gourd', 'Bottle Gourd', 'Cucumber', 'Squash'
-];
+const VARIETY_MAP = {
+  'Bitter Gourd': 'plantService.varieties.bitter_gourd',
+  'Sponge Gourd': 'plantService.varieties.sponge_gourd',
+  'Bottle Gourd': 'plantService.varieties.bottle_gourd',
+  'Cucumber': 'plantService.varieties.cucumber',
+  'Squash': 'plantService.varieties.kalabasa',
+};
 
-const LEAF_VARIETIES = [
-  'Bitter Gourd', 'Sponge Gourd', 'Bottle Gourd', 'Cucumber', 'Squash'
-];
+const FLOWER_VARIETIES = Object.keys(VARIETY_MAP);
+const LEAF_VARIETIES = Object.keys(VARIETY_MAP);
 
 export const PredictionFeedbackModal = ({
   visible,
@@ -24,6 +28,7 @@ export const PredictionFeedbackModal = ({
   originalGender,
   onSubmit,
 }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1); // 1 = ask correct, 2 = pick correct
   const [selectedVariety, setSelectedVariety] = useState(originalVariety);
   const [selectedGender, setSelectedGender] = useState(originalGender);
@@ -66,27 +71,27 @@ export const PredictionFeedbackModal = ({
         <View style={styles.content}>
           {step === 1 ? (
             <>
-              <Text style={styles.title}>Was this prediction correct?</Text>
+              <Text style={styles.title}>{t('scanResults.wasPredictionCorrect')}</Text>
               <Text style={styles.description}>
-                Help us improve the AI by confirming if the prediction was accurate.
+                {t('scanResults.feedbackDescription')}
               </Text>
               
               <View style={styles.buttonRow}>
                 <TouchableOpacity style={[styles.button, styles.btnNo]} onPress={handleIncorrect}>
                   <Ionicons name="close" size={20} color={theme.colors.error} />
-                  <Text style={[styles.btnText, { color: theme.colors.error }]}>No, fix it</Text>
+                  <Text style={[styles.btnText, { color: theme.colors.error }]}>{t('scanResults.noFixIt')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.button, styles.btnYes]} onPress={handleCorrect}>
                   <Ionicons name="checkmark" size={20} color="#fff" />
-                  <Text style={[styles.btnText, { color: '#fff' }]}>Yes, correct</Text>
+                  <Text style={[styles.btnText, { color: '#fff' }]}>{t('scanResults.yesCorrect')}</Text>
                 </TouchableOpacity>
               </View>
             </>
           ) : (
             <>
-              <Text style={styles.title}>Correct the Prediction</Text>
+              <Text style={styles.title}>{t('scanResults.correctPrediction')}</Text>
               
-              <Text style={styles.label}>Select correct variety:</Text>
+              <Text style={styles.label}>{t('scanResults.selectCorrectVariety')}:</Text>
               <View style={styles.chipContainer}>
                 {varieties.map(v => (
                   <TouchableOpacity
@@ -94,14 +99,14 @@ export const PredictionFeedbackModal = ({
                     style={[styles.chip, selectedVariety === v && styles.chipActive]}
                     onPress={() => setSelectedVariety(v)}
                   >
-                    <Text style={[styles.chipText, selectedVariety === v && styles.chipTextActive]}>{v}</Text>
+                    <Text style={[styles.chipText, selectedVariety === v && styles.chipTextActive]}>{t(VARIETY_MAP[v])}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {scanType === 'flower' && (
                 <>
-                  <Text style={styles.label}>Select correct gender:</Text>
+                  <Text style={styles.label}>{t('scanResults.selectCorrectGender')}:</Text>
                   <View style={styles.chipContainer}>
                     {['male', 'female'].map(g => (
                       <TouchableOpacity
@@ -110,7 +115,7 @@ export const PredictionFeedbackModal = ({
                         onPress={() => setSelectedGender(g)}
                       >
                         <Text style={[styles.chipText, selectedGender === g && styles.chipTextActive]}>
-                          {g.charAt(0).toUpperCase() + g.slice(1)}
+                          {g === 'male' ? t('common.male') : t('common.female')}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -119,7 +124,7 @@ export const PredictionFeedbackModal = ({
               )}
 
               <TouchableOpacity style={[styles.button, styles.btnSubmit]} onPress={handleFixSubmit}>
-                <Text style={[styles.btnText, { color: '#fff' }]}>Submit Correction</Text>
+                <Text style={[styles.btnText, { color: '#fff' }]}>{t('scanResults.submitCorrection')}</Text>
               </TouchableOpacity>
             </>
           )}

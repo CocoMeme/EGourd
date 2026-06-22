@@ -34,29 +34,18 @@ const scanSchema = new mongoose.Schema(
     variety: {
       type: String,
       enum: [
-        // Flower varieties (legacy Tagalog)
+        // Flower varieties
         'Ampalaya Bilog',
         'Patola',
         'Upo (Smooth)',
         'Cucumber',
         'Kalabasa',
-        // Flower varieties (new English)
-        'Bitter Gourd',
-        'Sponge Gourd',
-        'Bottle Gourd',
-        'Squash',
-        // Leaf varieties (legacy Tagalog)
+        // Leaf varieties
         'Ampalaya',
         'Patola',
         'Upo',
         'Kalabasa',
         'Pipino',
-        // Leaf varieties (new English)
-        'Bitter Gourd',
-        'Sponge Gourd',
-        'Bottle Gourd',
-        'Squash',
-        'Cucumber',
         null,
       ],
       default: null,

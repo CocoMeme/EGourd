@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../styles';
 import { plantService } from '../../services';
 
 export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollinations }) => {
+  const { t } = useTranslation();
   const getStatusColor = (status) => {
     const colors = {
       planted: '#4CAF50',
@@ -48,7 +50,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
   };
 
   const formatDate = (date) => {
-    if (!date) return 'Not set';
+    if (!date) return t('common.notSet');
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -75,7 +77,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
     
     if (hasStarted && startDate) {
       return {
-        text: `Flowering since ${formatDate(startDate)}`,
+        text: t('plantService.floweringSince', { date: formatDate(startDate) }),
         color: '#4CAF50',
         icon: 'flower'
       };
@@ -85,13 +87,13 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
       const daysLeft = Math.max(0, predictedDaysToFlower - plantAge);
       if (daysLeft <= 0) {
         return {
-          text: 'Should be flowering now!',
+          text: t('plantService.shouldBeFlowering'),
           color: '#FF9800',
           icon: 'flower-outline'
         };
       }
       return {
-        text: `~${daysLeft} days until flowering`,
+        text: t('plantService.daysUntilFlowering', { daysLeft }),
         color: '#2196F3',
         icon: 'time-outline'
       };
@@ -139,7 +141,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
             {getGourdDisplayName(plant.gourdType)}
           </Text>
           <View style={styles.ageContainer}>
-            <Text style={styles.ageText}>{plantAge} days old</Text>
+            <Text style={styles.ageText}>{t('pollination.daysOld', { days: plantAge })}</Text>
           </View>
         </View>
         
@@ -163,7 +165,7 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
       <View style={styles.detailsContainer}>
         <View style={styles.detailRow}>
           <Ionicons name="calendar-outline" size={16} color={theme.colors.text.secondary} />
-          <Text style={styles.detailText}>Planted: {formatDate(plant.datePlanted)}</Text>
+          <Text style={styles.detailText}>{t('plantService.plantedOn', { date: formatDate(plant.datePlanted) })}</Text>
         </View>
 
         {/* Flowering Prediction */}
@@ -183,11 +185,11 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
           <View style={styles.flowerCounts}>
             <View style={styles.flowerCount}>
               <Ionicons name="male" size={14} color="#4A90E2" />
-              <Text style={styles.flowerCountText}>{plant.flowering.maleFlowerCount || 0} male</Text>
+              <Text style={styles.flowerCountText}>{t('plantService.flowerCount', { count: plant.flowering.maleFlowerCount || 0, gender: t('common.male') })}</Text>
             </View>
             <View style={styles.flowerCount}>
               <Ionicons name="female" size={14} color="#E94B8A" />
-              <Text style={styles.flowerCountText}>{plant.flowering.femaleFlowerCount || 0} female</Text>
+              <Text style={styles.flowerCountText}>{t('plantService.flowerCount', { count: plant.flowering.femaleFlowerCount || 0, gender: t('common.female') })}</Text>
             </View>
           </View>
         )}
@@ -198,8 +200,9 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
             <View style={styles.statItem}>
               <Ionicons name="heart" size={14} color="#FF5722" />
               <Text style={styles.statText}>
-                {pollinationInfo.successful}/{pollinationInfo.total} pollinations
-                {pollinationInfo.pending > 0 ? ` (${pollinationInfo.pending} pending)` : ''}
+                {pollinationInfo.pending > 0
+                  ? t('plantService.pollinationsWithPending', { successful: pollinationInfo.successful, total: pollinationInfo.total, pending: pollinationInfo.pending })
+                  : t('plantService.pollinations', { successful: pollinationInfo.successful, total: pollinationInfo.total })}
               </Text>
             </View>
           </View>
@@ -211,8 +214,9 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
             <View style={styles.statItem}>
               <Ionicons name="nutrition" size={14} color="#9C27B0" />
               <Text style={styles.statText}>
-                {fruitInfo.total} fruits ({fruitInfo.harvested} harvested)
-                {fruitInfo.totalYield > 0 ? ` - ${fruitInfo.totalYield.toFixed(1)}kg` : ''}
+                {fruitInfo.totalYield > 0
+                  ? t('plantService.fruitsWithYield', { total: fruitInfo.total, harvested: fruitInfo.harvested, yield: fruitInfo.totalYield.toFixed(1) })
+                  : t('plantService.fruits', { total: fruitInfo.total, harvested: fruitInfo.harvested })}
               </Text>
             </View>
           </View>
@@ -234,18 +238,18 @@ export const PlantCard = ({ plant, onPress, onEdit, onDelete, onTrackPollination
         {(plant.status === 'flowering' || plant.status === 'pollinating' || plant.flowering?.hasStartedFlowering || plant.flowering?.hasStarted) && onTrackPollinations && (
           <TouchableOpacity style={[styles.actionButton, styles.pollinateButton]} onPress={onTrackPollinations}>
             <Ionicons name="heart" size={20} color="#FF5722" />
-            <Text style={[styles.actionText, { color: '#FF5722' }]}>Pollinate</Text>
+            <Text style={[styles.actionText, { color: '#FF5722' }]}>{t('pollination.pollinate')}</Text>
           </TouchableOpacity>
         )}
         
         <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
           <Ionicons name="create-outline" size={20} color={theme.colors.primary} />
-          <Text style={styles.actionText}>Edit</Text>
+          <Text style={styles.actionText}>{t('common.edit')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={onDelete}>
           <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
-          <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+          <Text style={[styles.actionText, styles.deleteText]}>{t('common.delete')}</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
